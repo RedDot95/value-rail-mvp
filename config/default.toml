@@ -1,0 +1,53 @@
+# Value Rail MVP - Delivery 1 default configuration.
+# All values here are offline/prototype defaults derived from the Bauauftrag (04.10.2026).
+# Nothing in this file points to a live marketplace endpoint.
+
+[display]
+timezone = "Europe/Berlin"
+
+# Rule parameters are VERSIONED: on `init-db`/`rules seed` a RuleVersion row is created
+# whenever these parameters differ from the latest stored version. Old evaluations keep
+# referencing the RuleVersion they were computed with (exact replay).
+[rules]
+label = "bauauftrag-2026-10-04-v1"
+price_find_min_discount = "0.25"     # Preisfund: >= 25 % proven nominal discount
+verified_min_edge = "0.10"           # Verifizierte Route: >= 10 % net edge ...
+verified_min_profit_eur = "1.00"     # ... AND >= 1 EUR profit
+max_quote_age_seconds = 900          # checkout/exit quote freshness
+max_offer_age_seconds = 3600         # offer snapshot freshness
+
+[alerts]
+sink = "log"
+alert_statuses = ["price_find", "verified_route"]
+material_price_change_pct = "0.02"   # >= 2 % change of all-in unit price -> new event
+restock_min_increase = 1             # quantity 0/unknown -> >0, or +N units -> new event
+max_attempts = 5
+retry_backoff_seconds = 60
+log_file = "data/alerts.log"         # structured JSON lines (in addition to stderr)
+
+# Scan intervals from the Bauauftrag. Delivery 1 worker only runs the OFFLINE fixture scan.
+[scan_intervals]
+watchlist_seconds = 300          # Watchlist: 5 min
+new_sellers_seconds = 1800       # neue Seller: 30 min
+aggregator_seconds = 86400       # Aggregatoren: taeglich (discovery only)
+stale_after_seconds = 900        # data older than this is displayed as "veraltet"
+
+[[connectors]]
+key = "fixture"
+kind = "fixture"
+enabled = true
+notes = "SYNTHETIC offline fixtures from tests/fixtures/scenarios"
+
+[[connectors]]
+key = "bitsa"
+kind = "placeholder"
+enabled = false
+product_family = "bitsa"
+notes = "Kandidat. Kein Connector implementiert; Zugang, ToS und Checkout-Nachweis offen (Delivery 2)."
+
+[[connectors]]
+key = "paysafe"
+kind = "placeholder"
+enabled = false
+product_family = "paysafecard"
+notes = "Kandidat. Kein Connector implementiert; Zugang, ToS und Checkout-Nachweis offen (Delivery 2)."

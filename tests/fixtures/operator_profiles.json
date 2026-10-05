@@ -1,0 +1,15 @@
+{
+  "synthetic": true,
+  "_notice": "SYNTHETIC TEST DATA - fiktive Haendler/Preise, kein reales Angebot, keine Kaufempfehlung",
+  "profiles": [
+    {
+      "name": "SYNTHETIC-Operator",
+      "region": "DE",
+      "max_budget_eur": "500.00",
+      "capabilities": {
+        "synthetic_seller_account": "proven",
+        "synthetic_exit_account": "proven"
+      }
+    }
+  ]
+}

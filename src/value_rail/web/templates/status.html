@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Systemstatus{% endblock %}
+{% block content %}
+<div class="card lvl-{{ system.level }}"><b>Systemstatus</b><div>{{ system.headline }}</div>
+<div class="mut">Live-Scanning: <b>nein</b> (Delivery 1 – nur Offline-Fixtures). Kein 24/7-Betrieb nachgewiesen.</div></div>
+
+<h2>Quellen</h2>
+{% for src in system.sources %}<div class="card lvl-{{ 'ok' if src.health == 'ok' else ('bad' if src.health == 'down' else 'warn') }}">
+<div class="row"><b>{{ src.name }}</b><span class="pill">{{ src.health }}</span></div>
+<div class="mut">{{ src.key }} · {{ src.kind }} / {{ src.role }}{% if src.is_synthetic %} · <span class="tag">SYNTHETIC</span>{% endif %}</div>
+<div class="mut">Letzter Erfolg: {{ src.last_success_at|berlin }}{% if src.last_error %} · Fehler: {{ src.last_error }} ({{ src.last_error_at|berlin }}){% endif %}</div>
+</div>{% else %}<div class="empty">Keine Quellen registriert.</div>{% endfor %}
+
+<h2>Letzte Scans</h2>
+<div class="card"><table><tr><th>#</th><th>Zeit</th><th>Status</th><th class="n">Bew./Alerts</th></tr>
+{% for r in system.scans %}<tr><td>{{ r.id }}</td><td>{{ r.started_at|berlin }}<div class="mut">{{ r.trigger }}{% if r.sources_failed %} · gestört: {{ r.sources_failed|join(', ') }}{% endif %}</div></td><td>{{ r.status }}</td><td class="n">{{ r.evaluations_created }}/{{ r.alerts_enqueued }}</td></tr>
+{% else %}<tr><td colspan="4" class="empty">Noch kein Scan.</td></tr>{% endfor %}</table></div>
+
+<h2>Konfiguration</h2>
+<div class="card"><table>
+<tr><td>Watchlist-Intervall</td><td class="n">{{ system.intervals.watchlist_seconds }} s</td></tr>
+<tr><td>Neue Seller</td><td class="n">{{ system.intervals.new_sellers_seconds }} s</td></tr>
+<tr><td>Aggregatoren (nur Discovery)</td><td class="n">{{ system.intervals.aggregator_seconds }} s</td></tr>
+<tr><td>Veraltet nach</td><td class="n">{{ system.intervals.stale_after_seconds }} s</td></tr>
+<tr><td>Regelversion</td><td class="n">{{ system.rule.label if system.rule else '–' }}</td></tr>
+<tr><td>Alert-Outbox</td><td class="n">{% for k, v in system.outbox.items() %}{{ k }}: {{ v }} {% else %}leer{% endfor %}</td></tr>
+</table></div>
+{% endblock %}

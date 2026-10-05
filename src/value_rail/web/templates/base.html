@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="color-scheme" content="light dark">
+<title>{% block title %}Value Rail{% endblock %}</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--fg:#14161a;--mut:#667085;--ok:#0f9d58;--warn:#b26a00;--bad:#c62828;--acc:#1f5eff;--line:#e4e7ec}
+@media (prefers-color-scheme:dark){:root{--bg:#0d0f12;--card:#171a1f;--fg:#eef0f3;--mut:#98a2b3;--line:#2a2f37}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:12px;align-items:center}
+header b{font-size:17px;flex:1}header a{color:var(--acc);text-decoration:none;font-weight:600}
+main{max-width:720px;margin:0 auto;padding:12px}
+.synth{background:repeating-linear-gradient(45deg,#ffe08a,#ffe08a 10px,#ffd24d 10px,#ffd24d 20px);color:#3d2c00;font-weight:700;text-align:center;padding:6px 10px;font-size:13px;letter-spacing:.3px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:18px 4px 8px}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px;color:inherit;text-decoration:none}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.big{font-size:22px;font-weight:700}.mut{color:var(--mut);font-size:13px}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;border:1px solid currentColor}
+.s-price_find{color:var(--acc)}.s-verified_route{color:var(--ok)}.s-blocked{color:var(--bad)}.s-expired{color:var(--warn)}.s-no_signal{color:var(--mut)}
+.lvl-ok{border-left:5px solid var(--ok)}.lvl-warn{border-left:5px solid var(--warn)}.lvl-bad{border-left:5px solid var(--bad)}
+.tag{display:inline-block;background:#ffe08a;color:#3d2c00;border-radius:6px;padding:0 6px;font-size:11px;font-weight:700}
+.stale{color:var(--warn);font-size:13px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}td.n{text-align:right;white-space:nowrap}
+ul{padding-left:18px;margin:6px 0}code{font-size:12px;word-break:break-all}
+details summary{cursor:pointer;color:var(--mut);margin:8px 0}
+.empty{color:var(--mut);padding:8px 4px}
+</style>
+</head>
+<body>
+{% if any_synthetic %}<div class="synth">SYNTHETISCHE TESTDATEN – keine realen Angebote, kein Live-Scan, keine Kaufempfehlung</div>{% endif %}
+<header><b>Value Rail</b><a href="/">Funde</a><a href="/status">Status</a></header>
+<main>
+{% if not settings.auth_enabled %}<div class="card lvl-warn mut">Auth deaktiviert – nur lokal (localhost) verwenden. Externer Zugriff nur mit TLS + Basic-Auth.</div>{% endif %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

@@ -1,0 +1,44 @@
+{% extends "base.html" %}{% from "_macros.html" import eval_card %}
+{% block title %}Bewertung #{{ ev.id }}{% endblock %}
+{% block content %}
+{{ eval_card(card) }}
+{% set o = card.outputs %}
+<div class="card"><b>Kennzahlen</b>
+<table>
+<tr><td>Rabatt (nominal)</td><td class="n">{{ o.discount|pct }}</td></tr>
+<tr><td>All-in je Stück</td><td class="n">{{ o.unit_all_in_eur|eur }}</td></tr>
+<tr><td>Nennwert-Referenz</td><td class="n">{{ o.face_value_reference_eur|eur }}</td></tr>
+<tr><td>Angezeigte Menge</td><td class="n">{{ o.advertised_quantity|unk }}</td></tr>
+<tr><td>Nachgewiesene Menge</td><td class="n">{{ o.proven_quantity|unk }} ({{ o.proven_quantity_scope|unk }})</td></tr>
+<tr><td>Restkapazität / Ursache</td><td class="n">{{ o.remaining_capacity|unk }} / {{ o.capacity_limit_cause|unk }}</td></tr>
+<tr><td>Bewertete Menge q</td><td class="n">{{ o.evaluated_quantity|unk }}</td></tr>
+<tr><td>Anschaffung acquisition_cost(q)</td><td class="n">{{ o.acquisition_cost_eur|eur }}</td></tr>
+<tr><td>Netto-Exit net_exit(q)</td><td class="n">{{ o.net_exit_eur|eur }}</td></tr>
+<tr><td><b>Profit(q)</b></td><td class="n"><b>{{ o.profit_eur|eur }}</b></td></tr>
+<tr><td><b>Edge(q)</b></td><td class="n"><b>{{ o.edge|pct }}</b></td></tr>
+</table></div>
+
+{% if o.cost_breakdown %}<div class="card"><b>Kostenaufstellung</b><table>
+{% for l in o.cost_breakdown %}<tr><td>{{ l.label }}{% if l.note %}<div class="mut">{{ l.note }}</div>{% endif %}</td><td class="n">{{ l.amount_eur|eur(4) }}</td></tr>{% endfor %}
+</table></div>{% endif %}
+{% if o.exit_breakdown %}<div class="card"><b>Exit-Aufstellung</b><table>
+{% for l in o.exit_breakdown %}<tr><td>{{ l.label }}{% if l.note %}<div class="mut">{{ l.note }}</div>{% endif %}</td><td class="n">{{ l.amount_eur|eur(4) }}</td></tr>{% endfor %}
+</table></div>{% endif %}
+
+<div class="card"><b>Prüfung</b>
+<div class="mut">Blockgründe</div><ul>{% for b in o.block_reasons %}<li>{{ b }}</li>{% else %}<li>keine</li>{% endfor %}</ul>
+<div class="mut">Fehlende Nachweise</div><ul>{% for m in o.missing_evidence %}<li>{{ m }}</li>{% else %}<li>keine</li>{% endfor %}</ul>
+<div class="mut">Ignorierte Angebote</div><ul>{% for i in o.ignored_offers %}<li><code>{{ i.offer_ref }}</code>: {{ i.reason }}</li>{% else %}<li>keine</li>{% endfor %}</ul>
+<div class="mut">Hinweise</div><ul>{% for n in o.notes %}<li>{{ n }}</li>{% else %}<li>keine</li>{% endfor %}</ul>
+</div>
+
+<div class="card"><b>Evidenz ({{ evidence|length }})</b>
+<ul>{% for e in evidence %}<li>{% if e.is_synthetic %}<span class="tag">SYNTHETIC</span> {% endif %}<b>{{ e.kind }}</b> · {{ e.summary }}<div class="mut">{{ e.captured_at|berlin }} · {{ e.subject_ref }} · sha256 {{ e.content_hash[:12] }}…</div></li>{% else %}<li>keine</li>{% endfor %}</ul></div>
+
+<div class="card"><b>Reproduzierbarkeit</b>
+<div class="mut">Regelversion #{{ rule.id }} „{{ rule.label }}“ gültig ab {{ rule.valid_from|berlin }} · Engine {{ ev.engine_version }} · Inputs-Hash <code>{{ ev.inputs_hash[:16] }}</code></div>
+<div><a href="/evaluations/{{ ev.id }}/replay">Replay prüfen (JSON)</a></div>
+<div class="mut">Alerts dieser Route (letzte 5): {% for a in alerts %}#{{ a.route_evaluation_id }} {{ a.state }} ({{ a.reason }}, Versuche {{ a.attempts }}, event {{ a.event_id[:10] }}){% if not loop.last %}; {% endif %}{% else %}keiner{% endfor %}</div>
+</div>
+<details><summary>Rohdaten (Inputs JSON)</summary><pre style="white-space:pre-wrap;font-size:11px">{{ inputs|tojson(indent=1) }}</pre></details>
+{% endblock %}

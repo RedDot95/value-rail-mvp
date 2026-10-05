@@ -1,0 +1,20 @@
+{% macro eval_card(c) -%}
+<a class="card" href="/evaluations/{{ c.id }}">
+  <div class="row"><span><b>{{ c.title }}</b> {% if c.synthetic %}<span class="tag">SYNTHETIC</span>{% endif %}</span>
+    <span class="pill s-{{ c.status }}">{{ c.status_de }}</span></div>
+  {% set o = c.outputs %}
+  {% if c.status == 'verified_route' or (c.status == 'expired' and o.profit_eur != 'unknown') %}
+  <div class="row"><span class="big">{{ o.profit_eur|eur }}</span><span>Edge <b>{{ o.edge|pct }}</b></span></div>
+  <div class="mut">Menge {{ o.evaluated_quantity }} · Kosten {{ o.acquisition_cost_eur|eur }} · Netto-Exit {{ o.net_exit_eur|eur }}</div>
+  {% else %}
+  <div class="row"><span class="big">{{ o.discount|pct }}</span><span>{{ o.unit_all_in_eur|eur }} / Nennwert {{ o.face_value_reference_eur|eur }}</span></div>
+  {% if o.proven_quantity != 'unknown' %}<div class="mut">Nachgewiesen: {{ o.proven_quantity }} Stk ({{ o.proven_quantity_scope }}) = {{ o.face_total_eur|eur }} Nennwert / {{ o.cost_total_eur|eur }} Kosten{% if o.advertised_quantity != 'unknown' %} · angezeigt {{ o.advertised_quantity }}{% endif %}</div>{% endif %}
+  {% if c.status == 'price_find' %}<div class="mut">Profit: unbekannt (Exit/Voraussetzungen offen)</div>{% endif %}
+  {% endif %}
+  {% if o.block_reasons %}<div class="mut">Blockiert: {{ o.block_reasons|join(', ') }}</div>{% endif %}
+  {% if o.missing_evidence and c.status != 'verified_route' %}<div class="mut">Fehlende Nachweise: {{ o.missing_evidence|join(', ') }}</div>{% endif %}
+  {% if o.stale_reasons %}<div class="stale">Veraltet: {{ o.stale_reasons|join(', ') }}</div>{% endif %}
+  {% if c.stale %}<div class="stale">⚠ {{ c.stale_reasons|join(' · ') }}</div>{% endif %}
+  <div class="mut">{{ c.evaluated_at|berlin }}</div>
+</a>
+{%- endmacro %}

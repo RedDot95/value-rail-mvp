@@ -1,0 +1,208 @@
+"""Scan pipeline.
+
+Per route candidate: fetch everything from the connector FIRST (no DB transaction open), then
+persist snapshots + quotes + evidence + RouteEvaluation + alert outbox row in ONE transaction.
+A failing source marks the scan `degraded` and the source `down` - never "no deals".
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.orm import Session, sessionmaker
+
+from ..alerts.outbox import enqueue_if_needed
+from ..connectors.base import CapabilityNotSupported, Connector, DiscoveryItem, QuoteBundle, SourceUnavailable
+from ..domain.enums import ScanStatus
+from ..evidence import content_hash
+from ..settings import Settings
+from ..storage.orm import OperatorProfileRow, RouteEvaluationRow, ScanRunRow, SourceRow
+from ..storage.repo import (active_rule_version, ensure_rule_version, get_or_create_product, insert_evidence,
+                            insert_offer_snapshot, insert_quote, mark_source_health, rule_params_of, upsert_source)
+from ..valuation.engine import ENGINE_VERSION, evaluate_route
+from ..valuation.models import EvaluationResult, OfferInput, RouteInputs, RuleParams
+
+log = logging.getLogger("value_rail.worker")
+
+
+class ScanReport(BaseModel):
+    scan_run_id: int
+    status: ScanStatus
+    items_seen: int = 0
+    evaluations_created: int = 0
+    alerts_enqueued: int = 0
+    sources_failed: dict[str, str] = Field(default_factory=dict)
+    statuses: dict[str, str] = Field(default_factory=dict)
+    evaluation_ids: dict[str, int] = Field(default_factory=dict)
+
+
+class _Fetched(BaseModel):
+    item: DiscoveryItem
+    offers: list[Any]
+    checkout: QuoteBundle | None
+    exit: QuoteBundle | None
+
+
+def _fetch(connector: Connector, item: DiscoveryItem, now: datetime) -> _Fetched:
+    raws = connector.offer_fetch(item, now)
+    offers = [connector.normalize(item, r, now) for r in raws]
+    caps = connector.capabilities()
+    checkout = exit_ = None
+    try:
+        checkout = connector.checkout_quote(item, now) if caps.checkout_quote else None
+    except CapabilityNotSupported:
+        checkout = None
+    try:
+        exit_ = connector.exit_quote(item, now) if caps.exit_quote else None
+    except CapabilityNotSupported:
+        exit_ = None
+    return _Fetched(item=item, offers=offers, checkout=checkout, exit=exit_)
+
+
+def persist_evaluation(s: Session, *, inputs: RouteInputs, result: EvaluationResult, rule_version_id: int,
+                       scan_run_id: int | None, operator_profile_id: int | None, product_id: int | None) -> RouteEvaluationRow:
+    inputs_json = inputs.model_dump(mode="json")
+    row = RouteEvaluationRow(
+        route_key=inputs.route_key, scan_run_id=scan_run_id, rule_version_id=rule_version_id,
+        operator_profile_id=operator_profile_id, product_id=product_id, evaluated_at=inputs.evaluated_at,
+        status=str(result.status), discount=result.discount, profit_eur=result.profit_eur, edge=result.edge,
+        evaluated_quantity=str(result.evaluated_quantity), inputs=inputs_json, outputs=result.canonical(),
+        inputs_hash=content_hash(inputs_json), engine_version=ENGINE_VERSION, is_synthetic=inputs.is_synthetic)
+    s.add(row)
+    s.flush()
+    return row
+
+
+def _operator(s: Session, name: str | None) -> OperatorProfileRow | None:
+    q = select(OperatorProfileRow)
+    if name:
+        q = q.where(OperatorProfileRow.name == name)
+    return s.scalar(q.order_by(OperatorProfileRow.id).limit(1))
+
+
+def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: RuleParams,
+                  operator: OperatorProfileRow | None, settings: Settings, now: datetime) -> tuple[RouteEvaluationRow, EvaluationResult, bool]:
+    item = f.item
+    srcs: dict[str, SourceRow] = {}
+    for spec in item.sources:
+        srcs[spec.key] = upsert_source(s, key=spec.key, name=spec.name, kind=str(spec.kind), role=str(spec.role),
+                                       is_synthetic=item.is_synthetic)
+    product = get_or_create_product(s, item.product, family=item.product_family, now=now, is_synthetic=item.is_synthetic)
+
+    offer_inputs: list[OfferInput] = []
+    for o in f.offers:
+        src = srcs[o.source.key]
+        row = insert_offer_snapshot(
+            s, source=src, product=product, scan_run_id=scan_id, route_key=item.route_key, captured_at=o.captured_at,
+            price_amount=o.unit_price, price_currency=o.currency, price_text_raw=o.price_text_raw,
+            price_includes_fees=o.price_includes_fees, fees=[x.model_dump(mode="json") for x in o.fees],
+            advertised=o.advertised_quantity, checkout_confirmed=o.checkout_confirmed_quantity,
+            purchased=o.purchased_quantity, raw=o.raw | {"identity": o.identity.model_dump(mode="json")},
+            is_synthetic=o.is_synthetic)
+        ref = f"offer_snapshot:{row.id}"
+        ev_refs = [f"evidence:{insert_evidence(s, d, subject_ref=ref, source=src).id}" for d in o.evidence]
+        offer_inputs.append(OfferInput(
+            offer_ref=ref, source_key=src.key, source_role=o.source.role, identity=o.identity, unit_price=o.unit_price,
+            currency=o.currency, price_includes_fees=o.price_includes_fees, fees=o.fees,
+            advertised_quantity=o.advertised_quantity, checkout_confirmed_quantity=o.checkout_confirmed_quantity,
+            purchased_quantity=o.purchased_quantity, captured_at=o.captured_at, evidence_refs=ev_refs))
+
+    def _store_quote(b: QuoteBundle | None, kind: str):
+        if b is None:
+            return None
+        q = b.quote
+        src = srcs[b.source.key]
+        row = insert_quote(
+            s, kind=kind, source=src, product=product, scan_run_id=scan_id, route_key=item.route_key,
+            identity=q.identity.model_dump(mode="json"),
+            quantity=getattr(q, "quantity_confirmed", "unknown"), unit_price=q.unit_price, currency=q.currency,
+            depth_quantity=getattr(q, "depth_quantity", "unknown"), fees=[x.model_dump(mode="json") for x in q.fees],
+            captured_at=q.captured_at, valid_until=q.valid_until, is_synthetic=item.is_synthetic)
+        ref = f"quote:{row.id}"
+        ev_refs = [f"evidence:{insert_evidence(s, d, subject_ref=ref, source=src).id}" for d in b.evidence]
+        return q.model_copy(update={"quote_ref": ref, "evidence_refs": ev_refs})
+
+    checkout = _store_quote(f.checkout, "checkout")
+    exit_q = _store_quote(f.exit, "exit")
+
+    caps = dict(operator.capabilities) if operator else {}
+    connector_prereqs = [{"name": n, "status": caps.get(n, "unknown")} for n in item.prerequisites]
+    inputs = RouteInputs(route_key=item.route_key, product=item.product, offers=offer_inputs, checkout_quote=checkout,
+                         exit_quote=exit_q, prerequisites=connector_prereqs, evaluated_at=now,
+                         is_synthetic=item.is_synthetic)
+    result = evaluate_route(inputs, params)
+    ev_row = persist_evaluation(s, inputs=inputs, result=result, rule_version_id=rv_id, scan_run_id=scan_id,
+                                operator_profile_id=operator.id if operator else None, product_id=product.id)
+    decision, alert = enqueue_if_needed(s, ev_row, result, settings.file_config.alerts, now)
+    for src in srcs.values():
+        mark_source_health(s, src, ok=True, now=now)
+    log.info("evaluated %s -> %s (alert: %s)", item.route_key, result.status, decision.reason)
+    return ev_row, result, alert is not None
+
+
+def run_scan(session_factory: sessionmaker[Session], connector: Connector, settings: Settings, now: datetime, *,
+             trigger: str = "cli", operator_name: str | None = None) -> ScanReport:
+    caps = connector.capabilities()
+    with session_factory.begin() as s:
+        rv = active_rule_version(s, now)
+        if rv is None:
+            rv = ensure_rule_version(s, RuleParams.model_validate(settings.file_config.rules.model_dump()), now=now)
+        rv_id, params = rv.id, rule_params_of(rv)
+        scan = ScanRunRow(started_at=now, status=ScanStatus.RUNNING.value, trigger=trigger, sources_ok=[],
+                          sources_failed={}, is_synthetic=caps.synthetic,
+                          notes="OFFLINE fixture scan (SYNTHETIC)" if caps.synthetic else "")
+        s.add(scan)
+        s.flush()
+        scan_id = scan.id
+        op = _operator(s, operator_name)
+        op_id = op.id if op else None
+
+    rep = ScanReport(scan_run_id=scan_id, status=ScanStatus.RUNNING)
+    ok_sources: set[str] = set()
+    try:
+        items = connector.discovery(now)
+    except SourceUnavailable as exc:
+        items = []
+        rep.sources_failed[exc.source_key] = str(exc)
+    for item in items:
+        rep.items_seen += 1
+        try:
+            fetched = _fetch(connector, item, now)
+        except SourceUnavailable as exc:
+            rep.sources_failed[exc.source_key] = str(exc)
+            with session_factory.begin() as s:
+                spec = next((x for x in item.sources if x.key == exc.source_key), None)
+                if spec is not None:
+                    src = upsert_source(s, key=spec.key, name=spec.name, kind=str(spec.kind), role=str(spec.role),
+                                        is_synthetic=item.is_synthetic)
+                    mark_source_health(s, src, ok=False, now=now, error=str(exc))
+            log.warning("source unavailable during %s: %s (route NOT evaluated; disturbance)", item.route_key, exc)
+            continue
+        with session_factory.begin() as s:
+            operator = s.get(OperatorProfileRow, op_id) if op_id else None
+            ev_row, result, alerted = _persist_item(s, fetched, scan_id=scan_id, rv_id=rv_id, params=params,
+                                                    operator=operator, settings=settings, now=now)
+        rep.evaluations_created += 1
+        rep.alerts_enqueued += int(alerted)
+        rep.statuses[item.route_key] = str(result.status)
+        rep.evaluation_ids[item.route_key] = ev_row.id
+        ok_sources.update(x.key for x in item.sources if x.key not in rep.sources_failed)
+
+    if rep.sources_failed:
+        rep.status = ScanStatus.DEGRADED if rep.evaluations_created or items else ScanStatus.FAILED
+    else:
+        rep.status = ScanStatus.OK
+    with session_factory.begin() as s:
+        scan = s.get(ScanRunRow, scan_id)
+        scan.finished_at = now
+        scan.status = rep.status.value
+        scan.sources_ok = sorted(ok_sources - set(rep.sources_failed))
+        scan.sources_failed = rep.sources_failed
+        scan.items_seen = rep.items_seen
+        scan.evaluations_created = rep.evaluations_created
+        scan.alerts_enqueued = rep.alerts_enqueued
+    return rep

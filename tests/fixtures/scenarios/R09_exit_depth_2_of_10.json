@@ -1,0 +1,71 @@
+{
+  "synthetic": true,
+  "_notice": "SYNTHETIC TEST DATA - fiktive Haendler/Preise, kein reales Angebot, keine Kaufempfehlung",
+  "scenario_id": "R09_exit_depth_2_of_10",
+  "regression_case": 9,
+  "title_de": "10 Stueck im Checkout bestaetigt, Exit-Tiefe nur 2",
+  "product_family": "synthetic-voucher",
+  "expected": {
+    "status": "verified_route",
+    "evaluated_quantity": 2,
+    "profit_eur": "20.00",
+    "edge": "0.5"
+  },
+  "product": {
+    "face_value": "40",
+    "face_currency": "EUR",
+    "region": "DE",
+    "variant": "digital-code",
+    "seller": "SYNTHETIC-Direct-A",
+    "redemption_program": "SYNTHETIC-Program-A"
+  },
+  "sources": [
+    {
+      "key": "synthetic-direct-a",
+      "name": "SYNTHETIC Direct Seller A",
+      "kind": "direct_seller",
+      "role": "price_basis"
+    },
+    {
+      "key": "synthetic-exit-venue",
+      "name": "SYNTHETIC Exit Venue",
+      "kind": "exit_venue",
+      "role": "exit"
+    }
+  ],
+  "prerequisites": [
+    "synthetic_seller_account",
+    "synthetic_exit_account"
+  ],
+  "offers": [
+    {
+      "source": "synthetic-direct-a",
+      "price_text": "20,00 €",
+      "price_includes_fees": true,
+      "captured_at": "now-60s",
+      "advertised_quantity": {
+        "value": 10,
+        "observed_at": "now-60s",
+        "scope": "listing"
+      }
+    }
+  ],
+  "checkout_quote": {
+    "source": "synthetic-direct-a",
+    "unit_price": "20.00",
+    "currency": "EUR",
+    "quantity_confirmed": 10,
+    "fees": [],
+    "captured_at": "now-60s",
+    "valid_until": "now+10m"
+  },
+  "exit_quote": {
+    "venue": "synthetic-exit-venue",
+    "unit_price": "30.00",
+    "currency": "EUR",
+    "depth_quantity": 2,
+    "fees": [],
+    "captured_at": "now-60s",
+    "valid_until": "now+10m"
+  }
+}

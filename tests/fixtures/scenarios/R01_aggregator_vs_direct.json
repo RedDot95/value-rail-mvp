@@ -1,0 +1,60 @@
+{
+  "synthetic": true,
+  "_notice": "SYNTHETIC TEST DATA - fiktive Haendler/Preise, kein reales Angebot, keine Kaufempfehlung",
+  "scenario_id": "R01_aggregator_vs_direct",
+  "regression_case": 1,
+  "title_de": "Aggregator 36 EUR vs. Direktpreis 56 EUR (Nennwert 50 EUR)",
+  "product_family": "synthetic-voucher",
+  "expected": {
+    "status": "no_signal",
+    "unit_all_in_eur": "56.00",
+    "alert": false
+  },
+  "product": {
+    "face_value": "50",
+    "face_currency": "EUR",
+    "region": "DE",
+    "variant": "digital-code",
+    "seller": "SYNTHETIC-Direct-A",
+    "redemption_program": "SYNTHETIC-Program-A"
+  },
+  "sources": [
+    {
+      "key": "synthetic-aggregator-x",
+      "name": "SYNTHETIC Aggregator X",
+      "kind": "aggregator",
+      "role": "discovery_only"
+    },
+    {
+      "key": "synthetic-direct-a",
+      "name": "SYNTHETIC Direct Seller A",
+      "kind": "direct_seller",
+      "role": "price_basis"
+    }
+  ],
+  "offers": [
+    {
+      "source": "synthetic-aggregator-x",
+      "price_text": "36,00 €",
+      "price_includes_fees": true,
+      "captured_at": "now-60s",
+      "advertised_quantity": {
+        "value": 5,
+        "observed_at": "now-60s",
+        "scope": "listing"
+      }
+    },
+    {
+      "source": "synthetic-direct-a",
+      "price_text": "56,00 €",
+      "price_includes_fees": true,
+      "captured_at": "now-60s",
+      "advertised_quantity": {
+        "value": 5,
+        "observed_at": "now-60s",
+        "scope": "listing"
+      }
+    }
+  ],
+  "prerequisites": []
+}

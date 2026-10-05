@@ -1,0 +1,50 @@
+{
+  "synthetic": true,
+  "_notice": "SYNTHETIC TEST DATA - fiktive Haendler/Preise, kein reales Angebot, keine Kaufempfehlung",
+  "scenario_id": "R03_paysafe_partial_qty",
+  "regression_case": 3,
+  "title_de": "Paysafe-Familie: 11 angezeigt, nur 3 historisch gekauft zu 45 %",
+  "product_family": "paysafecard",
+  "expected": {
+    "status": "price_find",
+    "proven_quantity": 3,
+    "face_total_eur": "9",
+    "cost_total_eur": "4.05",
+    "remaining_capacity": "unknown"
+  },
+  "product": {
+    "face_value": "3",
+    "face_currency": "EUR",
+    "region": "DE",
+    "variant": "digital-pin",
+    "seller": "SYNTHETIC-Paysafe-Reseller",
+    "redemption_program": "SYNTHETIC-Paysafe-like-Program"
+  },
+  "sources": [
+    {
+      "key": "synthetic-paysafe-reseller",
+      "name": "SYNTHETIC Paysafe-like Reseller",
+      "kind": "direct_seller",
+      "role": "price_basis"
+    }
+  ],
+  "offers": [
+    {
+      "source": "synthetic-paysafe-reseller",
+      "price_text": "1,35 €",
+      "price_includes_fees": true,
+      "captured_at": "now-60s",
+      "advertised_quantity": {
+        "value": 11,
+        "observed_at": "now-60s",
+        "scope": "listing"
+      },
+      "purchased_quantity": {
+        "value": 3,
+        "observed_at": "now-3d",
+        "scope": "historical_purchase"
+      }
+    }
+  ],
+  "prerequisites": []
+}

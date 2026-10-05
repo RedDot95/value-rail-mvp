@@ -1,0 +1,43 @@
+{
+  "synthetic": true,
+  "_notice": "SYNTHETIC TEST DATA - fiktive Haendler/Preise, kein reales Angebot, keine Kaufempfehlung",
+  "scenario_id": "R02_bitsa_price_find",
+  "regression_case": 2,
+  "title_de": "Bitsa-Familie: Nennwert 5 EUR, all-in 1,20 EUR, Exit unbekannt",
+  "product_family": "bitsa",
+  "expected": {
+    "status": "price_find",
+    "discount": "0.76",
+    "profit_eur": "unknown"
+  },
+  "product": {
+    "face_value": "5",
+    "face_currency": "EUR",
+    "region": "DE",
+    "variant": "digital-topup",
+    "seller": "SYNTHETIC-Bitsa-Reseller",
+    "redemption_program": "SYNTHETIC-Bitsa-like-Program"
+  },
+  "sources": [
+    {
+      "key": "synthetic-bitsa-reseller",
+      "name": "SYNTHETIC Bitsa-like Reseller",
+      "kind": "direct_seller",
+      "role": "price_basis"
+    }
+  ],
+  "offers": [
+    {
+      "source": "synthetic-bitsa-reseller",
+      "price_text": "1,20 €",
+      "price_includes_fees": true,
+      "captured_at": "now-60s",
+      "advertised_quantity": {
+        "value": 50,
+        "observed_at": "now-60s",
+        "scope": "listing"
+      }
+    }
+  ],
+  "prerequisites": []
+}
