@@ -39,7 +39,8 @@ value_rail = ["web/templates/*.html", "web/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+addopts = "-q -m 'not live'"
+markers = ["live: hits the real network (excluded by default; run with `pytest -m live` or `value-rail smoke <connector>`)"]
 filterwarnings = ["error::DeprecationWarning:value_rail.*"]
 
 [tool.alembic]

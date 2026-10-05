@@ -38,4 +38,7 @@ def test_registry_builds_only_fixture(tmp_path):
     cs = build_connectors(st)
     assert [c.key for c in cs] == ["fixture"]
     rows = {r["key"]: r for r in describe_connectors(st)}
-    assert rows["bitsa"]["enabled"] is False and rows["paysafe"]["enabled"] is False
+    # the live connector is configured but disabled by default; placeholders are never runnable
+    assert rows["recharge"]["enabled"] is False and rows["recharge"]["capabilities"]["live_network"] is True
+    assert rows["recharge"]["capabilities"]["checkout_quote"] is False
+    assert rows["bitrefill"]["enabled"] is False

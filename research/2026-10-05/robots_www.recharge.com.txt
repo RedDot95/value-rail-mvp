@@ -1,0 +1,32 @@
+
+User-agent: meta-externalagent
+Disallow: /blog/*?s=
+Disallow: /blog/search/
+Disallow: /blog/*/search/
+Disallow: /blog/*page=*
+Disallow: /blog/*?_rsc*
+
+User-agent: meta-webindexer
+Disallow: /blog/*?s=
+Disallow: /blog/search/
+Disallow: /blog/*/search/
+Disallow: /blog/*page=*
+Disallow: /blog/*?_rsc*
+
+User-agent: *
+Disallow: /checkout
+Disallow: /cart
+Disallow: /orders
+Disallow: /user
+Disallow: /account
+Disallow: /password
+Disallow: /api
+Allow: /api/client/countries
+Allow: /api/client/pages
+Allow: /api/client/taxons
+Allow: /api/client/products
+Crawl-delay: 1
+
+Sitemap: https://www.recharge.com/sitemap.xml
+Sitemap: https://www.recharge.com/sitemap-other.xml
+Sitemap: https://www.recharge.com/blog/post-sitemap2.xml

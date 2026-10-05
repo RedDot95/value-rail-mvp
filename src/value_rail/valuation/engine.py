@@ -25,7 +25,7 @@ from ..domain.money import MONEY_CONTEXT, is_unknown
 from .models import (BreakdownLine, CheckoutQuoteInput, EvaluationResult, ExitQuoteInput, FeeComponent,
                      OfferInput, RouteInputs, RuleParams)
 
-ENGINE_VERSION = "1.0.0"
+ENGINE_VERSION = "1.1.0"  # 1.1.0: percent fees may carry cap_per_unit (Delivery 2)
 
 
 class UnknownFeeError(ValueError):
@@ -59,9 +59,13 @@ def _apply_fees(base: Decimal, q: int, fees: list[FeeComponent], lines: list[Bre
             v = amt
         elif f.kind == "fixed_per_unit":
             v = amt * q
-        else:  # percent of base amount
+        else:  # percent of base amount (optionally capped per unit)
             v = base * amt
-        lines.append(BreakdownLine(label=f.name, amount_eur=v, note=f.kind))
+            if f.cap_per_unit is not None and q > 0:
+                per_unit = min((base / q) * amt, Decimal(f.cap_per_unit))
+                v = per_unit * q
+        note = f.kind if f.cap_per_unit is None else f"{f.kind} (max {f.cap_per_unit} EUR/Einheit)"
+        lines.append(BreakdownLine(label=f.name, amount_eur=v, note=note))
         total += v
     return total
 

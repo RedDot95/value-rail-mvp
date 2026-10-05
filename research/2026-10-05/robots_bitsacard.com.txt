@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://bitsacard.com/sitemap-index.xml
+Sitemap: https://bitsacard.com/blog/sitemap-index.xml

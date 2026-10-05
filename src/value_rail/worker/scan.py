@@ -25,6 +25,7 @@ from ..storage.repo import (active_rule_version, ensure_rule_version, get_or_cre
                             insert_offer_snapshot, insert_quote, mark_source_health, rule_params_of, upsert_source)
 from ..valuation.engine import ENGINE_VERSION, evaluate_route
 from ..valuation.models import EvaluationResult, OfferInput, RouteInputs, RuleParams
+from .exit_rules import exit_quote_from_rule
 
 log = logging.getLogger("value_rail.worker")
 
@@ -87,8 +88,12 @@ def _operator(s: Session, name: str | None) -> OperatorProfileRow | None:
 def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: RuleParams,
                   operator: OperatorProfileRow | None, settings: Settings, now: datetime) -> tuple[RouteEvaluationRow, EvaluationResult, bool]:
     item = f.item
+    exit_bundle, exit_rule = f.exit, None
+    if exit_bundle is None:
+        exit_bundle, exit_rule = exit_quote_from_rule(params, item, now)
+    specs = list(item.sources) + ([exit_bundle.source] if exit_rule is not None else [])
     srcs: dict[str, SourceRow] = {}
-    for spec in item.sources:
+    for spec in specs:
         srcs[spec.key] = upsert_source(s, key=spec.key, name=spec.name, kind=str(spec.kind), role=str(spec.role),
                                        is_synthetic=item.is_synthetic)
     product = get_or_create_product(s, item.product, family=item.product_family, now=now, is_synthetic=item.is_synthetic)
@@ -127,10 +132,11 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: 
         return q.model_copy(update={"quote_ref": ref, "evidence_refs": ev_refs})
 
     checkout = _store_quote(f.checkout, "checkout")
-    exit_q = _store_quote(f.exit, "exit")
+    exit_q = _store_quote(exit_bundle, "exit")
 
     caps = dict(operator.capabilities) if operator else {}
-    connector_prereqs = [{"name": n, "status": caps.get(n, "unknown")} for n in item.prerequisites]
+    prereq_names = list(dict.fromkeys(list(item.prerequisites) + (list(exit_rule.prerequisites) if exit_rule else [])))
+    connector_prereqs = [{"name": n, "status": caps.get(n, "unknown")} for n in prereq_names]
     inputs = RouteInputs(route_key=item.route_key, product=item.product, offers=offer_inputs, checkout_quote=checkout,
                          exit_quote=exit_q, prerequisites=connector_prereqs, evaluated_at=now,
                          is_synthetic=item.is_synthetic)
@@ -138,8 +144,9 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: 
     ev_row = persist_evaluation(s, inputs=inputs, result=result, rule_version_id=rv_id, scan_run_id=scan_id,
                                 operator_profile_id=operator.id if operator else None, product_id=product.id)
     decision, alert = enqueue_if_needed(s, ev_row, result, settings.file_config.alerts, now)
-    for src in srcs.values():
-        mark_source_health(s, src, ok=True, now=now)
+    for key, src in srcs.items():
+        if not key.startswith("rule-exit:"):
+            mark_source_health(s, src, ok=True, now=now)
     log.info("evaluated %s -> %s (alert: %s)", item.route_key, result.status, decision.reason)
     return ev_row, result, alert is not None
 
@@ -154,7 +161,8 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         rv_id, params = rv.id, rule_params_of(rv)
         scan = ScanRunRow(started_at=now, status=ScanStatus.RUNNING.value, trigger=trigger, sources_ok=[],
                           sources_failed={}, is_synthetic=caps.synthetic,
-                          notes="OFFLINE fixture scan (SYNTHETIC)" if caps.synthetic else "")
+                          notes="OFFLINE fixture scan (SYNTHETIC)" if caps.synthetic else
+                          (f"LIVE scan {connector.key}" if caps.live_network else ""))
         s.add(scan)
         s.flush()
         scan_id = scan.id

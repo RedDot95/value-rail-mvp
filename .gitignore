@@ -8,3 +8,8 @@ data/*.log
 *.egg-info/
 .env
 build/
+# raw research downloads (large, third-party HTML); text extracts + docs/sources.md are kept
+research/**/*.html
+research/**/*.xml
+research/**/*.headers
+research/**/robots_cryptovoucher.io.txt

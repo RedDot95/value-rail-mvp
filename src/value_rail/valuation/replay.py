@@ -33,8 +33,10 @@ def replay_evaluation(s: Session, evaluation_id: int) -> ReplayResult:
     inputs = RouteInputs.model_validate(ev.inputs)
     recomputed = evaluate_route(inputs, params).canonical()
     stored = ev.outputs
+    # engine_version is reported separately (engine_version_stored/now); a version bump alone is no diff
     diff = {k: {"stored": stored.get(k), "replayed": recomputed.get(k)}
-            for k in sorted(set(stored) | set(recomputed)) if stored.get(k) != recomputed.get(k)}
+            for k in sorted(set(stored) | set(recomputed))
+            if k != "engine_version" and stored.get(k) != recomputed.get(k)}
     return ReplayResult(evaluation_id=ev.id, rule_version_id=rv.id, rule_label=rv.label, match=not diff,
                         inputs_hash_ok=content_hash(ev.inputs) == ev.inputs_hash,
                         engine_version_stored=ev.engine_version, engine_version_now=ENGINE_VERSION, diff=diff)

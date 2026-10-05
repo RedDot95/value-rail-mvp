@@ -167,6 +167,10 @@ def ensure_rule_version(s: Session, params: RuleParams, *, now: datetime, notes:
     return add_rule_version(s, params, valid_from=now, now=now, notes=notes)
 
 
+def rule_version_by_label(s: Session, label: str) -> RuleVersionRow | None:
+    return s.scalar(select(RuleVersionRow).where(RuleVersionRow.label == label).order_by(RuleVersionRow.id.desc()).limit(1))
+
+
 def rule_params_of(row: RuleVersionRow) -> RuleParams:
     return RuleParams.model_validate(row.params)
 

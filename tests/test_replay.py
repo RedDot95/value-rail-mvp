@@ -41,7 +41,7 @@ def test_case16_rule_change_old_evaluation_reproducible(ctx, scenario_dir, now):
         res = replay_evaluation(s, ev1)
         stored = s.get(RouteEvaluationRow, ev1)
         assert res.match and res.diff == {} and res.inputs_hash_ok
-        assert res.rule_label == "bauauftrag-2026-10-04-v1"
+        assert res.rule_label == "delivery2-2026-10-05-v2"
         assert stored.outputs["status"] == "price_find"
         res2 = replay_evaluation(s, r2.evaluation_ids["synthetic:R16_rule_change"])
         assert res2.match and res2.rule_label == "test-v2"

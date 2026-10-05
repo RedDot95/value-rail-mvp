@@ -23,7 +23,7 @@ from .storage.repo import active_rule_version, add_rule_version, latest_evaluati
 from .valuation.replay import replay_evaluation
 from .worker.scheduler import run_cycle, run_forever
 
-app = typer.Typer(help="Value Rail MVP - Delivery 1 (OFFLINE, synthetic fixtures only; no live scanning, no purchases)",
+app = typer.Typer(help="Value Rail MVP - offline fixtures + one opt-in live connector (recharge); never purchases",
                   no_args_is_help=True)
 rules_app = typer.Typer(help="Versioned valuation rules")
 app.add_typer(rules_app, name="rules")
@@ -56,7 +56,20 @@ def load_fixtures(down: list[str] = typer.Option([], "--down", help="Simulate an
             typer.echo(f"  {STATUS_LABEL_DE[RouteStatus(st)]:<20} {k}")
 
 
-app.command("scan", help="Alias of load-fixtures (Delivery 1 has only the offline fixture connector).")(load_fixtures)
+app.command("scan", help="Alias of load-fixtures: scans all ENABLED connectors (default: offline fixtures only).")(load_fixtures)
+
+
+@app.command()
+def smoke(connector: str = typer.Argument(..., help="connector key, e.g. 'recharge'"),
+          out_dir: str = typer.Option("docs", "--out-dir", help="where live_smoke_<date>.md is written ('' = none)")) -> None:
+    """LIVE smoke test of one real connector (network!). Writes docs/live_smoke_<Berlin date>.md."""
+    from pathlib import Path
+
+    from .smoke import run_smoke
+    ctx = _ctx()
+    rep, md = run_smoke(ctx, connector, out_dir=Path(out_dir) if out_dir else None)
+    typer.echo(md)
+    raise typer.Exit(code=0 if rep.status.value in ("ok", "degraded") else 2)
 
 
 @app.command()
