@@ -145,3 +145,17 @@ def test_heartbeat_file_and_healthz_endpoint(sched_ctx, now, monkeypatch):
     monkeypatch.setattr("value_rail.web.app.utcnow", lambda: now + timedelta(hours=2))
     assert c.get("/healthz").status_code == 503
     assert c.get("/livez").status_code == 200
+
+
+def test_lease_takeover_from_dead_local_holder(sched_ctx, now):
+    from value_rail.worker.scheduler import DbLease, holder_is_dead_local
+    a = DbLease(sched_ctx.session_factory, "scheduler", "host:111:aaaa", 900, dead_check=lambda o: False)
+    assert a.acquire(now)
+    alive_b = DbLease(sched_ctx.session_factory, "scheduler", "host:222:bbbb", 900, dead_check=lambda o: False)
+    assert not alive_b.acquire(now)  # holder alive (or unknown) -> wait for TTL
+    b = DbLease(sched_ctx.session_factory, "scheduler", "host:222:bbbb", 900, dead_check=lambda o: o == "host:111:aaaa")
+    assert b.acquire(now) and b.holder().owner == "host:222:bbbb"
+    assert holder_is_dead_local("host:999999:x", hostname="host", alive=lambda p: False)
+    assert not holder_is_dead_local("other:999999:x", hostname="host", alive=lambda p: False)
+    assert not holder_is_dead_local("host:123:x", hostname="host", alive=lambda p: True)
+    assert not holder_is_dead_local("garbage", hostname="host")

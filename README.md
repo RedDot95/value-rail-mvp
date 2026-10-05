@@ -1,4 +1,13 @@
-# Value Rail MVP – Delivery 2 (erster echter Connector) + Delivery-3-Basis
+# Value Rail MVP – Delivery 3 (Marktplatz-Prüfung, dundle-Connector, 24/7 auf der Box)
+
+- **Delivery 3 (06.10.2026):**
+  - Marktplätze und Aggregatoren geprüft (`docs/sources.md` §0).
+  - Generischer JSON-LD-Connector, live für **dundle.com**; GAMIVO-Parser offline getestet, live blocked.
+  - Neue-Seller-Erkennung.
+  - Produktionsbetrieb unter supervisord (`deploy/vrctl`, `docs/deployment.md`).
+  - Tägliches Backup mit Restore-Test.
+  - `value-rail health --json`.
+
 
 - **Delivery 1:** Offline-Kern (DB, Bewertungslogik, mobile FastAPI-UI, Log-Alerts, synthetische Fixtures).
 - **Delivery 2:** erster echter Direkt-Connector **Recharge.com (DE)** für **Bitsa** und **paysafecard** über

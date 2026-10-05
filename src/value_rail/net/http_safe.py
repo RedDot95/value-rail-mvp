@@ -36,7 +36,7 @@ from urllib.parse import urljoin, urlsplit
 from .errors import (AccessDenied, AuthLost, BlockedUrl, NetworkError, RateLimited, RobotsDisallowed,
                      UpstreamError)
 
-DEFAULT_USER_AGENT = "ValueRailMVP/0.2 (private price research; polite; honors robots.txt)"
+DEFAULT_USER_AGENT = "ValueRailMVP/0.3 (private price research; polite; honors robots.txt)"
 MAX_REDIRECTS = 3
 
 
@@ -152,7 +152,7 @@ class SafeHttpClient:
                  max_bytes: int = 3_000_000, policy: PolitenessPolicy | None = None, respect_robots: bool = True,
                  transport: Transport | None = None, resolver: Resolver | None = None,
                  sleep: Callable[[float], None] = time.sleep, monotonic: Callable[[], float] = time.monotonic,
-                 rng: random.Random | None = None) -> None:
+                 rng: random.Random | None = None, robots_ttl_s: float = 86400.0) -> None:
         if not allowed_hosts:
             raise ValueError("allowed_hosts must not be empty")
         self.source_key = source_key
@@ -170,6 +170,8 @@ class SafeHttpClient:
         self.rng = rng or random.Random()
         self._last_request: dict[str, float] = {}
         self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
+        self._robots_at: dict[str, float] = {}
+        self.robots_ttl_s = robots_ttl_s  # long-running worker re-reads robots.txt daily
         self.request_log: list[tuple[str, int | str]] = []  # (url, status|error) for diagnostics/tests
 
     # ---------- validation ----------
@@ -220,7 +222,7 @@ class SafeHttpClient:
         self._last_request[host] = self.monotonic()
 
     def _robots_for(self, scheme: str, host: str) -> urllib.robotparser.RobotFileParser | None:
-        if host in self._robots:
+        if host in self._robots and self.monotonic() - self._robots_at.get(host, 0.0) < self.robots_ttl_s:
             return self._robots[host]
         url = f"{scheme}://{host}/robots.txt"
         rp = urllib.robotparser.RobotFileParser(url)
@@ -237,6 +239,7 @@ class SafeHttpClient:
             raise RobotsDisallowed(self.source_key, f"robots.txt returned HTTP {res.status}; refusing to crawl",
                                    url=url)
         self._robots[host] = rp
+        self._robots_at[host] = self.monotonic()
         return rp
 
     # ---------- request ----------

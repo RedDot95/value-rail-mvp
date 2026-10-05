@@ -1,0 +1,36 @@
+{
+  "recorded_by": "scripts/record_fixtures.py recharge (SafeHttpClient, robots.txt honoured)",
+  "note": "Stripped: only <title> and the schema.org ld+json blocks are kept. No cookies, no response headers, no personal data. Box egress is US (prices/regions as served to that egress).",
+  "files": {
+    "robots.txt": {
+      "url": "https://www.recharge.com/robots.txt",
+      "http_status": 200,
+      "content_type": "text/plain",
+      "fetched_at_utc": "2026-10-05T22:37:31+00:00"
+    },
+    "bitsa.html": {
+      "url": "https://www.recharge.com/en/de/bitsa",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-05T22:37:39+00:00",
+      "original_body_sha256": "392753d77f367e6735ba98596a617ad6bec77045147876623450ef4d10d0cc38",
+      "original_body_bytes": 332687
+    },
+    "paysafecard.html": {
+      "url": "https://www.recharge.com/en/de/paysafecard",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-05T22:37:45+00:00",
+      "original_body_sha256": "c3b22aa2a01cacd446d15a84a1cef3dcfd94f1e049b74f8c01cf986c4ed9192c",
+      "original_body_bytes": 339348
+    },
+    "crypto-voucher.html": {
+      "url": "https://www.recharge.com/en/de/crypto-voucher",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-05T22:37:52+00:00",
+      "original_body_sha256": "511be96072b56e8378dfe4da9bfe6d7512ca1b21c459348490fc46e25e21efaa",
+      "original_body_bytes": 320679
+    }
+  }
+}

@@ -24,3 +24,23 @@ def test_live_recharge_discovery_is_explicit():
                 c.offer_fetch(it, utcnow())
         else:
             assert it.product.seller == "recharge.com" and it.product.face_value != "unknown"
+
+
+@pytest.mark.live
+def test_live_dundle_discovery_is_explicit():
+    import tomllib
+    from pathlib import Path
+
+    from value_rail.connectors.jsonld_shop import JsonLdShopConfig, JsonLdShopConnector
+    conf = tomllib.load(open(Path(__file__).resolve().parents[1] / "config" / "production.toml", "rb"))
+    opts = next(c for c in conf["connectors"] if c["key"] == "dundle")["options"]
+    c = JsonLdShopConnector(JsonLdShopConfig.model_validate(opts))
+    c.configure_for_job({"tiers": ["watch"]})
+    items = c.discovery(utcnow())
+    assert items, "discovery must never silently return nothing"
+    for it in items:
+        if it.meta.get("page_error"):
+            with pytest.raises(FetchError):
+                c.offer_fetch(it, utcnow())
+        else:
+            assert it.product.seller == "dundle.com" and it.product.face_value != "unknown"

@@ -26,6 +26,7 @@ from ..storage.repo import (active_rule_version, ensure_rule_version, get_or_cre
 from ..valuation.engine import ENGINE_VERSION, evaluate_route
 from ..valuation.models import EvaluationResult, OfferInput, RouteInputs, RuleParams
 from .exit_rules import exit_quote_from_rule
+from .sellers import track_seller_offers
 
 log = logging.getLogger("value_rail.worker")
 
@@ -39,6 +40,8 @@ class ScanReport(BaseModel):
     sources_failed: dict[str, str] = Field(default_factory=dict)
     statuses: dict[str, str] = Field(default_factory=dict)
     evaluation_ids: dict[str, int] = Field(default_factory=dict)
+    offers_seen: int = 0
+    seller_events: dict[str, int] = Field(default_factory=dict)
 
 
 class _Fetched(BaseModel):
@@ -171,6 +174,7 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
 
     rep = ScanReport(scan_run_id=scan_id, status=ScanStatus.RUNNING)
     ok_sources: set[str] = set()
+    seller_offers: list[dict[str, Any]] = []
     try:
         items = connector.discovery(now)
     except SourceUnavailable as exc:
@@ -195,15 +199,21 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
             ev_row, result, alerted = _persist_item(s, fetched, scan_id=scan_id, rv_id=rv_id, params=params,
                                                     operator=operator, settings=settings, now=now)
         rep.evaluations_created += 1
+        rep.offers_seen += len(fetched.offers)
+        seller_offers.extend(o.raw["seller_offer"] for o in fetched.offers if isinstance(o.raw.get("seller_offer"), dict))
         rep.alerts_enqueued += int(alerted)
         rep.statuses[item.route_key] = str(result.status)
         rep.evaluation_ids[item.route_key] = ev_row.id
         ok_sources.update(x.key for x in item.sources if x.key not in rep.sources_failed)
 
     if rep.sources_failed:
-        rep.status = ScanStatus.DEGRADED if rep.evaluations_created or items else ScanStatus.FAILED
+        rep.status = ScanStatus.DEGRADED if rep.evaluations_created else ScanStatus.FAILED
     else:
         rep.status = ScanStatus.OK
+    ok_pages = set(getattr(connector, "ok_pages", set()) or set())
+    if seller_offers or ok_pages:
+        with session_factory.begin() as s:
+            rep.seller_events = track_seller_offers(s, seller_offers, ok_pages, now=now, scan_run_id=scan_id)
     with session_factory.begin() as s:
         scan = s.get(ScanRunRow, scan_id)
         scan.finished_at = now

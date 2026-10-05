@@ -177,3 +177,16 @@ def test_jitter_added():
     client, _, clock = make_client(routes, min_interval=5.0, jitter=2.0)
     client.get(f"{H}/a")
     assert 5.0 <= clock.sleeps[0] <= 7.0
+
+
+def test_robots_txt_is_refetched_after_ttl():
+    from .recorded import make_client as _mk
+    routes = {"https://www.recharge.com/robots.txt": (200, {"content-type": "text/plain"}, b"User-agent: *\nAllow: /\n"),
+              "https://www.recharge.com/x": (200, {"content-type": "text/html"}, b"ok")}
+    client, transport, clock = _mk(routes, robots_ttl_s=100.0)
+    client.get("https://www.recharge.com/x")
+    client.get("https://www.recharge.com/x")
+    assert sum(1 for c in transport.calls if c["url"].endswith("robots.txt")) == 1
+    clock.t += 101
+    client.get("https://www.recharge.com/x")
+    assert sum(1 for c in transport.calls if c["url"].endswith("robots.txt")) == 2

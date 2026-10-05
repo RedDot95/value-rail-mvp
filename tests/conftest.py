@@ -28,7 +28,10 @@ def now() -> datetime:
 
 
 def make_settings(tmp_path: Path, fixtures_dir: Path = FIXTURES, **kw) -> Settings:
-    return Settings(db_url=f"sqlite:///{tmp_path / 'test.db'}", config_path=REPO / "config" / "default.toml",
+    kw.setdefault("heartbeat_file", str(tmp_path / "heartbeat.json"))
+    kw.setdefault("backup_dir", tmp_path / "backups")
+    kw.setdefault("config_path", REPO / "config" / "default.toml")
+    return Settings(db_url=f"sqlite:///{tmp_path / 'test.db'}",
                     fixtures_dir=fixtures_dir, migrations_dir=REPO / "migrations", _env_file=None, **kw)
 
 

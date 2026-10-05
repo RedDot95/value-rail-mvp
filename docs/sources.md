@@ -1,3 +1,53 @@
+# Quellen (Stand 06.10.2026 – Marktplätze/Aggregatoren; darunter Delivery 2 vom 05.10.2026)
+
+## 0. Marktplatz-/Aggregator-Prüfung 06.10.2026 (00:20–00:45 CEST, Box-Egress USA)
+
+Geprüft: robots.txt, AGB/ToS, offizielle API/Affiliate-Feeds, ob Produktseiten ohne Login/JS strukturierte Daten liefern.
+UA `ValueRailMVP/0.3 (private price research; polite; honors robots.txt)`. Rohdaten in `research/2026-10-06/` (HTML/XML git-ignoriert).
+Browser-Automation steht dem Worker nicht zur Verfügung; Quellen, die sie bräuchten, sind übersprungen.
+
+| Quelle | Rolle | Status | Grund / Beleg |
+|---|---|---|---|
+| **Recharge.com** (`recharge`) | Direktverkäufer | **live geprüft, deployed** | robots.txt erlaubt Produktseiten (Crawl-delay 1). JSON-LD ProductGroup. Jetzt zusätzlich Seite `/en/de/crypto-voucher` (7 Stückelungen, 5–150 €). `/en/de/azteco` und `/en/de/bitcoin` liefern 404. |
+| **dundle.com** (`dundle`, Korsit B.V.) | Direktverkäufer (kein Marktplatz) | **implementiert, offline getestet, live geprüft, deployed** | https://dundle.com/robots.txt: `Allow: /`, sperrt nur /api/, Warenkorb, Zahlung, Konto und `?_rsc=`. AGB https://dundle.com/de/legal/terms-and-conditions/: keine Klausel gegen Crawling, Robots oder Automatisierung. Produktseiten `/de/paysafecard/` (10 Offers, 5–150 €) und `/de/bitsa/` (4 Offers, 10–100 €) haben schema.org `Product.offers[]` mit `priceSpecification` (EUR). Laut FAQ fällt beim Kauf eine Servicegebühr an, deren Höhe nur im Warenkorb steht ⇒ Pflichtgebühr `unknown` ⇒ `blocked`. `/de/azteco/` antwortet 200, aber ohne Product-JSON-LD (derzeit kein Angebot) ⇒ `absent_ok`, 0 Angebote, kein Fehler. |
+| **GAMIVO** (`gamivo`) | Marktplatz | **blocked** (Parser implementiert + offline getestet) | robots.txt https://www.gamivo.com/robots.txt erlaubt `/product/*`. T&C https://www.gamivo.com/page/terms-conditions: keine Klausel gegen Robots oder Scraping. Die JSON-LD `Product.offers[]` enthält **je Seller ein Offer mit `seller.name`** (Fixture: 5 Seller auf flexepin-eur-50). **Aber:** Der Worker-Client (Python, HTTP/1.1) bekommt auf jeder Produktseite eine **Cloudflare Managed Challenge** (403, `cf-mitigated: challenge`); nur ein HTTP/2-Client (curl) kam bei der Recherche durch. Protokoll oder Fingerprint zu wechseln, um die Challenge zu vermeiden, wäre eine Umgehung ⇒ **nicht gemacht**. Sitemap gab 403 („Attention Required“). Paysafecard, Bitsa und Azteco wurden auf GAMIVO nicht gefunden (Suche und Kategorie 404). Seiten im Connector: Flexepin 50/100, Neosurf 15, JetonCash 50 (EU). |
+| **Eneba** | Marktplatz | **blocked** | robots.txt erlaubt Produktseiten. Die AGB (https://www.eneba.com/terms-and-conditions) werden nur clientseitig per GraphQL gerendert ⇒ ohne JS nicht prüfbar. Das SSR-JSON-LD enthält nur AggregateOffer-Preise **ohne Seller-Namen**. Die Seller-Liste kommt aus der internen GraphQL-API (nicht genutzt). Die Preise sind in USD, weil der Egress in den USA liegt (keine Regionsumgehung). Die offizielle API (https://api.eneba.com/documentation/guide/getting-started) braucht Partner-Credentials und eine IP-Allowlist. |
+| **Kinguin** | Marktplatz | **blocked** | AGB https://static.kinguin.net/cms/Kinguin_TC_cbb8b4ce52/Kinguin_TC_cbb8b4ce52.pdf §3.4: „It is forbidden to retrieve the Site Content systematically to create or compile … a collection, compilation, database and catalog (by using robots, …) without written permission from Kinguin.net.“ §3.10 sanktioniert Automatisierungsskripte. |
+| **G2A** | Marktplatz | **blocked** | https://www.g2a.com/robots.txt ist von der Box nicht abrufbar (HTTP/2 INTERNAL_ERROR, mit HTTP/1.1 Timeout nach 20 s). Ohne lesbare robots.txt crawlen wir nicht. |
+| **CoinsBee** | Direktverkäufer (Zahlung in Krypto) | **blocked** | robots.txt erlaubt die Seiten, die AGB enthalten keine Scraping-Klausel. Die Seiten `/en/gift-cards/payment-cards/paysafecard/`, `…/bitsa/` und `/en/gift-cards/crypto/azteco/` haben JSON-LD aber nur als `AggregateOffer` je Land mit `lowPrice`/`highPrice` (= Nennwertspanne, z. B. EUR 1–150). Der tatsächliche Preis inkl. Aufschlag entsteht erst im Warenkorb (verboten) ⇒ kein belegbarer Preis. |
+| **AllKeyShop** | Aggregator (discovery only) | **blocked** | https://www.allkeyshop.com/robots.txt: Der Server schließt die TLS-Verbindung („unexpected eof“), robots.txt nicht lesbar. |
+| **GG.deals** | Aggregator (discovery only) | **blocked** | robots.txt (Cloudflare-managed, Content-Signal `search=yes, ai-train=no`) ist lesbar, aber Startseite und https://gg.deals/terms-of-service/ liefern eine **Cloudflare Managed Challenge** (403, `cf-mitigated: challenge`). „GC deals“ war als eigene Quelle nicht auffindbar, gemeint ist wohl GG.deals. |
+| **Bitrefill** | Direktverkäufer | **blocked** | Wie am 05.10.: Scraping laut ToS verboten; die Personal API braucht den API-Key des Nutzers. |
+
+**Folgen:**
+- Kein Marktplatz mit Seller-Angeboten ist derzeit legal und ohne Umgehung live abrufbar. Der Seller-Offer-Pfad (je Seller eine Route, `seller_offers` und `seller_offer_events`) ist implementiert und mit dem GAMIVO-Fixture offline getestet. Live läuft er für die Direktverkäufer, wo er neue oder entfernte Stückelungen erkennt.
+- Aggregatoren: keiner nutzbar ⇒ kein täglicher Aggregator-Job. Der Parser setzt bei `source_kind = "aggregator"` die Rolle `discovery_only`, solche Preise können nie Alerts auslösen.
+- Krypto-Watchlist: **Azteco BTC** (eindeutiges Asset) ist nur bei Eneba/Kinguin (blocked) und CoinsBee (kein Preis) gelistet, bei dundle derzeit ohne Angebot (wird im 30-min-Sweep beobachtet). Zusätzlich beobachtet: Recharge **Crypto Voucher**. Dessen Asset wird erst beim Einlösen gewählt, es ist also **kein eindeutiges Asset**; das ist so dokumentiert und es gibt keine Exit-Regel ⇒ `blocked`.
+
+### Generischer JSON-LD-Connector (`kind = "jsonld_shop"`, Parser `jsonld-offers/1.0.0`)
+- Liest nur die konfigurierten Produktseiten: kein Crawling, keine Such- oder Sitemap-Seiten, keine internen APIs, nie Warenkorb, Checkout oder Konto.
+- Parst schema.org `Product.offers[]`, auch innerhalb von `@graph`, in Listen oder mit `type=` ohne Anführungszeichen. `AggregateOffer` ohne Einzel-Offers zählt nicht als Angebot.
+- Seller: bei Direktverkäufern `fixed_seller`, bei Marktplätzen `offer.seller.name` (fehlt der Name ⇒ `ParserBroken`).
+- Menge: nur aus `inventoryLevel`, sonst `unknown`.
+- Nennwert aus SKU oder Name (z. B. `-50-eur-`, `€50`).
+- Eine Route je (Seite, SKU, Seller). Mehrere Offers desselben Sellers werden zusammengefasst: das günstigste wird behalten, die übrigen gezählt (`duplicates`).
+- Fehler sind unterscheidbar: 403 ⇒ `AccessDenied` (inkl. Cloudflare-Challenge), 404/5xx ⇒ `UpstreamError`, Layoutbruch ⇒ `ParserBroken`, 0 Offers ⇒ `UnexpectedEmpty`.
+- Evidence enthält Parser-Version, JSON-LD- und Body-Hash, das Offer-JSON-LD, ob robots.txt geprüft wurde, und die Quellenrolle.
+- Fähigkeiten: `checkout_quote = False`, `exit_quote = False`. Pflichtgebühr `unknown` ⇒ jede Route `blocked`.
+
+### Neue-Seller-Erkennung (`worker/sellers.py`, Migration 0003)
+Nach jedem Scan gleicht der Worker alle `seller_offer` gegen die Tabelle `seller_offers` ab. Mögliche Events:
+- `baseline`: erste Inventur einer Seite.
+- `new_seller_offer`: neues Offer auf einer bereits bekannten Seite.
+- `price_change`: Preisänderung.
+- `gone`: Offer fehlt, und zwar nur auf einer Seite, die in diesem Scan **erfolgreich** geparst wurde. Eine gestörte Seite ist eine Störung und nie „Seller weg“.
+- `returned`: zuvor verschwundenes Offer ist wieder da.
+
+Die Zahlen stehen in `ScanReport.seller_events` und in `health.jobs[].last_scan.seller_events`.
+
+
+---
+
 # Quellen (Stand Delivery 2, 05.10.2026)
 
 Alle Abrufe am **05.10.2026 zwischen 23:30 und 23:52 CEST** von der Box (curl bzw. dem Connector selbst).

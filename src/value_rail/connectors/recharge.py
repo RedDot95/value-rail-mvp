@@ -54,6 +54,7 @@ class RechargeProduct(BaseModel):
     family: str  # product family used in this app, e.g. "bitsa" / "paysafecard"
     redemption_program: str  # identity field, e.g. "bitsa" / "paysafecard"
     prerequisites: list[str] = []
+    tier: str = "watch"  # watch (5-min watchlist) | discover (30-min sweep); selected per job via options.tiers
 
 
 class RechargeConfig(BaseModel):
@@ -202,6 +203,15 @@ class RechargeConnector(Connector):
                                     max_retries=self.config.max_retries))
         self._pages: dict[str, tuple[ParsedPage, datetime]] = {}
         self._errors: dict[str, FetchError | SourceUnavailable] = {}
+        self.active_tiers: set[str] | None = None
+        self.ok_pages: set[str] = set()
+
+    def configure_for_job(self, options: dict[str, Any]) -> None:
+        tiers = options.get("tiers")
+        self.active_tiers = set(tiers) if tiers else None
+
+    def selected_products(self) -> list[RechargeProduct]:
+        return [p for p in self.config.products if self.active_tiers is None or p.tier in self.active_tiers]
 
     def capabilities(self) -> ConnectorCapabilities:
         return ConnectorCapabilities(
@@ -238,7 +248,8 @@ class RechargeConnector(Connector):
         items: list[DiscoveryItem] = []
         self._pages.clear()
         self._errors.clear()
-        for p in self.config.products:
+        self.ok_pages = set()
+        for p in self.selected_products():
             try:
                 page = self._fetch_page(p, now)
             except SourceUnavailable as exc:
@@ -251,6 +262,7 @@ class RechargeConnector(Connector):
                     meta={"slug": p.slug, "page_error": True}))
                 continue
             self._pages[p.slug] = (page, now)
+            self.ok_pages.add(page.url)
             for v in page.variants:
                 face, _src = face_value_of(v)
                 ident = ProductIdentity(face_value=face, face_currency=v.currency if face != "unknown" else "unknown",
@@ -315,5 +327,9 @@ class RechargeConnector(Connector):
             purchased_quantity=QuantityObservation(), captured_at=raw.fetched_at, evidence=evidence,
             raw={"sku": pl["sku"], "gtin13": pl["gtin13"], "availability": avail, "service_fee_from": sf,
                  "voucher_value": pl.get("voucher_value"), "parser_version": PARSER_VERSION, "page_url": pl["page_url"],
-                 "note": note},
+                 "note": note,
+                 "seller_offer": {"source_key": SOURCE.key, "page_url": pl["page_url"], "seller": SELLER,
+                                  "sku": pl["sku"], "offer_key": f"recharge-com|{pl['sku']}", "price": pl["price"],
+                                  "currency": currency, "quantity": "unknown", "region": item.product.region,
+                                  "availability": avail.rsplit("/", 1)[-1]}},
             is_synthetic=False)

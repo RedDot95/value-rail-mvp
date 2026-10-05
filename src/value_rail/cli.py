@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
@@ -61,8 +62,8 @@ app.command("scan", help="Alias of load-fixtures: scans all ENABLED connectors (
 
 @app.command()
 def smoke(connector: str = typer.Argument(..., help="connector key, e.g. 'recharge'"),
-          out_dir: str = typer.Option("docs", "--out-dir", help="where live_smoke_<date>.md is written ('' = none)")) -> None:
-    """LIVE smoke test of one real connector (network!). Writes docs/live_smoke_<Berlin date>.md."""
+          out_dir: str = typer.Option("docs", "--out-dir", help="where live_smoke_<date>_<key>.md is written ('' = none)")) -> None:
+    """LIVE smoke test of one real connector (network!). Writes docs/live_smoke_<Berlin date>_<key>.md."""
     from pathlib import Path
 
     from .smoke import run_smoke
@@ -139,14 +140,50 @@ def worker(once: bool = typer.Option(False, "--once", help="one scheduler tick, 
 
 
 @app.command()
-def health() -> None:
-    """Print the /healthz JSON; exit code 1 when stale (for cron/systemd watchers)."""
+def health(as_json: bool = typer.Option(False, "--json", help="compact single-line JSON (for watchers)")) -> None:
+    """Print worker/source health; exit code 1 when stale/failing (for cron/external watchers)."""
     from .health import compute_health
-    ctx = _ctx()
+    ctx = _ctx(init=False)  # lightweight: no migrations, read-only queries
     with ctx.session_factory() as s:
         body, code = compute_health(s, ctx.settings, utcnow())
-    typer.echo(json.dumps(body, indent=2, ensure_ascii=False))
+    if as_json:
+        typer.echo(json.dumps(body, ensure_ascii=False, separators=(",", ":"), default=str))
+    else:
+        typer.echo(json.dumps(body, indent=2, ensure_ascii=False, default=str))
     raise typer.Exit(code=0 if code == 200 else 1)
+
+
+@app.command()
+def backup(keep: int = typer.Option(None, help="override VALUE_RAIL_BACKUP_KEEP"),
+           restore_check: bool = typer.Option(True, "--restore-test/--no-restore-test")) -> None:
+    """Online SQLite backup to data/backups (+ restore test into a temp file, compares row counts)."""
+    from .backup import create_backup, restore_test, run_backup_job
+    ctx = _ctx()
+    if restore_check and keep is None:
+        info = run_backup_job(ctx.settings)
+    else:
+        info = create_backup(ctx.settings, keep=keep)
+        if restore_check:
+            info["restore_test"] = restore_test(Path(info["backup"]))
+            info["ok"] = info["restore_test"]["ok"]
+        else:
+            info["ok"] = True
+    typer.echo(json.dumps(info, indent=2, default=str))
+    raise typer.Exit(code=0 if info.get("ok") else 1)
+
+
+@app.command("restore-test")
+def restore_test_cmd(backup_file: Path = typer.Argument(None, help="backup file (default: newest)")) -> None:
+    """Restore a backup into a temp file and verify integrity + row counts."""
+    from .backup import list_backups, restore_test
+    ctx = _ctx()
+    f = backup_file or (list_backups(ctx.settings.backup_dir) or [None])[-1]
+    if f is None:
+        typer.echo("no backups found", err=True)
+        raise typer.Exit(2)
+    res = restore_test(Path(f))
+    typer.echo(json.dumps(res, indent=2))
+    raise typer.Exit(code=0 if res["ok"] else 1)
 
 
 @app.command()

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# value-rail process control on the box. Usage:
+#   deploy/vrctl start            start supervisord (detached, setsid) if not running - idempotent
+#   deploy/vrctl status           supervisorctl status + health summary
+#   deploy/vrctl restart [prog]   restart worker|web|all (default all)
+#   deploy/vrctl stop             stop programs and supervisord
+#   deploy/vrctl logs [prog]      tail the program log (worker|web)
+#   deploy/vrctl health           value-rail health --json (exit 1 when stale/failing)
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONF="$ROOT/deploy/supervisord.conf"
+CTL=("$ROOT/.venv/bin/supervisorctl" -c "$CONF")
+cd "$ROOT"
+mkdir -p data/logs data/run data/live data/backups
+
+running() { "${CTL[@]}" pid >/dev/null 2>&1; }
+
+case "${1:-status}" in
+  start)
+    if running; then echo "supervisord already running (pid $("${CTL[@]}" pid))"; else
+      [ -f .env ] || { echo "missing .env (see docs/deployment.md)"; exit 2; }
+      setsid nohup "$ROOT/.venv/bin/supervisord" -c "$CONF" >>data/logs/supervisord.stdout 2>&1 < /dev/null &
+      for _ in $(seq 1 20); do running && break; sleep 0.5; done
+      running && echo "supervisord started (pid $("${CTL[@]}" pid))" || { echo "supervisord failed to start"; exit 1; }
+    fi
+    "${CTL[@]}" status || true ;;
+  status)
+    running || { echo "supervisord NOT running - run: deploy/vrctl start"; exit 3; }
+    "${CTL[@]}" status || true
+    "$ROOT/.venv/bin/value-rail" health --json | "$ROOT/.venv/bin/python" -c 'import json,sys; b=json.load(sys.stdin); print("health:", b["status"], "| heartbeat age s:", b["heartbeat"].get("age_s"), "| stale sources:", b["stale_sources"], "| open alerts:", b["alerts_open"])' || true ;;
+  restart) running || { echo "not running"; exit 3; }; "${CTL[@]}" restart "${2:-all}" ;;
+  stop) running && { "${CTL[@]}" stop all; "${CTL[@]}" shutdown; } || echo "not running" ;;
+  logs) tail -n 50 "data/logs/${2:-worker}.log" ;;
+  health) exec "$ROOT/.venv/bin/value-rail" health --json ;;
+  *) sed -n '2,9p' "$0"; exit 2 ;;
+esac

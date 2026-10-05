@@ -14,3 +14,10 @@ research/**/*.xml
 research/**/*.headers
 research/**/robots_cryptovoucher.io.txt
 data/heartbeat.json*
+# runtime state of the 24/7 deployment (never committed)
+data/live/
+data/smoke/
+data/backups/
+data/logs/
+data/run/
+research/**/*.pdf

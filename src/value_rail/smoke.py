@@ -74,12 +74,13 @@ def run_smoke(ctx: AppContext, key: str, *, out_dir: Path | None, now: datetime 
     lines += ["", f"- Angebote (Offer-Snapshots) gespeichert: **{n_offers}**",
               f"- Preisfunde: **{price_finds}**, verifizierte Routen: "
               f"**{sum(1 for v in rep.statuses.values() if v == 'verified_route')}**",
+              f"- Seller-Offer-Events: {rep.seller_events or 'keine'}",
               f"- Letzte Evidence-ID: {ev_count}", "",
               "Ein blockiertes oder unprofitables Ergebnis ist ein korrektes Ergebnis. Es wurde nichts gekauft, "
               "kein Checkout/Warenkorb/Konto aufgerufen und keine Sperre umgangen.", ""]
     md = "\n".join(lines)
     if out_dir is not None:
         out_dir.mkdir(parents=True, exist_ok=True)
-        path = out_dir / f"live_smoke_{_berlin(started, '%Y-%m-%d')}.md"
+        path = out_dir / f"live_smoke_{_berlin(started, '%Y-%m-%d')}_{key}.md"
         path.write_text(md, encoding="utf-8")
     return rep, md

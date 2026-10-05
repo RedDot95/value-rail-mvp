@@ -1,0 +1,20 @@
+{
+  "recorded_by": "value-rail research 2026-10-06 (curl 8.x over HTTP/2, UA ValueRailMVP/0.3) - NOT the worker client",
+  "note": "Stripped: only <title> and ld+json blocks. The worker's HTTP/1.1 client gets a Cloudflare managed challenge (403, cf-mitigated: challenge) on the same URL -> source status blocked; this fixture only proves the parser.",
+  "files": {
+    "flexepin-eur-50.html": {
+      "url": "https://www.gamivo.com/product/flexepin-eur-50",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-05T22:25:45+00:00",
+      "original_body_sha256": "923bd211c129d3edad26e5112b2cdba57677fb341154d7f7a9bec29e5c7f6438",
+      "original_body_bytes": 732192
+    },
+    "robots.txt": {
+      "url": "https://www.gamivo.com/robots.txt",
+      "http_status": 200,
+      "content_type": "text/plain",
+      "fetched_at_utc": "2026-10-05T22:21:05+00:00"
+    }
+  }
+}

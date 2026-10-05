@@ -34,6 +34,7 @@ class SourceRole(StrEnum):
 
 class SourceKind(StrEnum):
     DIRECT_SELLER = "direct_seller"
+    MARKETPLACE = "marketplace"  # many third-party sellers per product page
     AGGREGATOR = "aggregator"
     EXIT_VENUE = "exit_venue"
 

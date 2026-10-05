@@ -1,0 +1,80 @@
+## Website Sitemap
+Sitemap: https://static.kinguin.net/media/sitemap/sitemap.xml
+
+## Enable robots.txt rules for all crawlers
+User-agent: *
+Crawl-Delay: 2
+
+User-agent: Googlebot
+User-agent: Googlebot-image
+
+## Do not crawl pages
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /customer/
+Disallow: /r/
+Disallow: /7en/
+Disallow: /cdn-cgi/
+Disallow: /*?SID=
+
+Allow: /*.js
+Allow: /*.css
+
+User-agent: Adidxbot
+Crawl-Delay: 0
+
+User-agent: bingbot
+Crawl-Delay: 0
+
+User-agent: PetalBot
+User-agent: AppInsights
+User-agent: SemrushBot
+User-agent: SemanticScholarBot
+User-agent: dotbot
+User-agent: whatcms
+User-agent: rogerbot
+User-agent: trendictionbot
+User-agent: blexbot
+User-agent: linkfluence
+User-agent: magpie-crawler
+User-agent: MJ12bot
+User-agent: mediatoolkitbot
+User-agent: aspiegelbot
+User-agent: domainstatsbot
+User-agent: cincraw
+User-agent: nimbostratus
+User-agent: httrack
+User-agent: serpstatbot
+User-agent: omgili
+User-agent: grapeshotcrawler
+User-agent: megaindex
+User-agent: semanticbot
+User-agent: cocolyzebot
+User-agent: domcopbot
+User-agent: traackr
+User-agent: bomborabot
+User-agent: linguee
+User-agent: webtechbot
+User-agent: domainstatsbot
+User-agent: clickagy
+User-agent: sqlmap
+User-agent: internet-structure-research-project-bot
+User-agent: seekport
+User-agent: awariosmartbot
+User-agent: onalyticabot
+User-agent: buck
+User-agent: riddler
+User-agent: sbl-bot
+User-agent: df bot 1.0
+User-agent: pubmatic crawler bot
+User-agent: bvbot
+User-agent: sogou
+User-agent: barkrowler
+User-agent: admantx
+User-agent: adbeat
+User-agent: embed.ly
+User-agent: semantic-visions
+User-agent: voluumdsp
+User-agent: wc-test-dev-bot
+User-agent: gulperbot
+Disallow: /

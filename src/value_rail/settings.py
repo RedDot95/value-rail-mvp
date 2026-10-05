@@ -6,7 +6,7 @@ import tomllib
 from decimal import Decimal
 from functools import cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -61,9 +61,12 @@ class ConnectorConfig(BaseModel):
 
 class JobConfig(BaseModel):
     name: str
-    connector: str  # key of a [[connectors]] entry (must be enabled)
+    kind: Literal["scan", "backup"] = "scan"
+    connector: str = ""  # scan jobs: key of a [[connectors]] entry (must be enabled); backup jobs: unused
     interval_seconds: int = 300
     enabled: bool = False
+    options: dict[str, Any] = Field(default_factory=dict)  # passed to Connector.configure_for_job (e.g. tiers)
+    min_interval_seconds: int = 60  # floor; a job can never run more often than this
 
 
 class SchedulerConfig(BaseModel):
@@ -102,6 +105,8 @@ class Settings(BaseSettings):
     basic_password: str = ""
     alert_log_file: str | None = None  # overrides [alerts].log_file (e.g. /data/alerts.log in Docker)
     heartbeat_file: str | None = None  # overrides [scheduler].heartbeat_file
+    backup_dir: Path = Path("./data/backups")
+    backup_keep: int = 14  # newest N backups are kept (daily job -> two weeks)
     # Telegram is OFF unless BOTH are set (and "telegram" is listed in [alerts].sink).
     telegram_bot_token: str = Field(default="", validation_alias=AliasChoices("VALUE_RAIL_TELEGRAM_BOT_TOKEN",
                                                                               "TELEGRAM_BOT_TOKEN"))

@@ -171,6 +171,32 @@ def test_smoke_report_offline_with_recorded_connector(ctx, tmp_path):
     c, _ = connector()
     rep, md = run_smoke(ctx, "recharge", out_dir=tmp_path, now=SCAN_NOW, connector=c)
     assert rep.evaluations_created == 10
-    f = tmp_path / "live_smoke_2026-10-05.md"
+    f = tmp_path / "live_smoke_2026-10-05_recharge.md"
     assert f.exists() and "23:45:00 CEST" in md and "Angebote (Offer-Snapshots) gespeichert: **10**" in md
     assert "Preisfunde: **0**" in md
+
+
+def test_recorded_2026_10_06_crypto_voucher_and_tiers():
+    """Re-recorded 2026-10-06 (incl. Crypto Voucher); same parser must still work."""
+    import json as _json
+    from pathlib import Path as _P
+
+    from value_rail.connectors.recharge import RechargeConfig, RechargeConnector, RechargeProduct, parse_page
+    _NOW = datetime(2026, 10, 6, 0, 0, tzinfo=UTC)
+    d = _P(__file__).resolve().parent / "fixtures" / "recorded" / "recharge_com_de_2026-10-06"
+    meta = _json.loads((d / "meta.json").read_text())
+    pg = parse_page("recharge-com-de", meta["files"]["crypto-voucher.html"]["url"], 200, (d / "crypto-voucher.html").read_bytes())
+    assert [v.price for v in pg.variants] == ["5", "10", "25", "50", "75", "100", "150"]
+    assert all(v.currency == "EUR" for v in pg.variants)
+    routes = {m["url"]: (m["http_status"], {"content-type": m["content_type"]}, (d / f).read_bytes())
+              for f, m in meta["files"].items()}
+    client, transport, _ = make_client(routes)
+    cfg = RechargeConfig(products=[RechargeProduct(slug="bitsa", family="bitsa", redemption_program="bitsa"),
+                                   RechargeProduct(slug="crypto-voucher", family="crypto_voucher",
+                                                   redemption_program="cryptovoucher", tier="discover")])
+    c = RechargeConnector(cfg, client=client)
+    c.configure_for_job({"tiers": ["watch"]})
+    items = c.discovery(_NOW)
+    assert items and all(i.meta["slug"] == "bitsa" for i in items)
+    o = c.normalize(items[0], c.offer_fetch(items[0], _NOW)[0], _NOW)
+    assert o.raw["seller_offer"]["seller"] == "recharge.com"

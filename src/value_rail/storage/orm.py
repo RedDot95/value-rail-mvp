@@ -261,6 +261,48 @@ class JobStateRow(Base):
     skipped_catchup_total: Mapped[int] = mapped_column(Integer, default=0)
 
 
+class SellerOfferRow(Base):
+    """Current state of one seller offer on a watched product page (mutable tracking table).
+
+    The immutable price history lives in offer_snapshots; this table only answers "is this seller offer
+    new / still there / gone?" for new-seller detection.
+    """
+
+    __tablename__ = "seller_offers"
+    __table_args__ = (UniqueConstraint("source_key", "page_url", "offer_key", name="uq_seller_offer"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_key: Mapped[str] = mapped_column(String(100))
+    page_url: Mapped[str] = mapped_column(String(500))
+    offer_key: Mapped[str] = mapped_column(String(300))
+    seller: Mapped[str] = mapped_column(String(200))
+    sku: Mapped[str] = mapped_column(String(200))
+    region: Mapped[str] = mapped_column(String(40), default="unknown")
+    first_seen_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    last_price: Mapped[str] = mapped_column(String(40), default="unknown")
+    currency: Mapped[str] = mapped_column(String(10), default="unknown")
+    last_quantity: Mapped[str] = mapped_column(String(40), default="unknown")
+    seen_count: Mapped[int] = mapped_column(Integer, default=1)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class SellerOfferEventRow(Base):
+    """Append-only log: baseline / new_seller_offer / price_change / gone / returned."""
+
+    __tablename__ = "seller_offer_events"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    scan_run_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_key: Mapped[str] = mapped_column(String(100))
+    page_url: Mapped[str] = mapped_column(String(500))
+    offer_key: Mapped[str] = mapped_column(String(300))
+    seller: Mapped[str] = mapped_column(String(200))
+    kind: Mapped[str] = mapped_column(String(30))
+    old_price: Mapped[str] = mapped_column(String(40), default="")
+    new_price: Mapped[str] = mapped_column(String(40), default="")
+    currency: Mapped[str] = mapped_column(String(10), default="unknown")
+
+
 IMMUTABLE_TABLES = ("products", "offer_snapshots", "evidence", "rule_versions", "quotes",
                     "route_evaluations", "execution_results")
 IMMUTABLE_MODELS = (ProductRow, OfferSnapshotRow, EvidenceRow, RuleVersionRow, QuoteRow,

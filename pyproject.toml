@@ -27,6 +27,9 @@ dev = [
     "pytest==9.1.1",
     "httpx2==2.13.1",  # Starlette 1.x TestClient backend (plain httpx is deprecated there)
 ]
+ops = [
+    "supervisor==4.3.0",  # process supervision on hosts without systemd (deploy/supervisord.conf)
+]
 
 [project.scripts]
 value-rail = "value_rail.cli:app"

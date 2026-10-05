@@ -43,12 +43,49 @@ def default_owner() -> str:
     return f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:8]}"
 
 
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True  # exists, owned by someone else
+    return True
+
+
+def holder_is_dead_local(owner: str, *, hostname: str | None = None,
+                         alive: Callable[[int], bool] = _pid_alive) -> bool:
+    """True only if the lease owner ran on THIS host and its pid no longer exists (crash/kill -9).
+
+    Unknown formats, other hosts or a live pid -> False (wait for the TTL, the safe default).
+    """
+    parts = owner.split(":")
+    if len(parts) != 3 or parts[0] != (hostname or socket.gethostname()):
+        return False
+    try:
+        pid = int(parts[1])
+    except ValueError:
+        return False
+    return pid != os.getpid() and not alive(pid)
+
+
 class DbLease:
-    def __init__(self, session_factory: sessionmaker[Session], name: str, owner: str, ttl_seconds: int) -> None:
+    def __init__(self, session_factory: sessionmaker[Session], name: str, owner: str, ttl_seconds: int,
+                 dead_check: Callable[[str], bool] = holder_is_dead_local) -> None:
         self.sf, self.name, self.owner, self.ttl = session_factory, name, owner, ttl_seconds
+        self.dead_check = dead_check
 
     def acquire(self, now: datetime) -> bool:
         exp = now + timedelta(seconds=self.ttl)
+        h = self.holder()
+        if h is not None and h.owner != self.owner and h.expires_at >= now and self.dead_check(h.owner):
+            with self.sf.begin() as s:  # crashed local holder: take over immediately (conditional on same owner)
+                res = s.execute(update(SchedulerLockRow)
+                                .where(SchedulerLockRow.name == self.name, SchedulerLockRow.owner == h.owner)
+                                .values(owner=self.owner, acquired_at=now, expires_at=exp))
+            if res.rowcount == 1:
+                log.warning("took over scheduler lease from dead local holder %s", h.owner)
+                return True
         with self.sf.begin() as s:
             res = s.execute(update(SchedulerLockRow)
                             .where(SchedulerLockRow.name == self.name,
@@ -85,6 +122,9 @@ def enabled_jobs(ctx: AppContext) -> list[JobConfig]:
     for j in ctx.settings.file_config.jobs:
         if not j.enabled:
             continue
+        if j.kind == "backup":
+            out.append(j)
+            continue
         c = connector_config(ctx.settings, j.connector)
         if c is None or not c.enabled:
             log.warning("job %s skipped: connector %r missing or disabled", j.name, j.connector)
@@ -93,16 +133,23 @@ def enabled_jobs(ctx: AppContext) -> list[JobConfig]:
     return out
 
 
+def effective_interval(j: JobConfig) -> int:
+    """Configured interval, but never below the job's floor (source limits / politeness)."""
+    return max(int(j.interval_seconds), int(j.min_interval_seconds))
+
+
 def sync_job_states(ctx: AppContext, now: datetime) -> None:
     with ctx.session_factory.begin() as s:
         for j in enabled_jobs(ctx):
             row = s.get(JobStateRow, j.name)
+            interval = effective_interval(j)
+            conn_key = j.connector if j.kind == "scan" else f"<{j.kind}>"
             if row is None:
-                s.add(JobStateRow(name=j.name, connector=j.connector, interval_seconds=j.interval_seconds,
+                s.add(JobStateRow(name=j.name, connector=conn_key, interval_seconds=interval,
                                   next_due_at=now, last_status="never_run", last_error="", consecutive_failures=0,
                                   runs_total=0, skipped_catchup_total=0))
-            elif row.interval_seconds != j.interval_seconds or row.connector != j.connector:
-                row.interval_seconds, row.connector = j.interval_seconds, j.connector
+            elif row.interval_seconds != interval or row.connector != conn_key:
+                row.interval_seconds, row.connector = interval, conn_key
 
 
 def _missed_slots(due: datetime, now: datetime, interval: int) -> int:
@@ -146,11 +193,12 @@ class Scheduler:
             due = [r for r in s.scalars(select(JobStateRow).order_by(JobStateRow.name)).all()
                    if r.name in {j.name for j in enabled_jobs(self.ctx)} and r.next_due_at is not None
                    and r.next_due_at <= now]
+        jobs = {j.name: j for j in enabled_jobs(self.ctx)}
         for st in due:
             missed = _missed_slots(st.next_due_at, now, st.interval_seconds)
             runs = min(missed + 1, max(1, self.cfg.max_catchup_runs))
             for _ in range(runs):
-                self._run_job(st.name, st.connector, trigger=f"scheduler:{st.name}")
+                self._run_job(st.name, st.connector, trigger=f"scheduler:{st.name}", job=jobs.get(st.name))
                 result["ran"].append(st.name)
                 self.lease.renew(self.clock())
             skipped = missed + 1 - runs
@@ -172,7 +220,8 @@ class Scheduler:
         self.write_heartbeat(self.clock(), result)
         return result
 
-    def _run_job(self, name: str, connector_key: str, *, trigger: str) -> ScanReport | None:
+    def _run_job(self, name: str, connector_key: str, *, trigger: str,
+                 job: JobConfig | None = None) -> ScanReport | None:
         started = self.clock()
         with self.ctx.session_factory.begin() as s:
             row = s.get(JobStateRow, name)
@@ -181,10 +230,20 @@ class Scheduler:
         rep: ScanReport | None = None
         err = ""
         try:
-            rep = run_scan(self.ctx.session_factory, self.connector_factory(connector_key), self.ctx.settings, started,
-                           trigger=trigger)
-            status = rep.status.value
-            if rep.sources_failed:
+            if job is not None and job.kind == "backup":
+                from ..backup import run_backup_job  # local import: backup is optional for scans
+                info = run_backup_job(self.ctx.settings, now=started)
+                status = "ok" if info.get("ok") else "failed"
+                if not info.get("ok"):
+                    err = json.dumps(info, sort_keys=True, default=str)[:2000]
+            else:
+                conn = self.connector_factory(connector_key)
+                configure = getattr(conn, "configure_for_job", None)
+                if configure is not None:
+                    configure(dict(job.options) if job is not None else {})
+                rep = run_scan(self.ctx.session_factory, conn, self.ctx.settings, started, trigger=trigger)
+                status = rep.status.value
+            if rep is not None and rep.sources_failed:
                 err = json.dumps(rep.sources_failed, sort_keys=True)[:2000]
         except Exception as exc:  # noqa: BLE001 - recorded in job state, loop stays alive
             log.exception("job %s crashed", name)

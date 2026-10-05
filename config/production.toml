@@ -1,0 +1,248 @@
+# Value Rail MVP - default configuration (Delivery 2, 05.10.2026).
+# Thresholds derive from the Bauauftrag (04.10.2026). The only live connector (recharge) is DISABLED
+# here; it is run explicitly via `value-rail smoke recharge` or by enabling it + its job below.
+
+[display]
+timezone = "Europe/Berlin"
+
+# Rule parameters are VERSIONED: on `init-db`/`rules seed` a RuleVersion row is created
+# whenever these parameters differ from the latest stored version. Old evaluations keep
+# referencing the RuleVersion they were computed with (exact replay).
+# A new RuleVersion row is created on init-db when no stored version carries this label.
+[rules]
+label = "delivery2-2026-10-05-v2"   # same rules as config/default.toml (keep in sync)
+price_find_min_discount = "0.25"     # Preisfund: >= 25 % proven nominal discount
+verified_min_edge = "0.10"           # Verifizierte Route: >= 10 % net edge ...
+verified_min_profit_eur = "1.00"     # ... AND >= 1 EUR profit
+max_quote_age_seconds = 900          # checkout/exit quote freshness
+max_offer_age_seconds = 3600         # offer snapshot freshness
+
+# ---- Sourced redemption/exit rules (Delivery 2). Every number cites a primary source fetched
+# 2026-10-05 (see docs/sources.md). Unsourced values are "unknown" and therefore BLOCK verified routes.
+# Derived exit quotes expire at review_by -> routes turn "Abgelaufen" if the terms are not re-checked.
+
+[[rules.exit_rules]]
+key = "paysafecard-de-issuer-refund"
+family = "paysafecard"
+redemption_program = "paysafecard"
+regions = ["DE"]
+exit_kind = "issuer_refund_to_bank_account"
+payout_currency = "EUR"
+description = "Ruecktausch beim Emittenten (Paysafe Prepaid Services Ltd.) auf persoenliches DE-Bankkonto; keine Barauszahlung; Identitaetspruefung (Ausweiskopie)."
+depth_per_request_units = 1   # AGB 5.1: Antrag je Seriennummer der betreffenden PaysafeCard
+prerequisites = ["paysafecard_refund_identity_verification_de_bank_account", "paysafecard_seller_authorized_by_psc"]
+sources = [
+  "https://www.paysafecard.com/en-de/terms-and-conditions/detail/?country=de&tx_pscterms_pi3%5Baction%5D=renderDetail&tx_pscterms_pi3%5Bcontroller%5D=Terms&tx_pscterms_pi3%5Bfilename%5D=L0xlZ2FsL2RlX3BheXNhZmVjYXJkXzI1LTA1LTIwMjYuaHRt&cHash=2114e4e3519f427f8fc1914b2f6df751 (AGB DE, Datei 25-05-2026, Kopf 'Version: 06/2025'; fetched 2026-10-05) - 2.1.1, 2.1.2, 3.4, 5.1-5.3, 6.1",
+  "https://www.paysafecard.com/en-de/fees-limits/ (fetched 2026-10-05)",
+]
+sourced_at = "2026-10-05"
+review_by = "2026-11-05T00:00:00Z"
+limits = { annual_account_payout_eur = "30000 (fees-limits page, PaysafeWallet; not proven to apply to PIN refunds)", fee_free_withdrawal = "14 days after distance purchase (AGB 6.1) - NOT used, conservative" }
+fees = [
+  { name = "paysafecard_refund_fee", kind = "percent", amount = "0.05", cap_per_unit = "5.00", required = true, evidence_ref = "paysafecard AGB DE 2.1.1 (5 % max 5,00 EUR)" },
+  { name = "paysafecard_monthly_fee_after_30_days", kind = "fixed_per_unit", amount = "unknown", required = false, evidence_ref = "AGB 2.1.2 says 3,00 EUR/Monat, fees-limits page says 4 EUR - conflict; only after 30 days; route assumes refund within 30 days", note = "nicht angesetzt (Ruecktausch < 30 Tage angenommen)" },
+]
+
+[[rules.exit_rules]]
+key = "bitsa-free-plan-sepa-out"
+family = "bitsa"
+redemption_program = "bitsa"
+regions = ["DE"]
+exit_kind = "card_balance_sepa_transfer"
+payout_currency = "EUR"
+description = "Gutschein auf BITSA-Karte (Pecunia Cards EDE, EEA-Wohnsitz, KYC Pflicht) einloesen, Guthaben per SEPA auf eigenes Konto ueberweisen (Free-Plan)."
+depth_limit_eur = "500"   # Free-Plan: SEPA-Ueberweisungen max 500 EUR/Tag (auch Aufladung 500 EUR/Tag)
+prerequisites = ["bitsa_account_kyc_eea"]
+sources = [
+  "https://bitsacard.com/en/plans (fetched 2026-10-05) - limits, transfer fee, footnotes 3 and 6",
+  "https://bitsacard.com/en/card-general-conditions (fetched 2026-10-05) - KYC, blocking",
+  "https://bitsacard.com/en/instructions-redeem-coupon (fetched 2026-10-05) - coupon validity 3 months, not refundable/cashable",
+]
+sourced_at = "2026-10-05"
+review_by = "2026-11-05T00:00:00Z"
+limits = { sepa_out_free_plan = "500/day, 1000/month, 2500/year", topup_free_plan = "500/day, 1000/month, 2500/year", max_balance_free_plan = "2500" }
+fees = [
+  { name = "bitsa_voucher_reload_fee", kind = "percent", amount = "unknown", required = true, evidence_ref = "bitsacard.com/en/plans footnote 3: 0 % - 6 % depending on the transaction (not determinable in advance)" },
+  { name = "bitsa_sepa_transfer_fee", kind = "fixed_per_order", amount = "1.50", required = true, evidence_ref = "bitsacard.com/en/plans: 1 EUR commission; footnote 6: 1.50 EUR to another entity -> conservative upper bound 1.50" },
+]
+
+[alerts]
+sink = "log"                         # "log" or "log,telegram" (telegram needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)
+alert_statuses = ["price_find", "verified_route"]
+material_price_change_pct = "0.02"   # >= 2 % change of all-in unit price -> new event
+restock_min_increase = 1             # quantity 0/unknown -> >0, or +N units -> new event
+max_attempts = 5
+retry_backoff_seconds = 60
+log_file = "data/alerts.log"         # structured JSON lines (in addition to stderr)
+
+# Scan intervals from the Bauauftrag (informational; the scheduler uses [[jobs]] below).
+[scan_intervals]
+watchlist_seconds = 300          # Watchlist: 5 min
+new_sellers_seconds = 1800       # neue Seller: 30 min
+aggregator_seconds = 86400       # Aggregatoren: taeglich (discovery only)
+stale_after_seconds = 900        # data older than this is displayed as "veraltet"
+
+# =====================================================================================================
+# PRODUCTION (24/7 on the box) - live connectors. Used via VALUE_RAIL_CONFIG_PATH=config/production.toml
+# (set in .env). Source access basis + blocked sources: docs/sources.md (checked 2026-10-06).
+# Politeness: every connector >= 5 s per host + 0-2 s jitter, robots.txt + Crawl-delay honoured,
+# one shared client per connector (watch + sweep jobs share it).
+# =====================================================================================================
+
+[[connectors]]
+key = "fixture"
+kind = "fixture"
+enabled = false
+notes = "SYNTHETIC offline fixtures - disabled in production"
+
+[[connectors]]
+key = "recharge"
+kind = "recharge"
+enabled = true
+notes = "Recharge.com DE (direct seller) - Bitsa, paysafecard, Crypto Voucher; JSON-LD ProductGroup."
+[connectors.options]
+storefront = "en/de"
+region = "DE"
+min_interval_s = 5.0
+jitter_s = 2.0
+products = [
+  { slug = "bitsa", family = "bitsa", redemption_program = "bitsa", prerequisites = ["bitsa_account_kyc_eea"], tier = "watch" },
+  { slug = "paysafecard", family = "paysafecard", redemption_program = "paysafecard", prerequisites = ["paysafecard_refund_identity_verification_de_bank_account"], tier = "watch" },
+  # Crypto Voucher (cryptovoucher.io): asset chosen at redemption (BTC and others) -> NOT an unambiguous asset.
+  { slug = "crypto-voucher", family = "crypto_voucher", redemption_program = "cryptovoucher", prerequisites = ["cryptovoucher_account_kyc"], tier = "watch" },
+]
+
+[[connectors]]
+key = "dundle"
+kind = "jsonld_shop"
+enabled = true
+notes = "dundle.com DE (direct seller, Korsit B.V.) - Product.offers JSON-LD per denomination; service fee only in cart."
+[connectors.options]
+source_key = "dundle-com-de"
+source_name = "dundle.com (DE storefront, JSON-LD)"
+host = "dundle.com"
+source_kind = "direct_seller"
+fixed_seller = "dundle.com"
+fee_name = "service_fee"
+fee_note = "dundle FAQ: Servicegebuehr beim Kauf, Hoehe nur im Warenkorb (nicht geoeffnet) -> unknown"
+min_interval_s = 5.0
+jitter_s = 2.0
+pages = [
+  { path = "/de/paysafecard/", family = "paysafecard", redemption_program = "paysafecard", region = "DE", tier = "watch", prerequisites = ["paysafecard_refund_identity_verification_de_bank_account"] },
+  { path = "/de/bitsa/", family = "bitsa", redemption_program = "bitsa", region = "DE", tier = "watch", prerequisites = ["bitsa_account_kyc_eea"] },
+  # Azteco (BTC on-chain): page exists but currently lists no Product offers -> absent_ok (0 offers, no error)
+  { path = "/de/azteco/", family = "crypto_voucher", redemption_program = "azteco-btc", region = "DE", tier = "discover", absent_ok = true, note = "Azteco BTC - unambiguous asset (Bitcoin on-chain)" },
+]
+
+[[connectors]]
+key = "gamivo"
+kind = "jsonld_shop"
+enabled = false   # BLOCKED live: Cloudflare managed challenge (403, cf-mitigated: challenge) for the worker client; not bypassed
+notes = "GAMIVO marketplace - parser ready (Product.offers JSON-LD with seller.name), offline-tested; live blocked by Cloudflare challenge for our HTTP/1.1 client (see docs/sources.md). No paysafecard/Bitsa/Azteco listing found."
+[connectors.options]
+source_key = "gamivo-com"
+source_name = "GAMIVO (marketplace, JSON-LD seller offers)"
+host = "www.gamivo.com"
+source_kind = "marketplace"
+fee_name = "checkout_fees"
+fee_note = "GAMIVO: service/payment fees only shown in checkout (not opened) -> unknown"
+min_interval_s = 6.0
+jitter_s = 2.0
+pages = [
+  { path = "/product/flexepin-eur-50", family = "flexepin", redemption_program = "flexepin", region = "EU", tier = "watch" },
+  { path = "/product/flexepin-eur-100", family = "flexepin", redemption_program = "flexepin", region = "EU", tier = "watch" },
+  { path = "/product/neosurf-gift-card-15-eu-eur-prepaid-eu-standard-15eur-gift-cards", family = "neosurf", redemption_program = "neosurf", region = "EU", tier = "discover" },
+  { path = "/product/jetoncash-card-eur-eu-gift-cards-prepaid-eu-standard-50eur", family = "jetoncash", redemption_program = "jetoncash", region = "EU", tier = "discover" },
+]
+
+# Blocked sources (documented, never built): see docs/sources.md
+[[connectors]]
+key = "eneba"
+kind = "blocked"
+enabled = false
+notes = "blocked: ToS only via client-side GraphQL (not verifiable), no seller names in SSR JSON-LD, USD for US egress (no region bypass), official API needs partner credentials."
+[[connectors]]
+key = "kinguin"
+kind = "blocked"
+enabled = false
+notes = "blocked: Kinguin T&C 3.4 forbids systematic retrieval to build a database without written permission."
+[[connectors]]
+key = "g2a"
+kind = "blocked"
+enabled = false
+notes = "blocked: www.g2a.com not reachable over plain HTTP from the box (HTTP/2 INTERNAL_ERROR / timeout incl. robots.txt)."
+[[connectors]]
+key = "coinsbee"
+kind = "blocked"
+enabled = false
+notes = "blocked: only AggregateOffer low/high (= face value range) in JSON-LD, actual price only in cart (not opened)."
+[[connectors]]
+key = "allkeyshop"
+kind = "blocked"
+enabled = false
+notes = "blocked (aggregator, discovery-only): TLS connection closed by server (also for robots.txt)."
+[[connectors]]
+key = "ggdeals"
+kind = "blocked"
+enabled = false
+notes = "blocked (aggregator, discovery-only): Cloudflare managed challenge (403, cf-mitigated: challenge) on all pages."
+[[connectors]]
+key = "bitrefill"
+kind = "blocked"
+enabled = false
+notes = "blocked: scraping forbidden by ToS; Personal API needs the user's API key."
+
+[scheduler]
+tick_seconds = 15
+lock_ttl_seconds = 900
+max_catchup_runs = 1
+heartbeat_file = "data/live/heartbeat.json"
+stale_factor = 3
+
+# Watchlist 5 min / new-seller sweep 30 min (from the brief). Aggregators daily: none usable (all blocked).
+[[jobs]]
+name = "recharge_watch"
+connector = "recharge"
+interval_seconds = 300
+min_interval_seconds = 300
+options = { tiers = ["watch"] }
+enabled = true
+
+[[jobs]]
+name = "dundle_watch"
+connector = "dundle"
+interval_seconds = 300
+min_interval_seconds = 300
+options = { tiers = ["watch"] }
+enabled = true
+
+[[jobs]]
+name = "dundle_sellers"
+connector = "dundle"
+interval_seconds = 1800
+min_interval_seconds = 1800
+options = { tiers = ["watch", "discover"] }
+enabled = true
+
+[[jobs]]
+name = "gamivo_watch"
+connector = "gamivo"
+interval_seconds = 300
+min_interval_seconds = 300
+options = { tiers = ["watch"] }
+enabled = false   # connector blocked (see above)
+
+[[jobs]]
+name = "gamivo_sellers"
+connector = "gamivo"
+interval_seconds = 1800
+min_interval_seconds = 1800
+options = { tiers = ["watch", "discover"] }
+enabled = false   # connector blocked (see above)
+
+[[jobs]]
+name = "backup_daily"
+kind = "backup"
+interval_seconds = 86400
+min_interval_seconds = 3600
+enabled = true

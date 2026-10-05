@@ -1,4 +1,31 @@
-# Betrieb (Stand Delivery 2 + Delivery-3-Basis)
+# Betrieb (Stand 06.10.2026 – 24/7 auf der Box)
+
+## Jobs in Produktion (`config/production.toml`)
+| Job | Connector | Intervall | Seiten |
+|---|---|---|---|
+| `recharge_watch` | recharge | 300 s (Watchlist) | /en/de/bitsa, /en/de/paysafecard, /en/de/crypto-voucher |
+| `dundle_watch` | dundle | 300 s (Watchlist) | /de/paysafecard/, /de/bitsa/ |
+| `dundle_sellers` | dundle | 1800 s (neue Seller/Stückelungen) | Watchlist + /de/azteco/ (`absent_ok`) |
+| `gamivo_watch` / `gamivo_sellers` | gamivo | 300 / 1800 s | **aus**, Quelle blocked (Cloudflare Challenge) |
+| `backup_daily` | – | 86400 s | Online-Backup + Restore-Test |
+
+- Aggregatoren-Job (täglich) gibt es nicht, weil kein Aggregator nutzbar ist (siehe `docs/sources.md` §0).
+- `min_interval_seconds` ist eine Untergrenze je Job (Default 60 s). Kein Job läuft häufiger als konfiguriert erlaubt.
+- Jeder Connector hält **eine** Client-Instanz für Watch- und Sweep-Job: ≥ 5 s je Host (GAMIVO 6 s) plus 0–2 s Jitter, robots.txt (24 h gecacht, danach neu gelesen) und Crawl-delay werden beachtet.
+
+## Befehle (Produktion)
+```bash
+deploy/vrctl status | start | restart [worker|web|all] | logs [worker|web] | health | stop
+.venv/bin/value-rail health --json      # externer Watcher (Exit 1 bei stale/failing)
+.venv/bin/value-rail backup             # sofortiges Backup + Restore-Test
+.venv/bin/value-rail restore-test       # neuestes Backup prüfen
+.venv/bin/value-rail smoke dundle       # LIVE-Smoke einer Quelle -> docs/live_smoke_<Datum>_<key>.md
+.venv/bin/python scripts/record_fixtures.py dundle   # neue datierte Offline-Fixtures aufnehmen
+```
+
+---
+
+# Betrieb (Stand Delivery 2 + Delivery-3-Basis) – historisch
 
 ## Scan-Intervalle (aus dem Bauauftrag, `config/default.toml [scan_intervals]`)
 | Klasse | Intervall | Delivery-1-Stand |

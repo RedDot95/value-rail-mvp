@@ -107,6 +107,10 @@ class Connector(ABC):
     @abstractmethod
     def normalize(self, item: DiscoveryItem, raw: RawOffer, now: datetime) -> NormalizedOffer: ...
 
+    def configure_for_job(self, options: dict[str, Any]) -> None:
+        """Per-job options (e.g. tiers=["watch"]). Default: ignored."""
+        return None
+
     def checkout_quote(self, item: DiscoveryItem, now: datetime) -> QuoteBundle | None:
         raise CapabilityNotSupported(f"{self.key}: checkout_quote not supported")
 

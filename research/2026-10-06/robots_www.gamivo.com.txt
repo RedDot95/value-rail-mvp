@@ -1,0 +1,76 @@
+User-agent: *
+
+# --- 1. BASIC SETTINGS ---
+Disallow: /?token=*
+Disallow: /account/*
+Disallow: */account/*
+Disallow: /activation?userId*
+Disallow: */activation?userId*
+Disallow: /cart
+Disallow: */cart/*
+Disallow: */cart
+Disallow: */login
+Disallow: /login
+Disallow: */login/*
+Disallow: /register
+Disallow: */register
+Disallow: /api/*
+Disallow: */api/*
+Disallow: /special/*
+Disallow: */special/*
+Disallow: /cdn-cgi/*
+Disallow: */cdn-cgi/*
+Disallow: */?token=*
+Disallow: */feed/
+Disallow: /guest
+Disallow: /*/guest
+Disallow: /confirmation
+Disallow: /*/confirmation
+Disallow: /seller
+Disallow: /*/seller
+Disallow: /payments
+Disallow: /*/payments
+
+
+# --- 2. INTERNAL SEARCH ---
+Disallow: /search/
+Disallow: */search/
+Disallow: /search?
+Disallow: */search?
+Disallow: */search
+
+
+# --- 3. FILTERS ---
+Disallow: *?currency=*
+Disallow: *&currency=*
+Disallow: *?priceRangeTo=*
+Disallow: *&priceRangeTo=*
+Disallow: *?priceRangeFrom=*
+Disallow: *&priceRangeFrom=*
+Disallow: *?sortBy=*
+Disallow: *&sortBy=*
+
+# --- 4. PARAMETERS ---
+Disallow: *?npr=*
+Disallow: *&npr=*
+Disallow: *?rp=*
+Disallow: *&rp=*
+
+# --- 5. GMC EXEPTIONS ---
+Allow: /product/*npr=*
+Allow: /*/product/*npr=*
+Allow: /product/*currency=*
+Allow: /*/product/*currency=*
+Allow: /direct-top-ups/*npr=*
+Allow: /*/direct-top-ups/*npr=*
+Allow: /direct-top-ups/*currency=*
+Allow: /*/direct-top-ups/*currency=*
+
+# --- 6. SITEMAPS ---
+Sitemap: https://www.gamivo.com/sitemap.xml
+Sitemap: https://www.gamivo.com/pl/sitemap.xml
+Sitemap: https://www.gamivo.com/fr/sitemap.xml
+Sitemap: https://www.gamivo.com/es/sitemap.xml
+Sitemap: https://www.gamivo.com/de/sitemap.xml
+Sitemap: https://www.gamivo.com/it/sitemap.xml
+Sitemap: https://www.gamivo.com/pt/sitemap.xml
