@@ -1,4 +1,49 @@
-# Review Brief – Delivery 2 (+ Delivery-3-Basis), Stand 05.10.2026 23:55 CEST
+# Review Brief – Delivery 3, Stand 06.10.2026 00:58 CEST
+
+**Ergebnis:**
+- Marktplätze und Aggregatoren geprüft.
+- **dundle.com** neu live (generischer JSON-LD-Connector), Recharge um **Crypto Voucher** erweitert.
+- **GAMIVO**: Parser mit Seller-Offers fertig und offline getestet, **live blocked** (Cloudflare Challenge, nicht umgangen).
+- Eneba, Kinguin, G2A, CoinsBee, AllKeyShop und GG.deals sind **blocked** (Gründe: `docs/sources.md` §0).
+- Worker und Web laufen seit **06.10.2026 00:45 CEST** unter supervisord auf der Box (letzter Neustart 00:51:50 CEST nach einem Code-Update).
+- `pytest`: **187 passed, 2 deselected (live)**, offline auch unter `unshare -rn` grün; `pytest -m live -k dundle`: 1 passed.
+- Nichts gekauft, kein Warenkorb, kein Push.
+
+Legende wie bisher: implementiert · offline getestet · live geprüft · **deployed** (läuft auf der Box unter Supervisor, Minuten) · **Dauerbetrieb beobachtet** (über Tage) – Letzteres ist für nichts erreicht.
+
+## Status-Matrix Delivery 3
+| Komponente | implementiert | offline getestet | live geprüft | deployed | Dauerbetrieb beobachtet | Nachweis |
+|---|---|---|---|---|---|---|
+| `jsonld_shop`-Connector (`jsonld-offers/1.0.0`) | ✓ | ✓ | ✓ (dundle 06.10. 00:41 CEST) | ✓ | – | `test_jsonld_shop.py` (15), `docs/live_smoke_2026-10-06_dundle.md` |
+| dundle.com DE: paysafecard 5–150 €, Bitsa 10–100 €, Azteco (`absent_ok`) | ✓ | ✓ (Fixtures 06.10.) | ✓ | ✓ (Jobs `dundle_watch` 5 min, `dundle_sellers` 30 min) | – | `tests/fixtures/recorded/dundle_com_de_2026-10-06/` |
+| Recharge + Crypto Voucher (5–150 €) | ✓ | ✓ (Fixtures 06.10.) | ✓ (00:41 CEST) | ✓ (`recharge_watch` 5 min) | – | `test_recorded_2026_10_06_crypto_voucher_and_tiers` |
+| GAMIVO Marktplatz (Seller je Offer) | ✓ | ✓ (Fixture 06.10., 5 Seller) | ✓ → **blocked** (403 Cloudflare Challenge, 00:42 CEST) | – (aus) | – | `docs/live_smoke_2026-10-06_gamivo.md` |
+| Eneba / Kinguin / G2A / CoinsBee / AllKeyShop / GG.deals | – (blocked) | – | Zugang geprüft 06.10. | – | – | `docs/sources.md` §0 |
+| Neue-Seller-Erkennung (baseline/new/price_change/gone/returned) | ✓ | ✓ | ✓ (31 baseline-Events live) | ✓ | – | `test_new_seller_detection_end_to_end` |
+| Job-Tiers + Mindestintervall | ✓ | ✓ | ✓ | ✓ | – | `test_scheduler_passes_job_options_and_runs_backup` |
+| robots.txt 24-h-Neuladen | ✓ | ✓ | – | ✓ | – | `test_robots_txt_is_refetched_after_ttl` |
+| supervisord (Auto-Restart, Log-Rotation) + `deploy/vrctl` | ✓ | – | ✓ (`kill -9` ⇒ Neustart in ca. 1 s) | ✓ | – | `docs/deployment.md` |
+| Lease-Übernahme von totem lokalem Halter | ✓ | ✓ | ✓ (00:47/00:48 CEST) | ✓ | – | `test_lease_takeover_from_dead_local_holder` |
+| Basic Auth (Passwort nur in `.env`, 0600) | ✓ | ✓ | ✓ (401 ohne, 200 mit) | ✓ | – | `test_web.py` |
+| Backup (Online-API) + Restore-Test, täglicher Job, Aufbewahrung 14 | ✓ | ✓ | ✓ (00:45 + 00:46 CEST, ok) | ✓ (`backup_daily`) | – | `test_backup_restore_and_retention`, `test_restore_test_detects_corruption` |
+| `value-rail health --json` (Heartbeat, Quellen, stale, Alerts, Scan-Zahlen, Backup) | ✓ | ✓ | ✓ | ✓ | – | `test_health_json_fields_and_stale_source` |
+| iPhone-Zugang HTTPS | – (nur geprüft) | – | – | – | – | `docs/deployment.md` (cloudflared vorhanden, kein Tunnel offen) |
+| Autostart nach Pod-Neustart | – (Box hat kein systemd/cron) | – | – | – | – | `deploy/vrctl start` manuell / Watcher |
+
+## Erste echte Zyklen (06.10.2026 00:45–00:57 CEST, DB `data/live/value_rail.db`)
+- 7 Scan-Runs, alle `ok`: dundle_sellers 1×, dundle_watch 3×, recharge_watch 3×.
+- **107 Offer-Snapshots**, 107 Bewertungen, alle **Blockiert**, **0 Preisfunde, 0 verifizierte Routen**, 0 Alerts.
+- Jeder Preis entspricht dem Nennwert (0 % Rabatt).
+- Blockgründe:
+  - Servicegebühr `unknown` (dundle, recharge), gilt für alle Routen;
+  - bei Bitsa zusätzlich die Einlösegebühr 0–6 % `unknown`;
+  - Crypto Voucher ohne Exit-Regel.
+- Seller-Events: 31 × `baseline` (14 dundle + 17 recharge), seither keine Änderungen.
+- Prozesse nach dem letzten Neustart 5,5 min später noch `RUNNING`, Heartbeat 14 s alt, Health `ok`.
+
+---
+
+# Review Brief – Delivery 2 (+ Delivery-3-Basis), Stand 05.10.2026 23:55 CEST (historisch)
 
 **Ergebnis:** Erster echter Direkt-Connector (Recharge.com DE: Bitsa + paysafecard) implementiert, offline gegen
 aufgezeichnete echte Antworten getestet und **einmal live geprüft** (05.10.2026 23:48 CEST: 10 Angebote, alle
