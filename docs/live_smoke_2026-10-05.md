@@ -35,3 +35,13 @@
 - Letzte Evidence-ID: 88
 
 Ein blockiertes oder unprofitables Ergebnis ist ein korrektes Ergebnis. Es wurde nichts gekauft, kein Checkout/Warenkorb/Konto aufgerufen und keine Sperre umgangen.
+
+## Kontext (manuell ergänzt)
+- Ausgeführt mit `value-rail smoke recharge` auf der Grok-Bot-Box (Europe/Berlin), User-Agent
+  `ValueRailMVP/0.2 (private price research; polite; honors robots.txt)`, Mindestabstand 5 s + 0–2 s Jitter.
+- Ein erster Lauf um 23:47:55 CEST (Scan-Run #3) lieferte dasselbe Ergebnis (10 Bewertungen, alle Blockiert); nur
+  die Berichtsausgabe brach wegen eines Formatierungsfehlers ab (behoben, Test `test_smoke_report_offline_*`).
+- Zusätzlich `pytest -m live` um 23:48:43 CEST: 1 passed (3 weitere Requests).
+- Interpretation: Recharge verkauft zum Nennwert; die Servicegebühr ist nur als „ab 0“ angegeben und
+  zahlungsartabhängig ⇒ Pflichtgebühr unbekannt ⇒ **Blockiert**. Kein Preisfund, keine verifizierte Route.
+  Das ist ein korrektes Ergebnis.

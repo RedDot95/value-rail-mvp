@@ -1,6 +1,6 @@
 {% extends "base.html" %}{% from "_macros.html" import eval_card %}
 {% block content %}
-<a class="card lvl-{{ system.level }}" href="/status"><div class="row"><b>Systemstatus</b><span class="mut">Offline-Modus</span></div>
+<a class="card lvl-{{ system.level }}" href="/status"><div class="row"><b>Systemstatus</b><span class="mut">{{ 'Live-Connector aktiv' if live_scanning else 'Live-Connector aus' }}</span></div>
 <div>{{ system.headline }}</div>
 <div class="mut">Regelversion: {{ system.rule.label if system.rule else 'keine' }} · Outbox: {% for k, v in system.outbox.items() %}{{ k }} {{ v }}{% if not loop.last %}, {% endif %}{% else %}leer{% endfor %}</div></a>
 

@@ -42,8 +42,10 @@ def test_detail_shows_breakdown_and_evidence(ctx):
 
 def test_status_page_and_health(ctx):
     c = _client(ctx)
-    assert "Live-Scanning: <b>nein</b>" in c.get("/status").text
-    assert c.get("/healthz").json()["live_scanning"] is False
+    assert "Live-Connector: <b>aus (nur manueller Smoke-Test)</b>" in c.get("/status").text
+    h = c.get("/healthz").json()
+    assert h["live_scanning"] is False and h["telegram_configured"] is False
+    assert c.get("/livez").status_code == 200
 
 
 def test_basic_auth_enforced_when_configured(tmp_path):

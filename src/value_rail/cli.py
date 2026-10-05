@@ -11,7 +11,7 @@ import typer
 from sqlalchemy import func, select
 
 from .alerts.dispatcher import dispatch_pending
-from .alerts.sinks import build_sink
+from .alerts.sinks import build_sink_from_settings
 from .connectors.registry import describe_connectors
 from .domain.enums import STATUS_LABEL_DE, RouteStatus
 from .domain.money import fmt_eur, fmt_pct
@@ -77,7 +77,7 @@ def dispatch() -> None:
     """Send pending outbox alerts via the configured sink (log)."""
     ctx = _ctx()
     cfg = ctx.settings.file_config.alerts
-    rep = dispatch_pending(ctx.session_factory, build_sink(cfg.sink, ctx.settings.effective_alert_log_file), utcnow(),
+    rep = dispatch_pending(ctx.session_factory, build_sink_from_settings(ctx.settings), utcnow(),
                            backoff_seconds=cfg.retry_backoff_seconds)
     typer.echo(rep.model_dump_json())
 
@@ -131,10 +131,22 @@ def diagnose() -> None:
 
 
 @app.command()
-def worker(once: bool = typer.Option(False, "--once"), cycles: Optional[int] = typer.Option(None, "--cycles")) -> None:
-    """Scheduler STUB: runs the offline fixture scan on the watchlist interval."""
+def worker(once: bool = typer.Option(False, "--once", help="one scheduler tick, then exit"),
+           cycles: Optional[int] = typer.Option(None, "--cycles", help="number of ticks")) -> None:
+    """Scheduler: DB lease (no overlap), persistent job state, bounded catch-up, heartbeat file."""
     ctx = _ctx()
     run_forever(ctx, max_cycles=1 if once else cycles)
+
+
+@app.command()
+def health() -> None:
+    """Print the /healthz JSON; exit code 1 when stale (for cron/systemd watchers)."""
+    from .health import compute_health
+    ctx = _ctx()
+    with ctx.session_factory() as s:
+        body, code = compute_health(s, ctx.settings, utcnow())
+    typer.echo(json.dumps(body, indent=2, ensure_ascii=False))
+    raise typer.Exit(code=0 if code == 200 else 1)
 
 
 @app.command()

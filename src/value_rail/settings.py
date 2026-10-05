@@ -40,6 +40,7 @@ class AlertConfig(BaseModel):
     max_attempts: int = 5
     retry_backoff_seconds: int = 60
     log_file: str | None = "data/alerts.log"
+    telegram_send_synthetic: bool = False
 
 
 class ScanIntervals(BaseModel):

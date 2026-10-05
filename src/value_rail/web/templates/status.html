@@ -2,7 +2,7 @@
 {% block title %}Systemstatus{% endblock %}
 {% block content %}
 <div class="card lvl-{{ system.level }}"><b>Systemstatus</b><div>{{ system.headline }}</div>
-<div class="mut">Live-Scanning: <b>nein</b> (Delivery 1 – nur Offline-Fixtures). Kein 24/7-Betrieb nachgewiesen.</div></div>
+<div class="mut">Live-Connector: <b>{{ 'aktiv' if live_scanning else 'aus (nur manueller Smoke-Test)' }}</b>. Kein 24/7-Betrieb nachgewiesen. Maschinenlesbar: <a href="/healthz">/healthz</a></div></div>
 
 <h2>Quellen</h2>
 {% for src in system.sources %}<div class="card lvl-{{ 'ok' if src.health == 'ok' else ('bad' if src.health == 'down' else 'warn') }}">

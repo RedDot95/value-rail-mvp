@@ -13,3 +13,4 @@ research/**/*.html
 research/**/*.xml
 research/**/*.headers
 research/**/robots_cryptovoucher.io.txt
+data/heartbeat.json*

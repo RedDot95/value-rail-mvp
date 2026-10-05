@@ -1,11 +1,17 @@
-# Value Rail MVP – Delivery 1 (Offline-Kern)
+# Value Rail MVP – Delivery 2 (erster echter Connector) + Delivery-3-Basis
 
-Umsetzung von Delivery 1 aus dem freigegebenen Bauauftrag (04.10.2026): ausführbarer **Offline-Kern** mit
-Datenbank, synthetischen Fixtures, Bewertungslogik, mobiler FastAPI-Oberfläche und Log-Alerts.
+- **Delivery 1:** Offline-Kern (DB, Bewertungslogik, mobile FastAPI-UI, Log-Alerts, synthetische Fixtures).
+- **Delivery 2:** erster echter Direkt-Connector **Recharge.com (DE)** für **Bitsa** und **paysafecard** über
+  schema.org-JSON-LD der öffentlichen Produktseiten (robots.txt erlaubt), SSRF-sicherer HTTP-Client, belegte
+  Einlöse-/Exit-Regeln als versionierte RuleVersion, aufgezeichnete echte Antworten als Offline-Fixtures,
+  separat ausführbarer Live-Smoke-Test (`docs/live_smoke_2026-10-05.md`).
+- **Delivery-3-Basis:** Scheduler mit DB-Lease, persistentem Job-Status, begrenztem Nachholen, Heartbeat-Datei,
+  `/healthz` + `/livez`, Telegram-Sink (implementiert, standardmäßig **aus**).
 
-> **Wichtig:** Alle mitgelieferten Daten sind **SYNTHETISCH** (fiktive Händler/Preise). Es gibt **keinen Live-Scan**,
-> **keine Käufe**, **keine erfundenen Marktplatz-Endpunkte**. Der Status jeder Komponente steht in
-> [`docs/review_brief.md`](docs/review_brief.md).
+> **Wichtig:** Fixture-Daten sind **SYNTHETISCH**. Der Live-Connector ist standardmäßig **deaktiviert** und läuft nur
+> explizit (`value-rail smoke recharge` oder nach Aktivierung). Es wird **nie gekauft**, kein Checkout/Warenkorb/Konto
+> aufgerufen, keine Sperre umgangen. Status je Komponente: [`docs/review_brief.md`](docs/review_brief.md),
+> Quellen: [`docs/sources.md`](docs/sources.md).
 
 ## Voraussetzungen
 - Python ≥ 3.12 (entwickelt/getestet mit 3.13.5)
@@ -21,7 +27,8 @@ cp .env.example .env                       # optional
 
 ## Tests (offline)
 ```bash
-.venv/bin/pytest            # 82 Tests, laufen ohne Netzwerk (auch unter `unshare -rn` geprüft)
+.venv/bin/pytest            # 162 Tests offline (auch unter `unshare -rn` geprüft); Live-Test ist ausgeschlossen
+.venv/bin/pytest -m live    # 1 LIVE-Test (Netzwerk!) gegen recharge.com - nur bewusst ausführen
 ```
 
 ## Datenbank + Fixtures laden
@@ -34,8 +41,21 @@ cp .env.example .env                       # optional
 .venv/bin/value-rail replay 4         # exakter Replay einer gespeicherten Bewertung (Exit-Code 1 bei Abweichung)
 .venv/bin/value-rail diagnose         # Konfiguration, DB-Zustand, Connector-Capabilities
 .venv/bin/value-rail rules list       # Regelversionen; neue: rules add --label X --param price_find_min_discount=0.30
-.venv/bin/value-rail worker --once    # Scheduler-STUB: ein Zyklus (Fixture-Scan + Outbox-Dispatch)
+.venv/bin/value-rail worker --once    # ein Scheduler-Tick (Lease, fällige Jobs, Dispatch, Heartbeat)
+.venv/bin/value-rail health           # /healthz-JSON; Exit 1 bei stale/failing (für externe Watcher)
 ```
+
+## Live-Smoke-Test (echtes Netzwerk, opt-in)
+```bash
+.venv/bin/value-rail smoke recharge   # 3 Requests (robots.txt + 2 Produktseiten, >= 5 s Abstand + Jitter)
+                                      # schreibt docs/live_smoke_<Datum Berlin>.md und speichert die Bewertungen in der DB
+```
+Ergebnis 05.10.2026 23:48 CEST: 10 Angebote, alle **Blockiert** (Servicegebühr unbekannt; Preis = Nennwert), 0 Preisfunde.
+Dauerhaft aktivieren: in `config/default.toml` beim Connector `recharge` **und** Job `recharge_scan` `enabled = true`.
+
+## Telegram (optional, standardmäßig aus)
+`TELEGRAM_BOT_TOKEN` und `TELEGRAM_CHAT_ID` setzen **und** `[alerts] sink = "log,telegram"`. Ohne beide Werte wird
+nichts gesendet (Warnung im Log). Synthetische Alerts gehen nie an Telegram (`telegram_send_synthetic = false`).
 Standard-DB: `./data/value_rail.db` (persistenter Pfad, via `VALUE_RAIL_DB_PATH` änderbar).
 Alerts: strukturierte JSON-Zeilen auf stderr **und** in `./data/alerts.log`.
 
@@ -46,7 +66,8 @@ Alerts: strukturierte JSON-Zeilen auf stderr **und** in `./data/alerts.log`.
 .venv/bin/uvicorn value_rail.web.app:create_app --factory --host 127.0.0.1 --port 8000
 ```
 Seiten: `/` (Systemstatus, Verifizierte Routen, Preisfunde, eingeklappt: Abgelaufen/Blockiert/Kein Signal),
-`/evaluations/{id}` (Kostenaufstellung, Evidenz, Replay), `/status`, `/healthz`, `/api/evaluations`.
+`/evaluations/{id}` (Kostenaufstellung, Evidenz, Replay), `/status`, `/healthz` (Job-Frische, 503 bei stale),
+`/livez`, `/api/evaluations`.
 Basic-Auth wird aktiv, sobald `VALUE_RAIL_BASIC_USER` und `VALUE_RAIL_BASIC_PASSWORD` gesetzt sind.
 `value-rail serve` verweigert nicht-lokale Hosts ohne Auth. **Externer Zugriff nur mit TLS + Auth** (siehe `docs/deployment.md`).
 
@@ -61,17 +82,21 @@ docker exec <container> value-rail load-fixtures
 ```
 config/default.toml          Regeln (versioniert), Alert-Policy, Scan-Intervalle, Connector-Registry
 src/value_rail/domain/       Entitäten (Pydantic), Enums, Identität, Decimal-/Zeit-Helfer
-src/value_rail/connectors/   Connector-Interface, Offline-Fixture-Connector, Bitsa/Paysafe-Platzhalter
+src/value_rail/connectors/   Connector-Interface, Fixture-Connector, Recharge.com-Connector (JSON-LD), Platzhalter
+src/value_rail/net/          SSRF-sicherer HTTP-Client (Allowlist, IP-Pinning, Redirect-Prüfung, robots, Rate-Limit), Fehlerklassen
 src/value_rail/normalization Preistext-Parsing (Währung "unknown" bei "$"), Asset-Normalisierung
 src/value_rail/evidence/     Evidenz-Hashing/-Entwürfe
 src/value_rail/valuation/    Bewertungs-Engine (exakte Formeln), Replay
 src/value_rail/storage/      SQLAlchemy-ORM, Decimal-/UTC-Typen, Repository, Engine/Migration
-src/value_rail/worker/       Scan-Pipeline (atomar: Snapshot + Bewertung + Outbox), Scheduler-Stub
-src/value_rail/alerts/       Dedup-/Materialitäts-Policy, Outbox, Sinks (LogAlertSink), Dispatcher
+src/value_rail/worker/       Scan-Pipeline (atomar), Exit-Regel-Quotes, Scheduler (Lease, Job-Status, Catch-up, Heartbeat)
+src/value_rail/alerts/       Dedup-/Materialitäts-Policy, Outbox, Sinks (Log, Telegram, Composite), Dispatcher
+src/value_rail/health.py     Health-Modell für /healthz und `value-rail health`
+src/value_rail/smoke.py      Live-Smoke-Test + Markdown-Bericht
 src/value_rail/web/          FastAPI + Jinja2 SSR, mobile-first
 src/value_rail/cli.py        CLI (Typer)
 migrations/                  Alembic (inkl. SQLite-Trigger für unveränderliche Tabellen)
-tests/fixtures/              SYNTHETISCHE Szenarien + Operator-Profil
+tests/fixtures/              SYNTHETISCHE Szenarien + Operator-Profil; recorded/ = echte, bereinigte Antworten (05.10.2026)
+research/2026-10-05/         Rohquellen (robots.txt, Text-Auszüge der AGB/Gebührenseiten)
 docs/                        sources, decisions, deployment, operations, review_brief
 ```
 Alembic-CLI direkt: `.venv/bin/alembic -c pyproject.toml upgrade head` (Konfiguration in `[tool.alembic]`).

@@ -30,7 +30,7 @@ details summary{cursor:pointer;color:var(--mut);margin:8px 0}
 </style>
 </head>
 <body>
-{% if any_synthetic %}<div class="synth">SYNTHETISCHE TESTDATEN – keine realen Angebote, kein Live-Scan, keine Kaufempfehlung</div>{% endif %}
+{% if any_synthetic %}<div class="synth">SYNTHETISCHE TESTDATEN vorhanden – als SYNTHETISCH markierte Karten sind keine realen Angebote; keine Kaufempfehlung</div>{% endif %}
 <header><b>Value Rail</b><a href="/">Funde</a><a href="/status">Status</a></header>
 <main>
 {% if not settings.auth_enabled %}<div class="card lvl-warn mut">Auth deaktiviert – nur lokal (localhost) verwenden. Externer Zugriff nur mit TLS + Basic-Auth.</div>{% endif %}

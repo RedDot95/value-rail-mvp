@@ -231,6 +231,36 @@ class ExecutionResultRow(Base):
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class SchedulerLockRow(Base):
+    """DB lease preventing overlapping scheduler runs (one holder per lock name; expires on crash)."""
+
+    __tablename__ = "scheduler_locks"
+    name: Mapped[str] = mapped_column(String(100), primary_key=True)
+    owner: Mapped[str] = mapped_column(String(200))
+    acquired_at: Mapped[datetime] = mapped_column(UTCDateTime)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime)
+
+
+class JobStateRow(Base):
+    """Persistent per-job scheduler state (survives restarts; drives bounded catch-up + /healthz)."""
+
+    __tablename__ = "job_states"
+    name: Mapped[str] = mapped_column(String(100), primary_key=True)
+    connector: Mapped[str] = mapped_column(String(100))
+    interval_seconds: Mapped[int] = mapped_column(Integer)
+    next_due_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    last_started_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    last_finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    last_success_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    last_error_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    last_status: Mapped[str] = mapped_column(String(30), default="never_run")
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    last_scan_run_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    consecutive_failures: Mapped[int] = mapped_column(Integer, default=0)
+    runs_total: Mapped[int] = mapped_column(Integer, default=0)
+    skipped_catchup_total: Mapped[int] = mapped_column(Integer, default=0)
+
+
 IMMUTABLE_TABLES = ("products", "offer_snapshots", "evidence", "rule_versions", "quotes",
                     "route_evaluations", "execution_results")
 IMMUTABLE_MODELS = (ProductRow, OfferSnapshotRow, EvidenceRow, RuleVersionRow, QuoteRow,

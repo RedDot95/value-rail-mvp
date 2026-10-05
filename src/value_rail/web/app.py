@@ -34,7 +34,7 @@ def _templates() -> Jinja2Templates:
 def create_app(ctx: AppContext | None = None) -> FastAPI:
     ctx = ctx or AppContext()
     templates = _templates()
-    app = FastAPI(title="Value Rail MVP (Delivery 1, offline)", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title="Value Rail MVP (Delivery 2)", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.ctx = ctx
 
     def auth(creds: HTTPBasicCredentials | None = Depends(_basic)) -> None:
@@ -47,21 +47,33 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
             raise HTTPException(status.HTTP_401_UNAUTHORIZED, "auth required",
                                 headers={"WWW-Authenticate": 'Basic realm="value-rail"'})
 
+    def _live() -> bool:
+        return any(c.enabled and c.kind not in ("fixture", "placeholder") for c in ctx.settings.file_config.connectors)
+
+    @app.get("/livez", include_in_schema=False)
+    def livez() -> JSONResponse:
+        return JSONResponse({"status": "alive"})
+
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> JSONResponse:
-        return JSONResponse({"status": "ok", "live_scanning": False, "mode": "offline-delivery-1"})
+        # no auth: contains only job/source timestamps + sanitised errors (no secrets, no prices)
+        from ..health import compute_health
+        with ctx.session_factory() as s:
+            body, code = compute_health(s, ctx.settings, utcnow())
+        return JSONResponse(body, status_code=code)
 
     @app.get("/", response_class=HTMLResponse, dependencies=[Depends(auth)])
     def index(request: Request):
         with ctx.session_factory() as s:
             vm = views.dashboard(s, ctx.settings, utcnow())
-        return templates.TemplateResponse(request, "dashboard.html", vm | {"settings": ctx.settings})
+        return templates.TemplateResponse(request, "dashboard.html", vm | {"settings": ctx.settings, "live_scanning": _live()})
 
     @app.get("/status", response_class=HTMLResponse, dependencies=[Depends(auth)])
     def status_page(request: Request):
         with ctx.session_factory() as s:
             vm = {"system": views.system_status(s, ctx.settings, utcnow())}
-        return templates.TemplateResponse(request, "status.html", vm | {"settings": ctx.settings, "any_synthetic": True})
+        return templates.TemplateResponse(request, "status.html", vm | {"settings": ctx.settings, "any_synthetic": True,
+                                                                "live_scanning": _live()})
 
     @app.get("/evaluations/{ev_id}", response_class=HTMLResponse, dependencies=[Depends(auth)])
     def detail(request: Request, ev_id: int):
