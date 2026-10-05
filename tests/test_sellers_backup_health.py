@@ -164,3 +164,13 @@ def test_scheduler_passes_job_options_and_runs_backup(tmp_path):
     assert list_backups(ctx.settings.backup_dir)
     assert effective_interval(ctx.settings.file_config.jobs[0]) == 60  # min_interval floor
     ctx.dispose()
+
+
+def test_backup_is_single_file_without_wal_sidecars(ctx):
+    info = create_backup(ctx.settings, now=NOW)
+    restore_test(info["backup"])
+    import os
+    assert not os.path.exists(info["backup"] + "-wal") and not os.path.exists(info["backup"] + "-shm")
+    con = sqlite3.connect(info["backup"])
+    assert con.execute("PRAGMA journal_mode").fetchone()[0] == "delete"
+    con.close()

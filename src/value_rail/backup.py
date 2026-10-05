@@ -46,6 +46,7 @@ def _copy(src: Path, dst: Path) -> None:
     d = sqlite3.connect(dst)
     try:
         s.backup(d)  # online backup API: page-by-page consistent snapshot
+        d.execute("PRAGMA journal_mode=DELETE")  # self-contained single file (no -wal/-shm sidecars)
     finally:
         d.close()
         s.close()
@@ -77,7 +78,8 @@ def prune(out_dir: Path, keep: int) -> list[str]:
     files = list_backups(out_dir)
     old = files[:-keep] if len(files) > keep else []
     for f in old:
-        f.unlink(missing_ok=True)
+        for side in (f, Path(str(f) + "-wal"), Path(str(f) + "-shm")):
+            side.unlink(missing_ok=True)
     return [str(f) for f in old]
 
 
