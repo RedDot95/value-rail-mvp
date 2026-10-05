@@ -6,7 +6,7 @@
 - **GAMIVO**: Parser mit Seller-Offers fertig und offline getestet, **live blocked** (Cloudflare Challenge, nicht umgangen).
 - Eneba, Kinguin, G2A, CoinsBee, AllKeyShop und GG.deals sind **blocked** (Gründe: `docs/sources.md` §0).
 - Worker und Web laufen seit **06.10.2026 00:45 CEST** unter supervisord auf der Box (letzter Neustart 00:51:50 CEST nach einem Code-Update).
-- `pytest`: **187 passed, 2 deselected (live)**, offline auch unter `unshare -rn` grün; `pytest -m live -k dundle`: 1 passed.
+- `pytest`: **188 passed, 2 deselected (live)**, offline auch unter `unshare -rn` grün; `pytest -m live -k dundle`: 1 passed.
 - Nichts gekauft, kein Warenkorb, kein Push.
 
 Legende wie bisher: implementiert · offline getestet · live geprüft · **deployed** (läuft auf der Box unter Supervisor, Minuten) · **Dauerbetrieb beobachtet** (über Tage) – Letzteres ist für nichts erreicht.
