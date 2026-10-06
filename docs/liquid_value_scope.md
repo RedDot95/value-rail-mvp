@@ -4,6 +4,14 @@ Das Ziel ist die Suche nach vollständig belegten, nach sämtlichen erforderlich
 
 `config/production.toml` aktiviert den Katalogfilter und meldet ausschließlich `verified_route`. Mindestgewinn: 0,01 EUR, Mindest-Edge: 0; der Versand verlangt zusätzlich strikt positiven Gewinn. Nominale Rabatte und Preisfunde bleiben Rechercheergebnisse. Der Offline-Standard und die synthetischen Fixtures behalten ihre bisherigen Regeln.
 
+## Suchvorgaben des Nutzers
+
+Bestätigt am 06.10.2026: Wohnsitz Deutschland; laut Nutzer sind Bankkonten innerhalb und außerhalb der EU vorhanden. Einzelne Bankländer und anbieterspezifische Berechtigungen sind damit nicht belegt.
+
+Die Recherche wird nicht auf vorhandene Anbieter-Konten oder ein vorab festgelegtes Kapital bzw. eine maximale Einsatzhöhe beschränkt. Der Nutzer kann sich für eine interessante Gelegenheit beim erforderlichen Anbieter anmelden und entscheidet den Einsatz pro Fall. Eine Kontenliste oder Kapitalangabe ist deshalb keine Voraussetzung für weitere Recherche. Fehlende Registrierung, KYC oder persönliche Freigaben bleiben konkret benannte offene Bedingungen und werden erst bei einer interessanten Route geprüft. Sie werden niemals automatisch als erfüllt angenommen.
+
+Je Gelegenheit sind Kaufpreis, sämtliche bekannten und offenen Gebühren, tatsächlicher Exit, benötigter Einsatz, verfügbare Mengen und geltende Länder-/Kontobedingungen auszuweisen. Ein nominaler Rabatt oder ein theoretischer Gewinn ohne vollständige Belege ist kein bestätigter Gewinn. Gewinnalarme bleiben vollständig belegten ausführbaren Routen vorbehalten.
+
 ## Was vorhanden ist
 
 - 75 ausdrücklich **unbewiesene** Instrument-Kandidaten, einschließlich der vom Nutzer genannten Familien. Der Katalog ist erweiterbar; Vollständigkeit oder Liquidität sämtlicher Einträge ist nicht nachgewiesen.
