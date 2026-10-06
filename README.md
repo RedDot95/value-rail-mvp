@@ -52,6 +52,7 @@ cp .env.example .env                       # optional
 .venv/bin/value-rail rules list       # Regelversionen; neue: rules add --label X --param price_find_min_discount=0.30
 .venv/bin/value-rail worker --once    # ein Scheduler-Tick (Lease, fällige Jobs, Dispatch, Heartbeat)
 .venv/bin/value-rail health           # /healthz-JSON; Exit 1 bei stale/failing (für externe Watcher)
+.venv/bin/value-rail enrich --dry-run # optionaler Modell-Enrichment-Pfad offline (Null-Provider ⇒ abstain), D-42
 ```
 
 ## Live-Smoke-Test (echtes Netzwerk, opt-in)
@@ -99,6 +100,7 @@ src/value_rail/valuation/    Bewertungs-Engine (exakte Formeln), Replay
 src/value_rail/storage/      SQLAlchemy-ORM, Decimal-/UTC-Typen, Repository, Engine/Migration
 src/value_rail/worker/       Scan-Pipeline (atomar), Exit-Regel-Quotes, Scheduler (Lease, Job-Status, Catch-up, Heartbeat)
 src/value_rail/alerts/       Dedup-/Materialitäts-Policy, Outbox, Sinks (Log, Telegram, Composite), Dispatcher
+src/value_rail/judgments/    optionale Modell-Urteile (TypeSafe), nur inferierte Hinweise, standardmäßig AUS (D-42)
 src/value_rail/health.py     Health-Modell für /healthz und `value-rail health`
 src/value_rail/smoke.py      Live-Smoke-Test + Markdown-Bericht
 src/value_rail/web/          FastAPI + Jinja2 SSR, mobile-first

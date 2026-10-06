@@ -121,3 +121,27 @@ name = "recharge_scan"
 connector = "recharge"
 interval_seconds = 1800         # 2 product pages every 30 min - polite
 enabled = false
+
+# ---- Optional model-judgment enrichment/safety layer (TypeSafe System One / Jev), docs/decisions.md D-42 ----
+# OFF by default. Inferred hints only: never enters the Decimal valuation math, never triggers an alert,
+# never purchases/checks out/redeems/logs in, never bypasses CAPTCHA/bot/region/KYC controls.
+# Provider resolves to "null" (no network) unless enabled = true AND provider = "typesafe" AND TYPESAFE_API_KEY is set.
+[enrichment]
+enabled = false
+provider = "null"                       # "null" | "typesafe"
+base_url = "https://api.typesafe.ai"    # POST /v1/systemone (docs.typesafe.ai/api.md, checked 2026-10-06)
+model = "jev-latest"                    # alias; the versioned id that answered is stored per judgment
+timeout_seconds = 10.0
+max_retries = 1                         # network errors / 5xx (529 Overloaded) only; 429 is never retried
+max_questions_per_offer = 4             # restriction_risk, looks_like_block_page, classify_instrument, select_face_value
+max_requests_per_scan = 50              # budget: one batched request per offer
+max_state_chars = 4000
+persist_abstentions = false
+show_in_ui = true
+restriction_block_threshold = 0.8       # restriction_risk >= this -> advisory "blocked" (display only, never unlocks)
+restriction_review_threshold = 0.5
+block_page_threshold = 0.8
+family_min_confidence = 0.7
+face_value_min_confidence = 0.8
+customer_region = "DE"
+accepted_regions = ["DE", "EEA", "EU", "Europe", "global"]

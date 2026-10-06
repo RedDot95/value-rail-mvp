@@ -8,7 +8,7 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import AliasChoices, BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PACKAGE_DIR = Path(__file__).resolve().parent
@@ -77,6 +77,37 @@ class SchedulerConfig(BaseModel):
     stale_factor: int = 3  # /healthz: job stale if last success older than stale_factor * interval
 
 
+class EnrichmentConfig(BaseModel):
+    """Optional model-judgment ENRICHMENT/SAFETY layer (docs/decisions.md D-42). OFF by default.
+
+    Judgments are inferred hints only: they never enter the Decimal valuation math, never enqueue an alert and
+    never trigger any purchase/checkout/account action or any bypass. Provider resolves to "null" (no network)
+    unless `enabled = true`, `provider = "typesafe"` AND TYPESAFE_API_KEY is set.
+    """
+
+    enabled: bool = False
+    provider: Literal["null", "typesafe"] = "null"
+    base_url: str = "https://api.typesafe.ai"  # docs.typesafe.ai/api: POST /v1/systemone
+    model: str = "jev-latest"  # alias; the versioned id that answered (e.g. jev-1.13.0) is stored per judgment
+    timeout_seconds: float = 10.0
+    max_retries: int = 1  # network errors / 5xx (incl. 529 Overloaded) only; 429 is never retried
+    max_questions_per_offer: int = Field(default=4, ge=0, le=16)
+    max_requests_per_scan: int = Field(default=50, ge=0)  # budget: one batched request per offer
+    max_state_chars: int = Field(default=4000, ge=200)  # every string in the state is truncated to this
+    max_face_value_candidates: int = Field(default=20, ge=1, le=254)  # Choice allows <= 255 options (+ "none")
+    persist_abstentions: bool = False  # abstain rows carry no signal; keep the table lean by default
+    show_in_ui: bool = True  # detail page "Inferred (Modell)" card (only while enabled)
+    # code-side thresholds (the model returns probabilities; decisions are made here, in code)
+    restriction_block_threshold: float = Field(default=0.8, ge=0, le=1)
+    restriction_review_threshold: float = Field(default=0.5, ge=0, le=1)
+    block_page_threshold: float = Field(default=0.8, ge=0, le=1)
+    family_min_confidence: float = Field(default=0.7, ge=0, le=1)
+    face_value_min_confidence: float = Field(default=0.8, ge=0, le=1)
+    # the compliant redemption route the restriction question is judged against
+    customer_region: str = "DE"
+    accepted_regions: list[str] = Field(default_factory=lambda: ["DE", "EEA", "EU", "Europe", "global"])
+
+
 class FileConfig(BaseModel):
     display: dict[str, Any] = Field(default_factory=lambda: {"timezone": "Europe/Berlin"})
     rules: RuleConfig = Field(default_factory=RuleConfig)
@@ -85,6 +116,7 @@ class FileConfig(BaseModel):
     connectors: list[ConnectorConfig] = Field(default_factory=list)
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
     jobs: list[JobConfig] = Field(default_factory=list)
+    enrichment: EnrichmentConfig = Field(default_factory=EnrichmentConfig)
 
     @property
     def display_timezone(self) -> str:
@@ -113,6 +145,10 @@ class Settings(BaseSettings):
     telegram_chat_id: str = Field(default="", validation_alias=AliasChoices("VALUE_RAIL_TELEGRAM_CHAT_ID",
                                                                             "TELEGRAM_CHAT_ID"))
 
+    # TypeSafe enrichment key (docs/decisions.md D-42). SecretStr: never shown in repr/diagnose/logs.
+    typesafe_api_key: SecretStr = Field(default=SecretStr(""), validation_alias=AliasChoices(
+        "VALUE_RAIL_TYPESAFE_API_KEY", "TYPESAFE_API_KEY"))
+
     @property
     def database_url(self) -> str:
         if self.db_url:
@@ -137,6 +173,18 @@ class Settings(BaseSettings):
     @property
     def telegram_configured(self) -> bool:
         return bool(self.telegram_bot_token.strip() and self.telegram_chat_id.strip())
+
+    @property
+    def typesafe_configured(self) -> bool:
+        return bool(self.typesafe_api_key.get_secret_value().strip())
+
+    @property
+    def enrichment_provider_effective(self) -> str:
+        """`typesafe` only if enrichment is enabled, the provider is typesafe AND a key is present; else `null`."""
+        cfg = self.file_config.enrichment
+        if cfg.enabled and cfg.provider == "typesafe" and self.typesafe_configured:
+            return "typesafe"
+        return "null"
 
     @property
     def auth_enabled(self) -> bool:

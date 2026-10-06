@@ -19,7 +19,7 @@ from .domain.money import fmt_eur, fmt_pct
 from .domain.timeutil import to_display, utcnow
 from .logging_setup import configure_logging
 from .services import AppContext
-from .storage.orm import AlertRow, RouteEvaluationRow, RuleVersionRow, ScanRunRow, SourceRow
+from .storage.orm import AlertRow, OfferJudgmentRow, RouteEvaluationRow, RuleVersionRow, ScanRunRow, SourceRow
 from .storage.repo import active_rule_version, add_rule_version, latest_evaluations, rule_params_of
 from .valuation.replay import replay_evaluation
 from .worker.scheduler import run_cycle, run_forever
@@ -126,9 +126,94 @@ def diagnose() -> None:
                                      "failed": r.sources_failed} if r else None)(
                 s.scalar(select(ScanRunRow).order_by(ScanRunRow.id.desc()).limit(1))),
             "connectors": describe_connectors(st),
+            "enrichment": {"enabled": st.file_config.enrichment.enabled,
+                           "provider_configured": st.file_config.enrichment.provider,
+                           "provider_effective": st.enrichment_provider_effective,
+                           "typesafe_api_key_present": st.typesafe_configured,  # never the key itself
+                           "model": st.file_config.enrichment.model,
+                           "judgments_stored": s.scalar(select(func.count()).select_from(OfferJudgmentRow))},
             "scan_intervals": st.file_config.scan_intervals.model_dump(),
         }
     typer.echo(json.dumps(info, indent=2, default=str, ensure_ascii=False))
+
+
+@app.command()
+def enrich(dry_run: bool = typer.Option(False, "--dry-run",
+                                        help="OFFLINE: enrich the SYNTHETIC fixture offers in memory, write nothing"),
+           block_page_sample: bool = typer.Option(True, "--block-page-sample/--no-block-page-sample",
+                                                  help="dry-run: also assess a SYNTHETIC block-page payload"),
+           limit: int = typer.Option(0, "--limit", help="max offers (0 = all, still bounded by the request budget)")) -> None:
+    """Model-judgment ENRICHMENT (inferred hints only; never valuation math, never alerts, never purchases).
+
+    --dry-run uses the configured provider (null by default -> explicit abstain) against the fixture offers.
+    Without --dry-run: requires [enrichment].enabled; enriches the offers of the latest evaluations and stores
+    them in offer_judgments.
+    """
+    from .connectors.fixture import FixtureConnector
+    from .judgments.questions import SELECT_FACE_VALUE
+    from .judgments.safety import advisory_view
+    from .judgments.service import (EnrichmentService, OfferContext, build_provider, context_from_offer,
+                                    context_from_snapshot)
+    ctx = _ctx(init=not dry_run)
+    st = ctx.settings
+    cfg = st.file_config.enrichment
+    if not dry_run and not cfg.enabled:
+        typer.echo("[enrichment].enabled = false -> nothing to do (use --dry-run for the offline path)", err=True)
+        raise typer.Exit(2)
+    svc = EnrichmentService(build_provider(st), cfg)
+    now = utcnow()
+    contexts: list[OfferContext] = []
+    statuses: dict[str, str] = {}
+    if dry_run:
+        conn = FixtureConnector(Path(st.fixtures_dir))
+        for item in conn.discovery(now):
+            for raw in conn.offer_fetch(item, now):
+                contexts.append(context_from_offer(item, conn.normalize(item, raw, now), max_chars=cfg.max_state_chars))
+        sample = Path(st.fixtures_dir) / "enrichment" / "synthetic_block_page.html"
+        if block_page_sample and sample.exists():
+            contexts.append(OfferContext(route_key="synthetic:block-page-sample", source_key="synthetic-block-sample",
+                                         source_name="SYNTHETIC block page sample", title="(fetched page)",
+                                         payload=sample.read_text(encoding="utf-8")[: cfg.max_state_chars],
+                                         is_synthetic=True))
+    else:
+        from .storage.orm import OfferSnapshotRow, ProductRow, SourceRow
+        with ctx.session_factory() as s:
+            for ev in latest_evaluations(s):
+                statuses[ev.route_key] = ev.status
+                for o in (ev.inputs or {}).get("offers", []):
+                    ref = o.get("offer_ref", "")
+                    if not ref.startswith("offer_snapshot:"):
+                        continue
+                    snap = s.get(OfferSnapshotRow, int(ref.split(":", 1)[1]))
+                    if snap is None:
+                        continue
+                    contexts.append(context_from_snapshot(snap, s.get(ProductRow, snap.product_id),
+                                                          s.get(SourceRow, snap.source_id), route_evaluation_id=ev.id,
+                                                          max_chars=cfg.max_state_chars))
+    if limit:
+        contexts = contexts[:limit]
+    rep, outcomes = svc.run(contexts, session_factory=None if dry_run else ctx.session_factory)
+    typer.echo(f"enrichment {'DRY-RUN (nothing stored)' if dry_run else 'stored'} · provider={svc.provider_name} · "
+               f"enabled={cfg.enabled} · INFERRED (model) hints only - observed values and valuation unchanged")
+    for out in outcomes:
+        c = out.context
+        typer.echo(f"- {c.route_key}  [{c.source_key}]{'  SYNTHETIC' if c.is_synthetic else ''}")
+        for r in out.results:
+            val = "abstain" if r.abstained else f"{r.answer} p={r.probability if r.probability is not None else '-'}" \
+                  f"{'' if r.confidence is None else f' conf={r.confidence}'}"
+            typer.echo(f"    {r.question_id:<22} {val:<40} signal={out.signals.get(r.question_id)}"
+                       f"{'  (' + r.abstain_reason + ')' if r.abstained and r.abstain_reason else ''}")
+            if r.question_id == SELECT_FACE_VALUE and out.candidates:
+                typer.echo("      candidates (code-extracted): " + " | ".join(
+                    f"{x.option_key}='{x.text}'" for x in out.candidates))
+            if r.question_id == SELECT_FACE_VALUE and out.selected is not None:
+                typer.echo(f"      face value (inferred, copied from code-extracted candidate "
+                           f"'{out.selected.text}' in {out.selected.found_in}): {out.selected.value} "
+                           f"{out.selected.currency}; observed: {c.observed_face_value}")
+        if c.route_key in statuses:
+            v = advisory_view(statuses[c.route_key], out.signals.values())
+            typer.echo(f"    status: deterministic={v['deterministic_status']} advisory={v['advisory_status']}")
+    typer.echo(rep.model_dump_json())
 
 
 @app.command()

@@ -27,8 +27,9 @@ Aggregator sources are `discovery_only` and are never a price basis.
 | Network | `net/{http_safe,robots,errors}.py` | SSRF-safe client: https only, host allowlist, public-IP pinning against DNS rebinding, manual redirect re-validation, size limits, ≥5 s/host + jitter, robots.txt (RFC 9309 matcher), distinct error classes |
 | Worker | `worker/{scheduler,scan,sellers,exit_rules}.py` | DB-lease scheduler (one active worker, TTL, dead-local-holder takeover, bounded catch-up). Scan runs fetch first, then one transaction per route. Seller-offer events |
 | Alerts | `alerts/{policy,outbox,dispatcher,sinks}.py` | Transactional outbox, dedup/re-alert policy, log sink + optional Telegram (off by default) |
-| Storage | `storage/{db,orm,repo,types}.py`, `migrations/` (Alembic 0001–0003) | SQLite. Snapshots are immutable/versioned |
+| Storage | `storage/{db,orm,repo,types}.py`, `migrations/` (Alembic 0001–0004) | SQLite. Snapshots are immutable/versioned |
 | Ops | `cli.py` (Typer), `web/` (FastAPI + Jinja, Basic Auth), `health.py`, `backup.py`, `smoke.py`, `deploy/` (supervisord, `vrctl`) | |
+| Judgments (new) | `judgments/{base,null_provider,typesafe_provider,questions,service,safety}.py`, table `offer_judgments` (Alembic 0004) | Optional TypeSafe System One enrichment/safety layer, **off by default** (null provider, no network). Inferred hints only; see below |
 
 Config: `config/default.toml` (offline/fixtures) and `config/production.toml` (live sources and jobs). Runtime settings come from `.env`
 (not in this archive; see `.env.example`).
@@ -41,7 +42,7 @@ uv pip install -p .venv/bin/python -e '.[dev]'   # or: .venv/bin/pip install -e 
 .venv/bin/pytest -m live         # opt-in, hits real sites (politely)
 .venv/bin/value-rail init-db && .venv/bin/value-rail load-fixtures && .venv/bin/value-rail serve
 ```
-Last run on this snapshot: **219 passed, 2 deselected (live)**.
+Last run on this snapshot: **254 passed, 2 deselected (live)** (06.10.2026, incl. 35 judgment tests).
 
 ## Status
 - **Delivery 1:** offline core (DB, valuation, UI, log alerts, synthetic fixtures). Done.
@@ -51,6 +52,9 @@ Last run on this snapshot: **219 passed, 2 deselected (live)**.
 - **Added 06.10.2026:** aggregator discovery sources: CoinGate (official no-auth MCP, read-only tools), BuySellVouchers list pages,
   CardBear, GiftCardWiki. All daily and `discovery_only`. GCX and GG.deals are blocked. Robots handling switched from `urllib.robotparser` to the RFC 9309 matcher.
 
+- **Added 06.10.2026 (afternoon):** model-judgment enrichment layer (TypeSafe System One / Jev), `docs/decisions.md` D-42.
+  Off by default; `value-rail enrich --dry-run` shows the offline path (null provider ⇒ abstain).
+
 ## Known issues / blockers
 - **Every live route is currently `blocked`.** No connector has a checkout quote (by design, carts are never opened), so a required fee stays `unknown`. There are 0 price finds so far.
 - **dundle.com** started returning 403 (incl. robots.txt) around midday 06.10. It is reported as `access_denied_403` / `robots_disallowed` and health is `stale`. It is not bypassed.
@@ -58,6 +62,9 @@ Last run on this snapshot: **219 passed, 2 deselected (live)**.
 - **Box egress is US.** Some sites serve USD or other regions; there is no region spoofing. CardBear and GiftCardWiki are US-only (discount % only).
 - **Deployment:** there is no systemd/cron autostart on the dev box. The daily aggregator jobs only take effect after a worker restart.
 - **Pending user access:** the BuySellVouchers Buyer API needs an account plus approval; the Bitrefill API needs the user's key.
+- **TypeSafe enrichment** needs the user's `TYPESAFE_API_KEY`. On this box `api.typesafe.ai` resolves to `198.18.0.1`
+  (egress interception), which the SSRF guard refuses ⇒ provider abstains. The guard was deliberately not relaxed. An authenticated
+  success response could not be verified (no key); the parser follows the documented examples and abstains on anything else.
 
 ## Please review for bugs in
 1. **Valuation Decimal math** (`valuation/engine.py`, `domain/money.py`): discount, profit and edge formulas, fee application (percent with `cap_per_unit`, fixed per order/unit, `included_in_quote`), FX handling, rounding/quantization, quantity selection, stale/expiry precedence, `"unknown"` propagation, replay determinism.
@@ -74,3 +81,12 @@ Last run on this snapshot: **219 passed, 2 deselected (live)**.
    - Check BSV RSC parsing robustness.
 4. **Alert dedup / outbox** (`alerts/*`, `worker/scan.py`): exactly-once enqueue inside the evaluation transaction, re-alert policy, dispatcher retry/backoff/dead-lettering, synthetic alerts never going to Telegram.
 5. **Scheduler lock** (`worker/scheduler.py`): lease acquire/renew/expiry races, dead-holder takeover (pid/host check), catch-up bounding, `min_interval_seconds` floor, job-state persistence and the heartbeat/health stale logic.
+6. **Judgments / enrichment layer** (`judgments/*`, `worker/scan.py::_enrich_after_scan`, `net/http_safe.py::post_json_authorized`):
+   - Can any model output reach the Decimal valuation, the alert outbox or an observed field? (Intended: no. Static import test +
+     byte-for-byte scan comparison in `tests/test_judgments.py`.)
+   - "Select, don't generate": `questions.resolve_selected_candidate` must only ever return a code-extracted candidate (option keys
+     are `candidate_<n>`, never numbers).
+   - Safety overlay monotonicity (`judgments/safety.py`): an inferred signal may only add `blocked`, never unlock.
+   - Secret handling: `TYPESAFE_API_KEY` (SecretStr) never in logs/diagnose/repr/exception text; bearer token sent only to the exact
+     https URL, no redirects followed, token syntax checked (header injection).
+   - Off-by-default: `[enrichment].enabled = false` ⇒ nothing imported/constructed in the scan path.

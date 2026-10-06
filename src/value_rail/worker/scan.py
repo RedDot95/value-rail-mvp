@@ -154,8 +154,39 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: 
     return ev_row, result, alert is not None
 
 
+def _enrich_after_scan(session_factory: sessionmaker[Session], enricher: Any, jobs: list[tuple[Any, ...]],
+                       scan_id: int) -> None:
+    """Optional INFERRED enrichment (D-42), strictly after all deterministic evaluations are committed.
+
+    Purely additive: writes only `offer_judgments`; never touches evaluations, alerts or the ScanReport.
+    Any failure is logged and swallowed.
+    """
+    try:
+        from ..judgments.service import context_from_offer
+        max_chars = enricher.cfg.max_state_chars
+        contexts = []
+        for item, offers, ev_id, refs in jobs:
+            for o, ref in zip(offers, refs):
+                snap_id = int(ref.split(":", 1)[1]) if ref.startswith("offer_snapshot:") else None
+                contexts.append(context_from_offer(item, o, max_chars=max_chars, offer_snapshot_id=snap_id,
+                                                   route_evaluation_id=ev_id, scan_run_id=scan_id))
+        enricher.begin_run()
+        er, _ = enricher.run(contexts, session_factory=session_factory)
+        log.info("enrichment (%s, inferred only): %d offers, %d requests, %d judgments, %d advisory blocks, "
+                 "%d suspected block pages, %d skipped (budget)", er.provider, er.offers_seen, er.requests,
+                 er.judgments_persisted, er.advisory_blocks, er.suspected_block_pages, er.skipped_budget)
+    except Exception as exc:  # noqa: BLE001 - enrichment must never break or alter a scan
+        log.warning("enrichment skipped after scan #%s: %s", scan_id, type(exc).__name__)
+
+
 def run_scan(session_factory: sessionmaker[Session], connector: Connector, settings: Settings, now: datetime, *,
-             trigger: str = "cli", operator_name: str | None = None) -> ScanReport:
+             trigger: str = "cli", operator_name: str | None = None, enricher: Any = None) -> ScanReport:
+    """`enricher`: optional judgments.EnrichmentService (tests inject one). When None, one is built only if
+    [enrichment].enabled is true; otherwise nothing enrichment-related is imported or constructed."""
+    if enricher is None and settings.file_config.enrichment.enabled:
+        from ..judgments.service import build_enrichment_service
+        enricher = build_enrichment_service(settings)
+    enrich_jobs: list[tuple[Any, ...]] = []
     caps = connector.capabilities()
     with session_factory.begin() as s:
         rv = active_rule_version(s, now)
@@ -205,6 +236,8 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         rep.statuses[item.route_key] = str(result.status)
         rep.evaluation_ids[item.route_key] = ev_row.id
         ok_sources.update(x.key for x in item.sources if x.key not in rep.sources_failed)
+        if enricher is not None:
+            enrich_jobs.append((item, fetched.offers, ev_row.id, [o["offer_ref"] for o in ev_row.inputs["offers"]]))
 
     if rep.sources_failed:
         rep.status = ScanStatus.DEGRADED if rep.evaluations_created else ScanStatus.FAILED
@@ -223,4 +256,6 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         scan.items_seen = rep.items_seen
         scan.evaluations_created = rep.evaluations_created
         scan.alerts_enqueued = rep.alerts_enqueued
+    if enricher is not None and enrich_jobs:
+        _enrich_after_scan(session_factory, enricher, enrich_jobs, scan_id)
     return rep

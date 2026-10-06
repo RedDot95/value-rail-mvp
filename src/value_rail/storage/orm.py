@@ -11,7 +11,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, UniqueConstraint, event
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text, UniqueConstraint, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 from .types import DecimalText, JSONText, UTCDateTime
@@ -303,10 +303,44 @@ class SellerOfferEventRow(Base):
     currency: Mapped[str] = mapped_column(String(10), default="unknown")
 
 
+class OfferJudgmentRow(Base):
+    """INFERRED model judgment about an offer (enrichment/safety layer, docs/decisions.md D-42, migration 0004).
+
+    Strictly separate from observed facts: nothing here is ever copied into offer_snapshots/products/
+    route_evaluations, and nothing here feeds the valuation engine or the alert outbox. Append-only
+    (ORM guard + SQLite triggers). `selected_value` is only ever a COPY of a code-extracted candidate
+    ("select, don't generate"), never a number produced by the model.
+    """
+
+    __tablename__ = "offer_judgments"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    offer_snapshot_id: Mapped[int | None] = mapped_column(ForeignKey("offer_snapshots.id"), nullable=True, index=True)
+    route_evaluation_id: Mapped[int | None] = mapped_column(ForeignKey("route_evaluations.id"), nullable=True)
+    scan_run_id: Mapped[int | None] = mapped_column(ForeignKey("scan_runs.id"), nullable=True)
+    route_key: Mapped[str] = mapped_column(String(200), index=True)
+    source_key: Mapped[str] = mapped_column(String(100))
+    question_id: Mapped[str] = mapped_column(String(60))
+    kind: Mapped[str] = mapped_column(String(10))  # choice | noul | score
+    answer: Mapped[str | None] = mapped_column(String(200), nullable=True)  # option key / yes|no; None = abstain
+    probability: Mapped[float | None] = mapped_column(Float, nullable=True)  # noul: P(yes); choice: P(answer)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)  # choice/score only
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)  # score questions only
+    distribution: Mapped[dict[str, Any] | None] = mapped_column(JSONText, nullable=True)
+    selected_value: Mapped[Any] = mapped_column(DecimalText, nullable=True)  # copy of a code-extracted candidate
+    selected_candidate: Mapped[dict[str, Any] | None] = mapped_column(JSONText, nullable=True)
+    signal: Mapped[str] = mapped_column(String(40))  # code-derived (thresholds in [enrichment])
+    abstained: Mapped[bool] = mapped_column(Boolean, default=False)
+    abstain_reason: Mapped[str] = mapped_column(Text, default="")
+    provider: Mapped[str] = mapped_column(String(40))
+    model: Mapped[str] = mapped_column(String(60))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime, index=True)
+    is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 IMMUTABLE_TABLES = ("products", "offer_snapshots", "evidence", "rule_versions", "quotes",
-                    "route_evaluations", "execution_results")
+                    "route_evaluations", "execution_results", "offer_judgments")
 IMMUTABLE_MODELS = (ProductRow, OfferSnapshotRow, EvidenceRow, RuleVersionRow, QuoteRow,
-                    RouteEvaluationRow, ExecutionResultRow)
+                    RouteEvaluationRow, ExecutionResultRow, OfferJudgmentRow)
 
 
 @event.listens_for(Session, "before_flush")

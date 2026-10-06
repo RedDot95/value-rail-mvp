@@ -173,4 +173,12 @@ def compute_health(s: Session, settings: Settings, now: datetime) -> tuple[dict[
             "alerts_open": {"pending": alerts.get("pending", 0), "dead": alerts.get("dead", 0)},
             "backup": backup,
             "telegram_configured": settings.telegram_configured and "telegram" in cfg.alerts.sink}
+    if cfg.enrichment.enabled:  # informational only (D-42): inferred soft-block hints never change status/HTTP code
+        from datetime import timedelta
+
+        from .storage.repo import inferred_signal_counts_since
+        body["inferred_last_24h"] = {
+            "note": "INFERRED model hints (not observed); status above is unaffected",
+            "by_source": inferred_signal_counts_since(s, now - timedelta(hours=24),
+                                                      ("suspected_block_page", "advisory_block"))}
     return body, (503 if overall in ("stale", "failing") else 200)

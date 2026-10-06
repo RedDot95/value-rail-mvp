@@ -359,3 +359,9 @@ kind = "backup"
 interval_seconds = 86400
 min_interval_seconds = 3600
 enabled = true
+
+# Model-judgment enrichment (docs/decisions.md D-42): OFF. To enable: set TYPESAFE_API_KEY in the worker env,
+# then enabled = true and provider = "typesafe" (all other keys default as in config/default.toml).
+[enrichment]
+enabled = false
+provider = "null"

@@ -264,8 +264,26 @@ class SafeHttpClient:
                             body=body)
         return res if not keep_headers else _with_headers(res, keep_headers, self._last_headers)
 
+    def post_json_authorized(self, url: str, body: bytes, *, bearer_token: str,
+                             accept: str = "application/json") -> FetchResult:
+        """POST JSON to an authenticated first-party API (e.g. TypeSafe enrichment, docs/decisions.md D-42).
+
+        The bearer token is sent ONLY to `url` itself: https is mandatory (even with allow_http), redirects are
+        never followed (a 3xx is an error, so the credential can never travel to another URL), and the token is
+        never written to `request_log`, exception messages or logs. Token syntax is validated to rule out header
+        injection (no whitespace/control/non-ASCII characters).
+        """
+        tok = bearer_token or ""
+        if not tok or not tok.isascii() or any(c.isspace() or ord(c) < 33 or ord(c) == 127 for c in tok):
+            raise ValueError("invalid bearer token (empty, whitespace, control or non-ASCII characters)")
+        if urlsplit(url).scheme != "https":
+            raise BlockedUrl(self.source_key, "authorized requests require https", url=url)
+        return self._request("POST", url, headers={"Content-Type": "application/json", "Accept": accept,
+                                                   "Authorization": f"Bearer {tok}"}, body=body,
+                             follow_redirects=False)
+
     def _request(self, method: str, url: str, *, headers: dict[str, str] | None = None, body: bytes | None = None,
-                 check_robots: bool | None = None) -> FetchResult:
+                 check_robots: bool | None = None, follow_redirects: bool = True) -> FetchResult:
         check_robots = self.respect_robots if check_robots is None else check_robots
         redirects: list[str] = []
         current = url
@@ -278,6 +296,10 @@ class SafeHttpClient:
                     raise RobotsDisallowed(self.source_key, f"robots.txt disallows {current}", url=current)
             resp, attempts = self._send_with_retries(method, current, ip, host, headers or {}, body)
             if resp.status in (301, 302, 303, 307, 308):
+                if not follow_redirects:
+                    raise UpstreamError(self.source_key, f"unexpected redirect HTTP {resp.status} from {current} "
+                                        "(authorized requests never follow redirects)", url=current,
+                                        http_status=resp.status)
                 loc = resp.headers.get("location")
                 if not loc:
                     raise UpstreamError(self.source_key, f"redirect without Location from {current}", url=current,

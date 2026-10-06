@@ -32,6 +32,21 @@
 <div class="mut">Hinweise</div><ul>{% for n in o.notes %}<li>{{ n }}</li>{% else %}<li>keine</li>{% endfor %}</ul>
 </div>
 
+{% if inferred is defined %}
+<div class="card" style="border:2px dashed var(--mut)"><b>Inferred (Modell) – keine beobachteten Fakten</b>
+<div class="mut">Modell-Hinweise (Enrichment, D-42). Fließen nicht in Rabatt/Profit/Edge oder Alerts ein; lösen keine Aktion aus.
+Status deterministisch: <span class="pill s-{{ inferred.view.deterministic_status }}">{{ inferred.view.deterministic_status|status_de }}</span>
+{% if inferred.view.changed %} · Modell-Hinweis: <span class="pill s-blocked">Blockiert (inferred)</span> – Einschränkungsrisiko (Region/KYC){% endif %}</div>
+{% if inferred.rows %}<table>
+<tr><th>Frage</th><th>Antwort (inferred)</th><th class="n">p / conf</th><th>Signal</th></tr>
+{% for j in inferred.rows %}<tr><td>{{ j.question_id }}<div class="mut">offer_snapshot:{{ j.offer_snapshot_id }}</div></td>
+<td>{% if j.abstained %}<i>keine Aussage</i>{% else %}{{ j.answer }}{% endif %}{% if j.selected_candidate %}<div class="mut">Kandidat „{{ j.selected_candidate.text }}“ (Code-extrahiert, {{ j.selected_candidate.found_in }})</div>{% endif %}</td>
+<td class="n">{{ '%.2f'|format(j.probability) if j.probability is not none else '–' }} / {{ '%.2f'|format(j.confidence) if j.confidence is not none else '–' }}</td>
+<td>{{ j.signal }}<div class="mut">{{ j.provider }} · {{ j.model }} · {{ j.created_at|berlin }}</div></td></tr>{% endfor %}
+</table>{% else %}<div class="empty">noch keine Modell-Hinweise</div>{% endif %}
+</div>
+{% endif %}
+
 <div class="card"><b>Evidenz ({{ evidence|length }})</b>
 <ul>{% for e in evidence %}<li>{% if e.is_synthetic %}<span class="tag">SYNTHETIC</span> {% endif %}<b>{{ e.kind }}</b> · {{ e.summary }}<div class="mut">{{ e.captured_at|berlin }} · {{ e.subject_ref }} · sha256 {{ e.content_hash[:12] }}…</div></li>{% else %}<li>keine</li>{% endfor %}</ul></div>
 

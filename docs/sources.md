@@ -1,4 +1,4 @@
-# Quellen (Stand 06.10.2026 – Marktplätze/Aggregatoren inkl. Vergleichsseiten 12:47 CEST; darunter Delivery 2 vom 05.10.2026)
+# Quellen (Stand 06.10.2026 – Marktplätze/Aggregatoren inkl. Vergleichsseiten 12:47 CEST, TypeSafe 13:14 CEST; darunter Delivery 2 vom 05.10.2026)
 
 ## 0. Marktplatz-/Aggregator-Prüfung 06.10.2026 (00:20–00:45 CEST, Box-Egress USA)
 
@@ -103,6 +103,24 @@ Die Zahlen stehen in `ScanReport.seller_events` und in `health.jobs[].last_scan.
 
 
 ---
+
+## 0c. TypeSafe (Enrichment-Layer, D-42) – Live-Doku geprüft 06.10.2026, 13:07–13:14 CEST
+
+Quelle der API-Form (nichts erfunden; per WebFetch gelesen am 06.10.2026):
+- https://docs.typesafe.ai/llms.txt (Index)
+- https://docs.typesafe.ai/api.md – `POST https://api.typesafe.ai/v1/systemone`, `Authorization: Bearer <API_KEY>`, Body `{state, model, questions}`, Antworten `{model, answers, usage}`; Fehler 401/422/429/529
+- https://docs.typesafe.ai/sdk/python.md und https://docs.typesafe.ai/sdk/python/api/clients/sync.md – SDK `typesafe-sdk` (`TypeSafeClient.system_one`, Env `TYPESAFE_API_KEY`, httpx2-Transport); PyPI-Metadaten 0.7.2 vom 26.09.2026 (https://pypi.org/pypi/typesafe-sdk/json)
+- https://docs.typesafe.ai/primitives.md, https://docs.typesafe.ai/primitives/choice.md, https://docs.typesafe.ai/primitives/noul.md, https://docs.typesafe.ai/primitives/score.md – Fragetypen, Limits (Choice ≤ 255 Optionen, Score 2–10 Stufen), Antwortfelder, „other/none“-Option, mehrere Fragen je Request
+- https://docs.typesafe.ai/concepts/how-to-build-with-system-one.md – Code behält die Kontrolle, atomare Fragen, Schwellen im Code
+- https://docs.typesafe.ai/cookbooks/pre_parsed_value_extraction_cookbook.md – Muster „Regex findet Kandidaten, Modell wählt, Code kopiert“ (Vorlage für `select_face_value`)
+- https://docs.typesafe.ai/models.md – Modell `jev-1.13.0`, Alias `jev-latest` (Default), Rate-Limits 80 req/s, Input-Token-Preis
+
+Live-Probe 06.10.2026 13:13 CEST (ohne Schlüssel, nichts Vertrauliches gesendet):
+- `curl -X POST https://api.typesafe.ai/v1/systemone` ohne Key ⇒ **HTTP 403** `{"detail":{"error_type":"authentication_error","message":"Must supply an API key! ..."}}` (Doku nennt 401; beide werden als Auth-Fehler ⇒ abstain behandelt).
+- **Box-Besonderheit:** Der Box-Resolver liefert für `api.typesafe.ai` (und `docs.typesafe.ai`) **198.18.0.1** (RFC-2544-Benchmark-Netz, Egress-Abfangung der Box). Der SSRF-Guard (D-26) lehnt nicht-öffentliche Adressen ab ⇒ der Provider antwortet auf **dieser Box** mit `blocked_url` ⇒ abstain. Der Guard wurde bewusst **nicht** aufgeweicht; Livebetrieb auf der Box braucht eine Nutzerentscheidung (siehe `docs/operations.md`).
+- Nicht verifiziert (kein Schlüssel): eine erfolgreiche authentifizierte Antwort. Der Parser folgt exakt den Beispielantworten der Doku und lehnt alles Abweichende ab (⇒ abstain).
+
+Daten, die gesendet würden: öffentliche Angebotsdaten (Titel, Händler, Region, Variante, Preistext, gekürzter Connector-Payload) und die Zielregion (`DE`). Keine Zugangsdaten, keine Nutzerdaten.
 
 # Quellen (Stand Delivery 2, 05.10.2026)
 

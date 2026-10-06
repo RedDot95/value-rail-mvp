@@ -13,8 +13,8 @@ from ..domain.entities import QuantityObservation
 from ..domain.identity import AssetIdentity, ProductIdentity
 from ..evidence import EvidenceDraft, content_hash
 from ..valuation.models import RuleParams
-from .orm import (AlertRow, AssetRow, EvidenceRow, ExecutionResultRow, OfferSnapshotRow, OperatorProfileRow,
-                  ProductRow, QuoteRow, RouteEvaluationRow, RuleVersionRow, ScanRunRow, SourceRow)
+from .orm import (AlertRow, AssetRow, EvidenceRow, ExecutionResultRow, OfferJudgmentRow, OfferSnapshotRow,
+                  OperatorProfileRow, ProductRow, QuoteRow, RouteEvaluationRow, RuleVersionRow, ScanRunRow, SourceRow)
 
 
 # ---------- sources / products ----------
@@ -241,3 +241,47 @@ def record_execution_result(s: Session, *, route_evaluation_id: int | None, prod
     s.add(row)
     s.flush()
     return row
+
+
+# ---------- inferred offer judgments (enrichment layer, D-42; append-only, never observed facts) ----------
+
+def insert_offer_judgment(s: Session, *, route_key: str, source_key: str, question_id: str, kind: str,
+                          answer: str | None, probability: float | None, confidence: float | None,
+                          score: float | None, distribution: dict[str, Any] | None, signal: str, abstained: bool,
+                          abstain_reason: str, provider: str, model: str, created_at: datetime,
+                          offer_snapshot_id: int | None = None, route_evaluation_id: int | None = None,
+                          scan_run_id: int | None = None, selected_value: Decimal | None = None,
+                          selected_candidate: dict[str, Any] | None = None,
+                          is_synthetic: bool = False) -> OfferJudgmentRow:
+    if selected_value is not None and not isinstance(selected_value, Decimal):
+        raise TypeError("selected_value must be the code-extracted Decimal candidate")
+    row = OfferJudgmentRow(offer_snapshot_id=offer_snapshot_id, route_evaluation_id=route_evaluation_id,
+                           scan_run_id=scan_run_id, route_key=route_key, source_key=source_key,
+                           question_id=question_id, kind=kind, answer=answer, probability=probability,
+                           confidence=confidence, score=score, distribution=distribution,
+                           selected_value=selected_value, selected_candidate=selected_candidate, signal=signal,
+                           abstained=abstained, abstain_reason=abstain_reason[:2000], provider=provider,
+                           model=model, created_at=created_at, is_synthetic=is_synthetic)
+    s.add(row)
+    s.flush()
+    return row
+
+
+def judgments_for_offer_refs(s: Session, refs: Iterable[str]) -> list[OfferJudgmentRow]:
+    """Judgments for `offer_snapshot:<id>` refs (as stored in evaluation inputs), newest first."""
+    ids = [int(r.split(":", 1)[1]) for r in refs if r.startswith("offer_snapshot:") and r.split(":", 1)[1].isdigit()]
+    if not ids:
+        return []
+    return list(s.scalars(select(OfferJudgmentRow).where(OfferJudgmentRow.offer_snapshot_id.in_(ids))
+                          .order_by(OfferJudgmentRow.id.desc())))
+
+
+def inferred_signal_counts_since(s: Session, since: datetime, signals: tuple[str, ...]) -> dict[str, dict[str, int]]:
+    """{source_key: {signal: count}} for informational health output (never changes health status)."""
+    out: dict[str, dict[str, int]] = {}
+    q = (select(OfferJudgmentRow.source_key, OfferJudgmentRow.signal, func.count())
+         .where(OfferJudgmentRow.created_at >= since, OfferJudgmentRow.signal.in_(signals))
+         .group_by(OfferJudgmentRow.source_key, OfferJudgmentRow.signal))
+    for key, sig, n in s.execute(q).all():
+        out.setdefault(key, {})[sig] = n
+    return out

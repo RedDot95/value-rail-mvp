@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from ..domain.enums import STATUS_LABEL_DE, RouteStatus
 from ..settings import Settings
 from ..storage.orm import AlertRow, RouteEvaluationRow, RuleVersionRow, SourceRow
-from ..storage.repo import evidence_for_refs, latest_evaluations, latest_scan_runs
+from ..storage.repo import evidence_for_refs, judgments_for_offer_refs, latest_evaluations, latest_scan_runs
 
 
 def _source_keys(ev: RouteEvaluationRow) -> set[str]:
@@ -92,4 +92,11 @@ def evaluation_detail(s: Session, ev_id: int, settings: Settings, now: datetime)
     evidence = evidence_for_refs(s, refs)
     rule = s.get(RuleVersionRow, ev.rule_version_id)
     alerts = list(s.scalars(select(AlertRow).where(AlertRow.route_key == ev.route_key).order_by(AlertRow.id.desc()).limit(5)))
-    return {"card": c, "ev": ev, "inputs": inp, "evidence": evidence, "rule": rule, "alerts": alerts}
+    vm = {"card": c, "ev": ev, "inputs": inp, "evidence": evidence, "rule": rule, "alerts": alerts}
+    enr = settings.file_config.enrichment
+    if enr.enabled and enr.show_in_ui:  # INFERRED (model) signals, shown separately from observed values (D-42)
+        from ..judgments.safety import advisory_view
+        offer_refs = [o["offer_ref"] for o in inp.get("offers", [])]
+        rows = [j for j in judgments_for_offer_refs(s, offer_refs) if j.route_evaluation_id in (None, ev.id)]
+        vm["inferred"] = {"rows": rows, "view": advisory_view(ev.status, [j.signal for j in rows])}
+    return vm

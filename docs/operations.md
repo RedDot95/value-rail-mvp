@@ -23,6 +23,33 @@ deploy/vrctl status | start | restart [worker|web|all] | logs [worker|web] | hea
 .venv/bin/python scripts/record_fixtures.py dundle   # neue datierte Offline-Fixtures aufnehmen
 ```
 
+## Modell-Enrichment (TypeSafe, optional, D-42) – standardmäßig AUS
+Inferierte Hinweise (Einschränkungsrisiko Region/KYC, Block-Seiten-Verdacht, Instrument-Familie, Nennwert-Auswahl) in
+`offer_judgments`. Ändert **nie** Bewertung, Rabatt/Profit/Edge oder Alerts; löst nie eine Aktion aus.
+
+Einschalten (Produktion):
+1. `TYPESAFE_API_KEY=<key>` in die Umgebung des Workers bzw. in `.env` (nur serverseitig; nie committen, nie ausgeben).
+   Der Schlüssel kann nur vom Nutzer kommen (https://console.typesafe.ai).
+2. In `config/production.toml` (oder `config/default.toml`):
+   ```toml
+   [enrichment]
+   enabled = true
+   provider = "typesafe"      # "null" = kein Netzwerk, nur abstain
+   # optional: model = "jev-1.13.0" (Version pinnen), max_requests_per_scan = 50, max_questions_per_offer = 4
+   ```
+3. `deploy/vrctl restart worker` (Worker liest die Konfiguration beim Start).
+4. Prüfen: `value-rail diagnose` ⇒ `"enrichment": {"enabled": true, "provider_effective": "typesafe", "typesafe_api_key_present": true}`
+   (der Schlüssel selbst wird nie ausgegeben). Offline-Pfad jederzeit: `value-rail enrich --dry-run`.
+   Nachträglich für die letzten Bewertungen: `value-rail enrich` (nur bei `enabled = true`; schreibt nur `offer_judgments`).
+
+Ohne Schlüssel oder mit `provider = "typesafe"` aber leerem Key ⇒ Warnung im Log und Null-Provider (kein Netzwerk).
+**Box-Blocker:** Auf dieser Box löst `api.typesafe.ai` auf `198.18.0.1` (Egress-Abfangung) auf; der SSRF-Guard verweigert
+nicht-öffentliche Ziele ⇒ jede Anfrage endet als `blocked_url` ⇒ abstain (Scan läuft unverändert weiter). Vor Livebetrieb
+auf der Box: entweder DNS liefert öffentliche Adressen, oder der Nutzer entscheidet ausdrücklich über eine eng begrenzte
+Ausnahme (nicht implementiert). Auf einem normalen Host (VPS) entfällt der Blocker.
+Anzeige: Detailseite einer Bewertung, Karte „Inferred (Modell) – keine beobachteten Fakten“ (gestrichelt), nur bei `enabled`.
+`/healthz` enthält bei `enabled` zusätzlich `inferred_last_24h` (rein informativ, ändert Status/HTTP-Code nicht).
+
 ---
 
 # Betrieb (Stand Delivery 2 + Delivery-3-Basis) – historisch
