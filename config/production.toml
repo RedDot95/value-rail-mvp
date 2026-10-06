@@ -1,6 +1,5 @@
-# Value Rail MVP - default configuration (Delivery 2, 05.10.2026).
-# Thresholds derive from the Bauauftrag (04.10.2026). The only live connector (recharge) is DISABLED
-# here; it is run explicitly via `value-rail smoke recharge` or by enabling it + its job below.
+# Live research configuration: fully evidenced profitable liquid-value routes (06.10.2026).
+# Real connectors and jobs enabled. Only verified profitable routes produce alerts.
 
 [display]
 timezone = "Europe/Berlin"
@@ -10,10 +9,10 @@ timezone = "Europe/Berlin"
 # referencing the RuleVersion they were computed with (exact replay).
 # A new RuleVersion row is created on init-db when no stored version carries this label.
 [rules]
-label = "delivery2-2026-10-05-v2"   # same rules as config/default.toml (keep in sync)
+label = "liquid-verified-2026-10-06-v1"
 price_find_min_discount = "0.25"     # Preisfund: >= 25 % proven nominal discount
-verified_min_edge = "0.10"           # Verifizierte Route: >= 10 % net edge ...
-verified_min_profit_eur = "1.00"     # ... AND >= 1 EUR profit
+verified_min_edge = "0"              # User goal: every fully proven, strictly profitable route
+verified_min_profit_eur = "0.01"     # minimum positive EUR-cent profit after all required fees
 max_quote_age_seconds = 900          # checkout/exit quote freshness
 max_offer_age_seconds = 3600         # offer snapshot freshness
 
@@ -68,7 +67,7 @@ fees = [
 
 [alerts]
 sink = "log"                         # "log" or "log,telegram" (telegram needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)
-alert_statuses = ["price_find", "verified_route"]
+alert_statuses = ["verified_route"]  # Price-only discoveries are research, never notifications
 material_price_change_pct = "0.02"   # >= 2 % change of all-in unit price -> new event
 restock_min_increase = 1             # quantity 0/unknown -> >0, or +N units -> new event
 max_attempts = 5
@@ -200,6 +199,16 @@ pages = [
   { path = "/en/products/list/bitnovo-voucher/", family = "bitnovo", redemption_program = "bitnovo", region = "unknown", empty_ok = true, note = "06.10.2026: category explicitly empty (total 0)" },
   { path = "/en/products/list/neosurf-voucher/", family = "neosurf", redemption_program = "neosurf", region = "unknown" },
   { path = "/en/products/list/Prepaid_Vouchers-Azteco/", family = "azteco", redemption_program = "azteco", region = "WW" },
+  # Category URLs found in current public search; leads remain discovery_only.
+  { path = "/en/products/list/flexepin-voucher/", family = "flexepin", redemption_program = "flexepin", region = "unknown", empty_ok = true },
+  { path = "/en/products/list/transcash-gift-cards/", family = "transcash", redemption_program = "transcash", region = "unknown", empty_ok = true },
+  { path = "/en/products/list/cashlib-gift-cards/", family = "cashlib", redemption_program = "cashlib", region = "unknown", empty_ok = true },
+  { path = "/en/products/list/a-bon-gift-cards/", family = "abon", redemption_program = "abon", region = "unknown", empty_ok = true },
+  { path = "/en/products/list/pcs-gift-cards/", family = "pcs", redemption_program = "pcs", region = "unknown", empty_ok = true },
+  { path = "/en/products/list/paypal-gift-cards/", family = "paypal-unverified", redemption_program = "paypal-unverified", region = "unknown", empty_ok = true },
+  { path = "/en/products/list/online-shopping-otto-gift-cards/", family = "otto", redemption_program = "otto", region = "unknown", empty_ok = true },
+  { path = "/en/products/list/electronics-mediamarkt-gift-cards/", family = "mediamarkt", redemption_program = "mediamarkt", region = "unknown", empty_ok = true },
+  { path = "/en/products/list/Gift_cards-Amazon_Gift_cards/", family = "amazon", redemption_program = "amazon", region = "unknown", empty_ok = true },
 ]
 
 [[connectors]]
@@ -214,10 +223,6 @@ host = "www.cardbear.com"
 min_interval_s = 6.0
 jitter_s = 2.0
 pages = [
-  { path = "/gift-card-discount/616/steam", family = "steam", redemption_program = "steam-us", region = "US" },
-  { path = "/gift-card-discount/606/playstation-network", family = "playstation", redemption_program = "psn-us", region = "US" },
-  { path = "/gift-card-discount/225/google-play", family = "google-play", redemption_program = "google-play-us", region = "US" },
-  { path = "/gift-card-discount/853/razer-gold", family = "razer-gold", redemption_program = "razer-gold-us", region = "US" },
   { path = "/gift-card-discount/111/amazon", family = "amazon", redemption_program = "amazon-us", region = "US" },
 ]
 
@@ -365,3 +370,6 @@ enabled = true
 [enrichment]
 enabled = false
 provider = "null"
+
+[scope]
+enabled = true

@@ -12,6 +12,7 @@ import typer
 from sqlalchemy import func, select
 
 from .alerts.dispatcher import dispatch_pending
+from .alerts.eligibility import delivery_check
 from .alerts.sinks import build_sink_from_settings
 from .connectors.registry import describe_connectors
 from .domain.enums import STATUS_LABEL_DE, RouteStatus
@@ -24,7 +25,7 @@ from .storage.repo import active_rule_version, add_rule_version, latest_evaluati
 from .valuation.replay import replay_evaluation
 from .worker.scheduler import run_cycle, run_forever
 
-app = typer.Typer(help="Value Rail MVP - offline fixtures + one opt-in live connector (recharge); never purchases",
+app = typer.Typer(help="Value Rail - liquid-value route research, evidence and coverage; never purchases",
                   no_args_is_help=True)
 rules_app = typer.Typer(help="Versioned valuation rules")
 app.add_typer(rules_app, name="rules")
@@ -79,7 +80,7 @@ def dispatch() -> None:
     ctx = _ctx()
     cfg = ctx.settings.file_config.alerts
     rep = dispatch_pending(ctx.session_factory, build_sink_from_settings(ctx.settings), utcnow(),
-                           backoff_seconds=cfg.retry_backoff_seconds)
+                           backoff_seconds=cfg.retry_backoff_seconds, eligibility=delivery_check(ctx.settings))
     typer.echo(rep.model_dump_json())
 
 
@@ -116,7 +117,8 @@ def diagnose() -> None:
             "config_path": str(st.config_path),
             "fixtures_dir": str(st.fixtures_dir),
             "auth_enabled": st.auth_enabled,
-            "live_scanning": False,
+            "live_scanning": any(c.enabled and c.kind not in ("fixture", "placeholder", "blocked")
+                                 for c in st.file_config.connectors),
             "rule_version": (lambda r: {"id": r.id, "label": r.label, "params": r.params} if r else None)(active_rule_version(s, utcnow())),
             "counts": {t.__tablename__: s.scalar(select(func.count()).select_from(t)) for t in
                        (SourceRow, ScanRunRow, RouteEvaluationRow, AlertRow, RuleVersionRow)},
@@ -135,6 +137,26 @@ def diagnose() -> None:
             "scan_intervals": st.file_config.scan_intervals.model_dump(),
         }
     typer.echo(json.dumps(info, indent=2, default=str, ensure_ascii=False))
+
+
+@app.command()
+def coverage(json_output: bool = typer.Option(False, "--json", help="Machine-readable catalogue, scope and actual evidence gaps")):
+    """Show liquid-value candidates, real monitoring coverage and why routes lack proof."""
+    from .coverage import coverage_report
+
+    ctx = _ctx()
+    with ctx.session_factory() as s:
+        report = coverage_report(s, ctx.settings, utcnow())
+    if json_output:
+        typer.echo(json.dumps(report, indent=2, ensure_ascii=False))
+        return
+    typer.echo(f"{report['candidate_count']} candidates; {report['explicitly_targeted_count']} explicitly targeted; "
+               f"{len(report['verified_routes_now'])} fresh verified profitable routes")
+    typer.echo(f"Verified-only alerts: {report['verified_only_alerts']}; real operator: {report['real_operator_configured']}")
+    for item in report["instruments"]:
+        sources = ", ".join(item["targeted_sources"]) or "no explicit target"
+        typer.echo(f"{item['label']}: {sources}; observations={item['observations']}; exit proof=unproven")
+    typer.echo(report["note"])
 
 
 @app.command()

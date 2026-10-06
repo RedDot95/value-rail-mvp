@@ -67,13 +67,14 @@ def _route(tmp_path, face: str, program: str, checkout_unit: str) -> RouteInputs
     p = params(tmp_path)
     b, rule = exit_quote_from_rule(p, item(face, program), NOW)
     cq = CheckoutQuoteInput(quote_ref="quote:hyp", source_key="recharge-com-de", identity=ident(face, program),
-                            unit_price=Decimal(checkout_unit), currency="EUR", quantity_confirmed=1, captured_at=NOW)
+                            unit_price=Decimal(checkout_unit), currency="EUR", quantity_confirmed=1, captured_at=NOW,
+                            evidence_refs=["HYPOTHETICAL checkout evidence (test only)"])
     off = OfferInput(offer_ref="offer_snapshot:hyp", source_key="recharge-com-de", source_role="price_basis",
                      identity=ident(face, program), unit_price=Decimal(checkout_unit), currency="EUR",
-                     price_includes_fees=True, captured_at=NOW)
+                     price_includes_fees=True, captured_at=NOW, evidence_refs=["HYPOTHETICAL offer evidence (test only)"])
     return RouteInputs(route_key="hyp", product=ident(face, program), offers=[off], checkout_quote=cq,
-                       exit_quote=b.quote.model_copy(update={"quote_ref": "quote:rule"}),
-                       prerequisites=[Prerequisite(name=n, status="proven") for n in rule.prerequisites],
+                       exit_quote=b.quote.model_copy(update={"quote_ref": "quote:rule", "evidence_refs": ["HYPOTHETICAL rule evidence"]}),
+                       prerequisites=[Prerequisite(name=n, status="proven", evidence_ref="HYPOTHETICAL account proof") for n in rule.prerequisites],
                        evaluated_at=NOW), p
 
 

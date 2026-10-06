@@ -84,14 +84,19 @@ class McpReplay:
 def make(key: str, routes=None, transport=None, **kw):
     e = conn_entry(key)
     cfg_cls, _ = AGGREGATOR_KINDS[e["kind"]]
-    cfg = cfg_cls.model_validate(e["options"])
     rec = {"buysellvouchers": BSV, "cardbear": CB, "giftcardwiki": GCW}.get(key)
+    options = dict(e["options"])
+    if key == "buysellvouchers":
+        # Parser replay covers its recorded date, independently of later search expansion.
+        recorded_urls = html_routes(rec)
+        options["pages"] = [p for p in options["pages"] if "https://" + options["host"] + p["path"] in recorded_urls]
+    cfg = cfg_cls.model_validate(options)
     client, tr, clock = make_client(routes if routes is not None else (html_routes(rec) if rec else {}),
                                     allowed=(cfg.host,), **kw)
     if transport is not None:
         client.transport = tr = transport
     client.source_key = cfg.source_key
-    return build_aggregator(e["kind"], e["options"], client=client), tr, clock
+    return build_aggregator(e["kind"], options, client=client), tr, clock
 
 
 # ------------------------------------------------------------------ fixtures / config

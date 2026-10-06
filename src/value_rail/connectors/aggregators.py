@@ -251,7 +251,8 @@ class AggregatorConnector(Connector):
                 items.append(DiscoveryItem(
                     route_key=f"{key}:{t.id}:{slugify(ld.lead_id)}", product=ident, product_family=t.family,
                     sources=[self.source], prerequisites=list(t.prerequisites),
-                    meta={"target_id": t.id, "lead_id": ld.lead_id, "tier": t.tier, "discovery_only": True}))
+                    meta={"target_id": t.id, "lead_id": ld.lead_id, "title": ld.title,
+                          "tier": t.tier, "discovery_only": True}))
         return items
 
     def offer_fetch(self, item: DiscoveryItem, now: datetime) -> list[RawOffer]:

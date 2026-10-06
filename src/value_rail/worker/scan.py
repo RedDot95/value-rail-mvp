@@ -42,6 +42,7 @@ class ScanReport(BaseModel):
     evaluation_ids: dict[str, int] = Field(default_factory=dict)
     offers_seen: int = 0
     seller_events: dict[str, int] = Field(default_factory=dict)
+    items_out_of_scope: int = 0
 
 
 class _Fetched(BaseModel):
@@ -81,8 +82,8 @@ def persist_evaluation(s: Session, *, inputs: RouteInputs, result: EvaluationRes
     return row
 
 
-def _operator(s: Session, name: str | None) -> OperatorProfileRow | None:
-    q = select(OperatorProfileRow)
+def _operator(s: Session, name: str | None, *, synthetic: bool) -> OperatorProfileRow | None:
+    q = select(OperatorProfileRow).where(OperatorProfileRow.is_synthetic == synthetic)
     if name:
         q = q.where(OperatorProfileRow.name == name)
     return s.scalar(q.order_by(OperatorProfileRow.id).limit(1))
@@ -139,7 +140,11 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: 
 
     caps = dict(operator.capabilities) if operator else {}
     prereq_names = list(dict.fromkeys(list(item.prerequisites) + (list(exit_rule.prerequisites) if exit_rule else [])))
-    connector_prereqs = [{"name": n, "status": caps.get(n, "unknown")} for n in prereq_names]
+    proofs = caps.get("_evidence", {})
+    connector_prereqs = [{"name": n, "status": ("unknown" if not item.is_synthetic
+                         and caps.get(n) == "proven" and proofs.get(n, "unknown") in ("", "unknown")
+                         else caps.get(n, "unknown")),
+                         "evidence_ref": proofs.get(n, "unknown")} for n in prereq_names]
     inputs = RouteInputs(route_key=item.route_key, product=item.product, offers=offer_inputs, checkout_quote=checkout,
                          exit_quote=exit_q, prerequisites=connector_prereqs, evaluated_at=now,
                          is_synthetic=item.is_synthetic)
@@ -177,15 +182,27 @@ def _enrich_after_scan(session_factory: sessionmaker[Session], enricher: Any, jo
 
 
 def run_scan(session_factory: sessionmaker[Session], connector: Connector, settings: Settings, now: datetime, *,
-             trigger: str = "cli", operator_name: str | None = None, enricher: Any = None) -> ScanReport:
+             trigger: str = "cli", operator_name: str | None = None, enricher: Any = None, guard=None) -> ScanReport:
     """`enricher`: optional judgments.EnrichmentService (tests inject one). When None, one is built only if
     [enrichment].enabled is true; otherwise nothing enrichment-related is imported or constructed."""
+    def check(s=None):
+        if guard is not None:
+            guard(s)
+
+    check()
     if enricher is None and settings.file_config.enrichment.enabled:
         from ..judgments.service import build_enrichment_service
         enricher = build_enrichment_service(settings)
     enrich_jobs: list[tuple[Any, ...]] = []
     caps = connector.capabilities()
     with session_factory.begin() as s:
+        check(s)
+        # Register declared single-source connectors even if discovery yields no
+        # offers or fails before producing a route candidate.
+        spec = getattr(connector, "source", None)
+        if spec is not None:
+            upsert_source(s, key=spec.key, name=spec.name, kind=str(spec.kind), role=str(spec.role),
+                          is_synthetic=caps.synthetic)
         rv = active_rule_version(s, now)
         if rv is None:
             rv = ensure_rule_version(s, RuleParams.model_validate(settings.file_config.rules.model_dump()), now=now)
@@ -197,24 +214,33 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         s.add(scan)
         s.flush()
         scan_id = scan.id
-        op = _operator(s, operator_name)
+        op = _operator(s, operator_name, synthetic=caps.synthetic)
         op_id = op.id if op else None
 
     rep = ScanReport(scan_run_id=scan_id, status=ScanStatus.RUNNING)
     ok_sources: set[str] = set()
     seller_offers: list[dict[str, Any]] = []
     try:
+        check()
         items = connector.discovery(now)
+        check()
     except SourceUnavailable as exc:
         items = []
         rep.sources_failed[exc.source_key] = str(exc)
     for item in items:
+        check()
         rep.items_seen += 1
+        from ..catalog import in_scope
+        if not in_scope(item, settings):
+            rep.items_out_of_scope += 1
+            continue
         try:
             fetched = _fetch(connector, item, now)
+            check()
         except SourceUnavailable as exc:
             rep.sources_failed[exc.source_key] = str(exc)
             with session_factory.begin() as s:
+                check(s)
                 spec = next((x for x in item.sources if x.key == exc.source_key), None)
                 if spec is not None:
                     src = upsert_source(s, key=spec.key, name=spec.name, kind=str(spec.kind), role=str(spec.role),
@@ -223,6 +249,7 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
             log.warning("source unavailable during %s: %s (route NOT evaluated; disturbance)", item.route_key, exc)
             continue
         with session_factory.begin() as s:
+            check(s)
             operator = s.get(OperatorProfileRow, op_id) if op_id else None
             ev_row, result, alerted = _persist_item(s, fetched, scan_id=scan_id, rv_id=rv_id, params=params,
                                                     operator=operator, settings=settings, now=now)
@@ -241,10 +268,17 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
     else:
         rep.status = ScanStatus.OK
     ok_pages = set(getattr(connector, "ok_pages", set()) or set())
+    spec = getattr(connector, "source", None)
+    if ok_pages and spec is not None:
+        ok_sources.add(spec.key)  # a proven empty page is a successful observation
     if seller_offers or ok_pages:
         with session_factory.begin() as s:
-            rep.seller_events = track_seller_offers(s, seller_offers, ok_pages, now=now, scan_run_id=scan_id)
+            check(s)
+            # Filtered products are not disappearance evidence for previously tracked offers.
+            gone_pages = set() if rep.items_out_of_scope else ok_pages
+            rep.seller_events = track_seller_offers(s, seller_offers, gone_pages, now=now, scan_run_id=scan_id)
     with session_factory.begin() as s:
+        check(s)
         # A later successful item must not erase a failure from the same source.
         # This also records discovery failures for already registered sources.
         for key in ok_sources | set(rep.sources_failed):
@@ -260,6 +294,8 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         scan.items_seen = rep.items_seen
         scan.evaluations_created = rep.evaluations_created
         scan.alerts_enqueued = rep.alerts_enqueued
+        if rep.items_out_of_scope:
+            scan.notes += f"; {rep.items_out_of_scope} candidates outside liquid-value scope (not evaluated)"
     if enricher is not None and enrich_jobs:
         _enrich_after_scan(session_factory, enricher, enrich_jobs, scan_id)
     return rep

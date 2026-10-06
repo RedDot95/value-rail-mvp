@@ -194,6 +194,7 @@ def face_value_of(v: ParsedVariant) -> tuple[Decimal | str, str]:
 
 class RechargeConnector(Connector):
     key = "recharge"
+    source = SOURCE
 
     def __init__(self, config: RechargeConfig | None = None, *, client: SafeHttpClient | None = None) -> None:
         self.config = config or RechargeConfig()

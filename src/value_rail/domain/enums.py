@@ -56,6 +56,7 @@ class AlertState(StrEnum):
     PENDING = "pending"
     SENT = "sent"
     DEAD = "dead"
+    SUPPRESSED = "suppressed"  # no longer qualifies under current scope/evidence
 
 
 class EvidenceKind(StrEnum):

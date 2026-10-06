@@ -1,3 +1,5 @@
+> Aktueller Stand dieser Sitzung: siehe [Compose-Betrieb](compose_operation.md) und [Ziel/Abdeckung](liquid_value_scope.md). Die nachfolgenden Grok-Box-Angaben stammen aus dem bestehenden Repository; ihre heutige Laufzeit/Persistenz wurde nicht bestätigt.
+
 # Deployment (Stand 06.10.2026 – Dauerbetrieb auf der Grok-Bot-Box)
 
 ## Was auf der Box praktisch geprüft wurde (06.10.2026 00:43–00:50 CEST)

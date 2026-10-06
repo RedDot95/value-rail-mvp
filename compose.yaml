@@ -1,0 +1,49 @@
+x-runtime: &runtime
+  image: value-rail-mvp:local
+  volumes:
+    - value_rail_data:/data
+  environment:
+    VALUE_RAIL_CONFIG_PATH: /app/config/production.toml
+    VALUE_RAIL_DB_PATH: /data/value_rail.db
+    VALUE_RAIL_ALERT_LOG_FILE: /data/alerts.log
+    VALUE_RAIL_HEARTBEAT_FILE: /data/heartbeat.json
+    VALUE_RAIL_BACKUP_DIR: /data/backups
+    VALUE_RAIL_BASIC_USER: ${VALUE_RAIL_BASIC_USER:-}
+    VALUE_RAIL_BASIC_PASSWORD: ${VALUE_RAIL_BASIC_PASSWORD:-}
+    VALUE_RAIL_TELEGRAM_BOT_TOKEN: ${VALUE_RAIL_TELEGRAM_BOT_TOKEN:-}
+    VALUE_RAIL_TELEGRAM_CHAT_ID: ${VALUE_RAIL_TELEGRAM_CHAT_ID:-}
+
+services:
+  init:
+    <<: *runtime
+    build: .
+    command: [value-rail, init-db]
+    restart: "no"
+    healthcheck:
+      disable: true
+  worker:
+    <<: *runtime
+    command: [value-rail, worker]
+    restart: unless-stopped
+    stop_grace_period: 2m
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [CMD, value-rail, health, --json]
+      interval: 60s
+      timeout: 10s
+      start_period: 10m
+      retries: 3
+  web:
+    <<: *runtime
+    command: [value-rail, serve, --host, 0.0.0.0, --port, "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    depends_on:
+      init:
+        condition: service_completed_successfully
+
+volumes:
+  value_rail_data:

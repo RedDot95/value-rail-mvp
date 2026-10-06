@@ -25,7 +25,7 @@ from ..domain.money import MONEY_CONTEXT, is_unknown
 from .models import (BreakdownLine, CheckoutQuoteInput, EvaluationResult, ExitQuoteInput, FeeComponent,
                      OfferInput, RouteInputs, RuleParams)
 
-ENGINE_VERSION = "1.2.0"  # Comparable all-in price selection and FX freshness/validity checks.
+ENGINE_VERSION = "1.3.0"  # Real routes require traceable quote, fee and prerequisite evidence.
 
 
 class UnknownFeeError(ValueError):
@@ -147,7 +147,7 @@ def _select_price_basis(inp: RouteInputs, rule: RuleParams) -> tuple[OfferInput 
     def price_rank(o: OfferInput) -> tuple[bool, bool, Decimal]:
         rate, block = _currency_block(o.currency, inp, "offer")
         fees = [] if o.price_includes_fees else o.fees
-        if block or is_unknown(o.unit_price) or unknown_required_fees(fees):
+        if block or is_unknown(o.unit_price) or unknown_required_fees(fees) or (not inp.is_synthetic and not o.evidence_refs):
             return True, True, Decimal(0)
         stale = _age_s(o.captured_at, inp.evaluated_at) > rule.max_offer_age_seconds or _fx_stale(o.currency, inp, rule)
         return False, stale, acquisition_cost_eur(Decimal(o.unit_price) * rate, 1, fees)
@@ -180,6 +180,10 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
 
     def check_fx(currency: str, what: str, *, nominal: bool = False) -> None:
         nonlocal nominal_fx_stale
+        if not inp.is_synthetic and currency != "EUR":
+            fx = max((f for f in inp.fx_rates if f.currency == currency), key=lambda f: f.captured_at, default=None)
+            if fx is not None and (not fx.quote_ref.strip() or is_unknown(fx.quote_ref.strip())):
+                blocks.append(f"fx_evidence_missing:{what}:{currency}")
         if _fx_stale(currency, inp, rule):
             stale.append(f"fx_rate_stale:{what}:{currency}")
             nominal_fx_stale |= nominal
@@ -205,6 +209,8 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     offer_rate: Decimal | None = None
     offer_fees: list[FeeComponent] = []
     if offer is not None:
+        if not inp.is_synthetic and not offer.evidence_refs:
+            blocks.append("offer_evidence_missing")
         out["price_basis_offer_ref"] = offer.offer_ref
         out["advertised_quantity"] = offer.advertised_quantity.value
         check_fx(offer.currency, "offer", nominal=True)
@@ -276,6 +282,16 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     for p in inp.prerequisites:
         if p.status != PrereqStatus.PROVEN:
             v_missing.append(f"prerequisite:{p.name}")
+        elif not inp.is_synthetic and (not p.evidence_ref.strip() or is_unknown(p.evidence_ref.strip())):
+            v_missing.append(f"prerequisite_evidence:{p.name}")
+
+    if not inp.is_synthetic:
+        for name, quote in (("checkout", cq), ("exit", eq)):
+            if quote is not None and not quote.evidence_refs:
+                v_missing.append(f"{name}_quote_evidence")
+        for component in offer_fees + (list(cq.fees) if cq else []) + (list(eq.fees) if eq else []):
+            if component.required and (not component.evidence_ref.strip() or is_unknown(component.evidence_ref.strip())):
+                blocks.append(f"fee_evidence_missing:{component.name}")
 
     # ---- proven quantity (never the advertised number) ----
     if offer is not None:

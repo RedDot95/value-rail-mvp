@@ -40,7 +40,10 @@ def build_payload(event_id: str, ev: RouteEvaluationRow, result: EvaluationResul
 def enqueue_if_needed(s: Session, ev: RouteEvaluationRow, result: EvaluationResult, cfg: AlertConfig,
                       now: datetime) -> tuple[AlertDecision, AlertRow | None]:
     prev = last_alert_for(s, result.route_key)
-    decision = decide(result, prev.fingerprint if prev else None, prev.event_id if prev else None, cfg)
+    # A suppressed stale notification must not silence a later freshly proven route.
+    # Keep the event chain so the replacement still has a unique, deterministic ID.
+    previous_fp = prev.fingerprint if prev and prev.state != AlertState.SUPPRESSED.value else None
+    decision = decide(result, previous_fp, prev.event_id if prev else None, cfg)
     if not decision.enqueue:
         return decision, None
     if s.query(AlertRow).filter(AlertRow.event_id == decision.event_id).first() is not None:

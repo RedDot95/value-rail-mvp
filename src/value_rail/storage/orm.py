@@ -212,6 +212,7 @@ class AlertRow(Base):
     next_attempt_at: Mapped[datetime] = mapped_column(UTCDateTime)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     sent_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
+    delivered_sinks: Mapped[list[str]] = mapped_column(JSONText, default=list, server_default="[]")
     is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False)
 
 

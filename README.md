@@ -1,4 +1,8 @@
-# Value Rail MVP – Delivery 3 (Marktplatz-Prüfung, dundle-Connector, 24/7 auf der Box)
+# Value Rail – belegte profitable Routen für liquide Werte
+
+Aktuelles Ziel: vollständig belegte profitable Wege für Zahlungs-/Kryptogutscheine und liquide Händlergutscheine. Die Produktionskonfiguration meldet nur verifizierte Routen mit positivem Gewinn. Der Katalog umfasst 75 unbewiesene Kandidaten; 15 Familien haben explizite Abrufziele. Umfang, Quellen und verbleibende Beleglücken: [Liquide Werte](docs/liquid_value_scope.md).
+
+Öffentliche Live-Abfragen lieferten Angebote, aber **noch keine vollständig belegte profitable Echtgeld-Route**. `value-rail coverage --json` und `/status` zeigen tatsächliche Abdeckung und fehlende Nachweise. Start auf einem dauerhaft verfügbaren Docker-Host: [Betrieb mit Compose](docs/compose_operation.md). Die folgenden Delivery- und Box-Angaben sind historische Projektberichte, kein Nachweis für laufenden Betrieb in dieser Sitzung.
 
 - **Delivery 3 (06.10.2026):**
   - Marktplätze und Aggregatoren geprüft (`docs/sources.md` §0).
@@ -36,8 +40,8 @@ cp .env.example .env                       # optional
 
 ## Tests (offline)
 ```bash
-.venv/bin/pytest            # 162 Tests offline (auch unter `unshare -rn` geprüft); Live-Test ist ausgeschlossen
-.venv/bin/pytest -m live    # 1 LIVE-Test (Netzwerk!) gegen recharge.com - nur bewusst ausführen
+.venv/bin/pytest            # 326 Offline-Tests; Live-Tests sind standardmäßig ausgeschlossen
+.venv/bin/pytest -m live    # LIVE-Tests (Netzwerk!) - nur bewusst ausführen
 ```
 
 ## Datenbank + Fixtures laden

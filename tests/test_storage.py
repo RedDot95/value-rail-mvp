@@ -25,6 +25,22 @@ def test_migration_matches_models(ctx):
     assert diff == []
 
 
+def test_alert_delivery_migration_preserves_existing_outbox(ctx, now):
+    from alembic import command
+    from value_rail.storage.db import alembic_config, migrate
+    from value_rail.storage.orm import AlertRow
+
+    run_scan(ctx.session_factory, FixtureConnector(FIXTURES), ctx.settings, now)
+    with ctx.session_factory() as s:
+        event_ids = [a.event_id for a in s.scalars(select(AlertRow).order_by(AlertRow.id))]
+    command.downgrade(alembic_config(ctx.settings), "0004")
+    migrate(ctx.settings)
+    with ctx.session_factory() as s:
+        alerts = list(s.scalars(select(AlertRow).order_by(AlertRow.id)))
+    assert [a.event_id for a in alerts] == event_ids
+    assert all(a.delivered_sinks == [] and a.state == "pending" for a in alerts)
+
+
 def _snapshot(s, now):
     src = upsert_source(s, key="synthetic-src", name="SYNTHETIC", kind="direct_seller", role="price_basis", is_synthetic=True)
     p = get_or_create_product(s, ProductIdentity(face_value=Decimal("10"), face_currency="EUR", region="DE", variant="v",

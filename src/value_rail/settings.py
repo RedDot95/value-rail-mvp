@@ -8,8 +8,11 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import AliasChoices, BaseModel, Field, SecretStr
+from pydantic import AliasChoices, BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .domain.enums import PrereqStatus
+from .domain.money import MaybeDecimal, is_unknown
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 REPO_ROOT_GUESS = PACKAGE_DIR.parents[1]
@@ -70,8 +73,8 @@ class JobConfig(BaseModel):
 
 
 class SchedulerConfig(BaseModel):
-    tick_seconds: int = 15
-    lock_ttl_seconds: int = 900  # a crashed holder's lock expires after this
+    tick_seconds: int = Field(default=15, gt=0)
+    lock_ttl_seconds: int = Field(default=900, gt=0)  # renewed during jobs; expires after a crash
     max_catchup_runs: int = 1  # after downtime a due job runs at most this many times, never a backlog storm
     heartbeat_file: str = "data/heartbeat.json"
     stale_factor: int = 3  # /healthz: job stale if last success older than stale_factor * interval
@@ -108,6 +111,36 @@ class EnrichmentConfig(BaseModel):
     accepted_regions: list[str] = Field(default_factory=lambda: ["DE", "EEA", "EU", "Europe", "global"])
 
 
+class OperatorProof(BaseModel):
+    status: PrereqStatus = PrereqStatus.UNKNOWN
+    evidence_ref: str = "unknown"
+
+    @model_validator(mode="after")
+    def require_proof(self):
+        if self.status == PrereqStatus.PROVEN and (not self.evidence_ref.strip() or is_unknown(self.evidence_ref.strip())):
+            raise ValueError("a proven real prerequisite needs an evidence_ref")
+        return self
+
+
+class OperatorConfig(BaseModel):
+    name: str
+    region: str = "DE"
+    max_budget_eur: MaybeDecimal = "unknown"
+    capabilities: dict[str, OperatorProof] = Field(default_factory=dict)
+
+    @field_validator("name")
+    @classmethod
+    def real_name(cls, value):
+        value = value.strip()
+        if not value or value.upper().startswith("SYNTHETIC"):
+            raise ValueError("real operator name must be nonempty and distinct from SYNTHETIC profiles")
+        return value
+
+
+class ScopeConfig(BaseModel):
+    enabled: bool = False  # production enables the liquid-candidate catalogue; fixtures remain unrestricted
+
+
 class FileConfig(BaseModel):
     display: dict[str, Any] = Field(default_factory=lambda: {"timezone": "Europe/Berlin"})
     rules: RuleConfig = Field(default_factory=RuleConfig)
@@ -117,6 +150,8 @@ class FileConfig(BaseModel):
     scheduler: SchedulerConfig = Field(default_factory=SchedulerConfig)
     jobs: list[JobConfig] = Field(default_factory=list)
     enrichment: EnrichmentConfig = Field(default_factory=EnrichmentConfig)
+    operator: OperatorConfig | None = None  # real prerequisites are opt-in and require evidence
+    scope: ScopeConfig = Field(default_factory=ScopeConfig)
 
     @property
     def display_timezone(self) -> str:

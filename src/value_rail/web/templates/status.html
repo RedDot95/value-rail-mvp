@@ -5,6 +5,15 @@
 <div class="mut">Live-Connector: <b>{{ 'aktiv' if live_scanning else 'aus (nur manueller Smoke-Test)' }}</b>. Kein 24/7-Betrieb nachgewiesen. Maschinenlesbar: <a href="/healthz">/healthz</a></div></div>
 
 <h2>Quellen</h2>
+{% if coverage.scope_enabled %}
+<div class="card"><b>Liquide Werte: Suchabdeckung</b>
+<div>{{ coverage.candidate_count }} Kandidaten · {{ coverage.explicitly_targeted_count }} gezielt angebunden · {{ coverage.verified_routes_now|length }} aktuell belegte profitable Routen</div>
+<div class="mut">Alerts nur für vollständig belegte profitable Routen. Ein Katalogeintrag belegt keine Auszahlung. Echtprofil: {{ 'konfiguriert' if coverage.real_operator_configured else 'fehlt' }}.</div>
+<details><summary>Instrumente und offene Belege</summary>
+{% for item in coverage.instruments %}<p><b>{{ item.label }}</b> · {{ item.observations }} Beobachtungen
+<span class="mut"> · {{ item.targeted_sources|join(', ') if item.targeted_sources else 'noch kein gezielter Abruf' }}{% if item.blockers %} · {{ item.blockers.keys()|join(', ') }}{% endif %}</span></p>{% endfor %}
+</details></div>
+{% endif %}
 {% for src in system.sources %}<div class="card lvl-{{ 'ok' if src.health == 'ok' else ('bad' if src.health == 'down' else 'warn') }}">
 <div class="row"><b>{{ src.name }}</b><span class="pill">{{ src.health }}</span></div>
 <div class="mut">{{ src.key }} · {{ src.kind }} / {{ src.role }}{% if src.is_synthetic %} · <span class="tag">SYNTHETIC</span>{% endif %}</div>

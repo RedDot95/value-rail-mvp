@@ -16,6 +16,76 @@ PAGE = (200, {"content-type": "text/html"}, b"<html>ok</html>")
 H = "https://www.recharge.com"
 
 
+def test_proxy_connect_pins_ip_and_keeps_origin_tls_hostname(monkeypatch):
+    from value_rail.net.http_safe import _ProxyPinnedHTTPSConnection
+
+    seen = {}
+    sock = object()
+
+    class Tunnel:
+        def __init__(self, host, port, timeout):
+            seen["proxy"] = (host, port)
+            self.sock = sock
+
+        def set_tunnel(self, host, port, headers):
+            seen["destination"] = (host, port, headers)
+
+        def connect(self):
+            pass
+
+        def close(self):
+            assert self.sock is None  # socket ownership transferred to origin TLS connection
+
+    class TLS:
+        def wrap_socket(self, value, server_hostname):
+            assert value is sock
+            seen["sni"] = server_hostname
+            return sock
+
+    import ssl
+    conn = _ProxyPinnedHTTPSConnection("www.recharge.com", PUBLIC_IP, 443, 10,
+                                       ssl.create_default_context(), proxy_url="http://proxy:8080")
+    conn._context = TLS()
+    monkeypatch.setattr("value_rail.net.http_safe.http.client.HTTPConnection", Tunnel)
+    conn.connect()
+    assert seen["proxy"] == ("proxy", 8080)
+    assert seen["destination"] == (PUBLIC_IP, 443, {"Host": "www.recharge.com:443"})
+    assert seen["sni"] == "www.recharge.com"
+
+
+@pytest.mark.parametrize("encoding", ["gzip", "deflate"])
+def test_compressed_response_limit_applies_after_decompression(monkeypatch, encoding):
+    import gzip
+    import zlib
+    from value_rail.net.http_safe import stdlib_transport
+
+    compressed = (gzip.compress if encoding == "gzip" else zlib.compress)(b"x" * 100000)
+
+    class Response:
+        status = 200
+        def read(self, size):
+            return compressed
+        def getheaders(self):
+            return [("content-encoding", encoding)]
+
+    class Conn:
+        def __init__(self, *args, **kwargs):
+            pass
+        def request(self, *args, **kwargs):
+            pass
+        def getresponse(self):
+            return Response()
+        def close(self):
+            pass
+
+    monkeypatch.delenv("HTTPS_PROXY", raising=False)
+    monkeypatch.delenv("https_proxy", raising=False)
+    monkeypatch.setattr("value_rail.net.http_safe._PinnedHTTPSConnection", Conn)
+    with pytest.raises(ValueError, match="decompressed response larger"):
+        stdlib_transport(method="GET", url=f"{H}/a", ip=PUBLIC_IP, headers={}, body=None,
+                         timeout=10, max_bytes=1024)
+
+
 @pytest.mark.parametrize("ip,ok", [("10.0.0.1", False), ("127.0.0.1", False), ("169.254.169.254", False),
                                    ("192.168.1.1", False), ("100.64.0.1", False), ("0.0.0.0", False),
                                    ("::1", False), ("fe80::1", False), ("::ffff:10.0.0.1", False),
