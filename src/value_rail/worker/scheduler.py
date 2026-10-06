@@ -185,7 +185,6 @@ class Scheduler:
             h = self.lease.holder()
             result["standby_for"] = h.owner if h else "unknown"
             log.info("another scheduler holds the lease (%s); standby", result["standby_for"])
-            self.write_heartbeat(now, result)
             return result
         result["lock_held"] = True
         sync_job_states(self.ctx, now)
@@ -210,7 +209,7 @@ class Scheduler:
             if skipped:
                 result["skipped_catchup"][st.name] = skipped
                 log.warning("job %s: %s missed slot(s) skipped (bounded catch-up)", st.name, skipped)
-        if self.dispatch and result["ran"]:
+        if self.dispatch:
             try:
                 sink = build_sink_from_settings(self.ctx.settings)
                 dispatch_pending(self.ctx.session_factory, sink, self.clock(),

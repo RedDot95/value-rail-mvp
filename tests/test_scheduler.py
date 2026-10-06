@@ -52,9 +52,37 @@ def test_overlap_second_scheduler_stands_by(sched_ctx, now):
     s1 = Scheduler(sched_ctx, owner="w1", clock=clock, dispatch=False)
     s2 = Scheduler(sched_ctx, owner="w2", clock=clock, dispatch=False)
     r1 = s1.tick()
+    heartbeat = s1.heartbeat_path.read_bytes()
     r2 = s2.tick()
     assert r1["lock_held"] and r1["ran"] == ["fixture_scan"]
     assert not r2["lock_held"] and r2["ran"] == [] and r2["standby_for"] == "w1"
+    assert s1.heartbeat_path.read_bytes() == heartbeat
+
+
+def test_alert_retry_runs_without_a_due_scan(sched_ctx, now, monkeypatch):
+    from value_rail.alerts.sinks import MemorySink
+
+    sink = MemorySink(fail_times=1)
+    monkeypatch.setattr("value_rail.worker.scheduler.build_sink_from_settings", lambda _: sink)
+    clock = Clock(now)
+    sch = Scheduler(sched_ctx, owner="w1", clock=clock)
+    assert sch.tick()["ran"] == ["fixture_scan"]
+    assert len(sink.sent) == 4
+    clock.t += timedelta(seconds=sched_ctx.settings.file_config.alerts.retry_backoff_seconds + 1)
+    assert sch.tick()["ran"] == []
+    assert len(sink.sent) == 5
+
+
+def test_alert_dispatch_without_any_enabled_jobs(sched_ctx, now, monkeypatch):
+    from value_rail.alerts.sinks import MemorySink
+    from value_rail.worker.scheduler import run_cycle
+
+    run_cycle(sched_ctx, now=now, dispatch=False)
+    sched_ctx.settings.file_config.jobs.clear()
+    sink = MemorySink()
+    monkeypatch.setattr("value_rail.worker.scheduler.build_sink_from_settings", lambda _: sink)
+    assert Scheduler(sched_ctx, owner="w1", clock=Clock(now)).tick()["ran"] == []
+    assert len(sink.sent) == 5
 
 
 def test_job_state_persists_across_restart(sched_ctx, now):

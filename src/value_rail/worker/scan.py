@@ -147,9 +147,6 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: 
     ev_row = persist_evaluation(s, inputs=inputs, result=result, rule_version_id=rv_id, scan_run_id=scan_id,
                                 operator_profile_id=operator.id if operator else None, product_id=product.id)
     decision, alert = enqueue_if_needed(s, ev_row, result, settings.file_config.alerts, now)
-    for key, src in srcs.items():
-        if not key.startswith("rule-exit:"):
-            mark_source_health(s, src, ok=True, now=now)
     log.info("evaluated %s -> %s (alert: %s)", item.route_key, result.status, decision.reason)
     return ev_row, result, alert is not None
 
@@ -248,6 +245,13 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         with session_factory.begin() as s:
             rep.seller_events = track_seller_offers(s, seller_offers, ok_pages, now=now, scan_run_id=scan_id)
     with session_factory.begin() as s:
+        # A later successful item must not erase a failure from the same source.
+        # This also records discovery failures for already registered sources.
+        for key in ok_sources | set(rep.sources_failed):
+            src = s.scalar(select(SourceRow).where(SourceRow.key == key))
+            if src is not None and not key.startswith("rule-exit:"):
+                mark_source_health(s, src, ok=key not in rep.sources_failed, now=now,
+                                   error=rep.sources_failed.get(key))
         scan = s.get(ScanRunRow, scan_id)
         scan.finished_at = now
         scan.status = rep.status.value

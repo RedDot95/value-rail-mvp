@@ -6,6 +6,7 @@ import json
 import sqlite3
 from datetime import timedelta
 
+import pytest
 from sqlalchemy import select
 
 from value_rail.backup import create_backup, list_backups, prune, restore_test, run_backup_job
@@ -133,6 +134,24 @@ def test_health_json_fields_and_stale_source(tmp_path):
     assert {"recharge_watch", "dundle_watch", "dundle_sellers", "backup_daily"} <= names
     assert not {"gamivo_watch", "gamivo_sellers"} & names
     ctx.dispose()
+
+
+@pytest.mark.parametrize("key", ["coingate", "buysellvouchers", "cardbear", "giftcardwiki"])
+def test_health_tracks_scheduled_aggregators_before_first_success(tmp_path, now, key):
+    from pathlib import Path
+
+    settings = make_settings(tmp_path, config_path=Path(__file__).resolve().parents[1] / "config" / "production.toml")
+    ctx = AppContext(settings)
+    try:
+        ctx.init_db(now=now)
+        with ctx.session_factory() as s:
+            body, _ = compute_health(s, settings, now)
+        src = next(x for x in body["sources"] if x["key"] == key)
+        assert src["scheduled"] and src["stale"]
+        assert key in body["stale_sources"]
+        assert src["max_age_s"] == settings.file_config.scheduler.stale_factor * 86400
+    finally:
+        ctx.dispose()
 
 
 def test_scheduler_passes_job_options_and_runs_backup(tmp_path):

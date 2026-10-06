@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
+import pytest
 from sqlalchemy import select
 
 from value_rail.connectors.fixture import FixtureConnector
@@ -42,3 +43,48 @@ def test_old_data_marked_stale_by_age(ctx, now):
         vm = dashboard(s, ctx.settings, now + timedelta(hours=1))
     assert vm["system"]["level"] in ("warn", "bad") and "veraltet" in vm["system"]["headline"]
     assert all(c["stale"] for g in vm["groups"].values() for c in g)
+
+
+@pytest.mark.parametrize("failed_first", [True, False])
+def test_partial_source_failure_is_down_regardless_of_item_order(ctx, now, failed_first):
+    from value_rail.connectors.base import SourceUnavailable
+    from value_rail.worker.scan import run_scan
+
+    shared = "synthetic-direct-a"
+
+    class OrderedFailure(FixtureConnector):
+        def discovery(self, at):
+            found = super().discovery(at)
+            return sorted(found, key=lambda i: i.meta["scenario_id"] != "R04_verified_profit_55",
+                          reverse=not failed_first)
+
+        def offer_fetch(self, item, at):
+            if item.meta["scenario_id"] == "R04_verified_profit_55":
+                raise SourceUnavailable(shared, "one product page failed")
+            return super().offer_fetch(item, at)
+
+    run_scan(ctx.session_factory, FixtureConnector(FIXTURES), ctx.settings, now)
+    rep = run_scan(ctx.session_factory, OrderedFailure(FIXTURES), ctx.settings, now + timedelta(minutes=5))
+    assert rep.status == "degraded" and shared in rep.sources_failed
+    with ctx.session_factory() as s:
+        src = s.scalar(select(SourceRow).where(SourceRow.key == shared))
+        assert src.health == "down"
+        assert src.last_success_at == now
+        assert "one product page failed" in src.last_error
+
+
+def test_discovery_failure_marks_existing_source_down(ctx, now):
+    from value_rail.connectors.base import SourceUnavailable
+    from value_rail.worker.scan import run_scan
+
+    run_scan(ctx.session_factory, FixtureConnector(FIXTURES), ctx.settings, now)
+
+    class DiscoveryFailure(FixtureConnector):
+        def discovery(self, at):
+            raise SourceUnavailable("synthetic-bitsa-reseller", "discovery unavailable")
+
+    rep = run_scan(ctx.session_factory, DiscoveryFailure(FIXTURES), ctx.settings, now + timedelta(minutes=5))
+    assert rep.status == "failed"
+    with ctx.session_factory() as s:
+        src = s.scalar(select(SourceRow).where(SourceRow.key == "synthetic-bitsa-reseller"))
+        assert src.health == "down" and src.last_success_at == now

@@ -10,10 +10,82 @@ import pytest
 from value_rail.domain.enums import RouteStatus
 from value_rail.domain.identity import ProductIdentity
 from value_rail.valuation import acquisition_cost_eur, evaluate_route, net_exit_eur, nominal_discount
+from value_rail.valuation.models import FxRate
 
 from .conftest import NOW, PRODUCT, RULE, checkout, exit_quote, fee, inputs, offer
 
 FULL = dict(prereqs=[("synthetic_account", "proven")])
+
+
+def with_fx(inp, rate="0.5", captured=NOW):
+    return inp.model_copy(update={"fx_rates": [FxRate(currency="USD", rate_to_eur=Decimal(rate),
+                                                    captured_at=captured)]})
+
+
+def test_price_basis_compares_converted_eur_prices():
+    inp = inputs(offers=[offer("40", ref="eur"), offer("60", currency="USD", ref="usd")])
+    result = evaluate_route(with_fx(inp), RULE)
+    assert result.price_basis_offer_ref == "usd" and result.unit_all_in_eur == Decimal("30")
+
+
+def test_price_basis_compares_all_in_fees():
+    inp = inputs(offers=[offer("40", ref="gross", includes=False,
+                              fees=[fee("service", "fixed_per_order", "20")]),
+                         offer("50", ref="all-in")])
+    result = evaluate_route(inp, RULE)
+    assert result.price_basis_offer_ref == "all-in" and result.unit_all_in_eur == Decimal("50")
+
+
+def test_price_basis_prefers_fresh_usable_evidence():
+    inp = inputs(offers=[offer("10", ref="stale", captured=NOW - timedelta(hours=2)),
+                         offer("20", ref="unknown-fee", includes=False,
+                               fees=[fee("service", "fixed_per_order", "unknown")]),
+                         offer("50", ref="usable")])
+    result = evaluate_route(inp, RULE)
+    assert result.price_basis_offer_ref == "usable" and result.status == RouteStatus.PRICE_FIND
+
+
+@pytest.mark.parametrize("rate", ["0", "-1"])
+def test_nonpositive_fx_rate_blocks_false_discount(rate):
+    result = evaluate_route(with_fx(inputs(offers=[offer(currency="USD")]), rate), RULE)
+    assert result.status == RouteStatus.BLOCKED
+    assert "fx_rate_invalid:offer:USD" in result.block_reasons
+    assert result.discount == "unknown"
+
+
+def test_stale_fx_rate_expires_price_find():
+    inp = with_fx(inputs(offers=[offer("45", currency="USD")]), captured=NOW - timedelta(hours=1))
+    result = evaluate_route(inp, RULE)
+    assert result.status == RouteStatus.EXPIRED
+    assert "fx_rate_stale:offer:USD" in result.stale_reasons
+
+
+def test_stale_exit_fx_rate_expires_complete_profitable_route():
+    inp = with_fx(inputs(cq=checkout(), eq=exit_quote("200", currency="USD")),
+                  captured=NOW - timedelta(hours=1))
+    result = evaluate_route(inp, RULE)
+    assert result.profit_eur == Decimal("55") and result.status == RouteStatus.EXPIRED
+    assert "fx_rate_stale:exit_quote:USD" in result.stale_reasons
+
+
+def test_unused_stale_fx_does_not_expire_eur_route():
+    inp = with_fx(inputs(cq=checkout(), eq=exit_quote()), captured=NOW - timedelta(hours=1))
+    assert evaluate_route(inp, RULE).status == RouteStatus.VERIFIED_ROUTE
+
+
+def test_newest_fx_rate_selected_independent_of_input_order():
+    inp = with_fx(inputs(offers=[offer("60", currency="USD")]))
+    old = FxRate(currency="USD", rate_to_eur=Decimal("2"), captured_at=NOW - timedelta(hours=1))
+    for rates in ([old, *inp.fx_rates], [*inp.fx_rates, old]):
+        result = evaluate_route(inp.model_copy(update={"fx_rates": rates}), RULE)
+        assert result.status == RouteStatus.PRICE_FIND and result.unit_all_in_eur == Decimal("30")
+
+
+@pytest.mark.parametrize("face", ["0", "-100"])
+def test_nonpositive_face_value_blocks_without_crashing(face):
+    product = PRODUCT.model_copy(update={"face_value": Decimal(face)})
+    result = evaluate_route(inputs(product=product, offers=[offer(identity=product)]), RULE)
+    assert result.status == RouteStatus.BLOCKED and "face_value_not_positive" in result.block_reasons
 
 
 def test_formulas_exact_decimal():
