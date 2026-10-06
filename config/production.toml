@@ -242,6 +242,8 @@ notes = "aggregator/discovery_only (marketplace listings used as hints): public 
 [connectors.options]
 source_key = "buysellvouchers"
 source_name = "BuySellVouchers (Listen, discovery)"
+max_pages_per_category = 4
+max_additional_pages = 12
 host = "www.buysellvouchers.com"
 min_interval_s = 6.0
 jitter_s = 2.0

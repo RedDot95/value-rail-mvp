@@ -89,6 +89,7 @@ def make(key: str, routes=None, transport=None, **kw):
     if key == "coingate":
         options.update(max_search_pages=1, max_discovered_brand_details=0)
     if key == "buysellvouchers":
+        options.update(max_pages_per_category=1, max_additional_pages=0)
         # Parser replay covers its recorded date, independently of later search expansion.
         recorded_urls = html_routes(rec)
         options["pages"] = [p for p in options["pages"] if "https://" + options["host"] + p["path"] in recorded_urls]
@@ -258,7 +259,7 @@ def test_bsv_parses_listings_with_seller_and_eur_prices():
     o = c.normalize(it, c.offer_fetch(it, NOW)[0], NOW)
     assert o.currency == "EUR" and o.unit_price != "unknown" and o.source.role == SourceRole.DISCOVERY_ONLY
     assert o.raw["seller"] == "EliteLoops"
-    assert o.evidence[0].payload["parser_version"] == "bsv-rsc-list/1.1.0"
+    assert o.evidence[0].payload["parser_version"] == "bsv-rsc-list/1.2.0"
     # politeness: >= 5 s between requests to the host, never a buy/feedback/query URL
     assert all(s >= 5 for s in clock.sleeps)
     urls = [call["url"] for call in transport.calls]

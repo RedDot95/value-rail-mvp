@@ -1,3 +1,5 @@
+> Update 06.10.2026: BuySellVouchers unterstützt jetzt normale, robots-erlaubte `?page=N`-Navigation mit Budget und täglicher Rotation (`bsv-rsc-list/1.2.0`). Die frühere Schlussfolgerung „nur Pfade ohne Query“ war zu streng: die spezifische Allow-Regel gewinnt. Ein öffentlicher Abruf von Amazon-Seite 2 bestätigte HTTP 200, `currentPage=2` und weitere 20 Produkte. Details und Grenzen: [Pagination](discovery_pagination.md). Die folgenden früheren Smoke-Zahlen bleiben historische Einzelmessungen.
+
 # Quellen (Stand 06.10.2026 – Marktplätze/Aggregatoren inkl. Vergleichsseiten 12:47 CEST, TypeSafe 13:14 CEST; darunter Delivery 2 vom 05.10.2026)
 
 ## 0. Marktplatz-/Aggregator-Prüfung 06.10.2026 (00:20–00:45 CEST, Box-Egress USA)

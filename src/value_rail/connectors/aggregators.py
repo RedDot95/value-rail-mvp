@@ -15,7 +15,7 @@ Sources (access basis + date in docs/sources.md):
                   create_order, get_order, notify_when_in_stock, list_payment_methods are refused client-side.
                   No email is ever sent. CoinGate is itself the seller (UAB Rewards Distributed).
 - `bsv_list`      BuySellVouchers category listing pages /en/products/list/<category>/ (robots allows paths
-                  without query; Next.js RSC payload `initialProductsList` in the plain HTML response).
+                  and normal ?page=N navigation; Next.js RSC payload `initialProductsList` in the plain HTML response).
                   Seller = public store name; individual sellers without store name are pseudonymised.
 - `cardbear_html` CardBear brand comparison pages /gift-card-discount/<id>/<slug> (server-rendered table,
                   discount % per marketplace; the /r.php outbound link is robots-disallowed and NEVER followed,
@@ -42,7 +42,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -129,6 +129,7 @@ class AggPage:
     notes: list[str] = field(default_factory=list)
     complete: bool = True
     page_proofs: list[dict[str, Any]] = field(default_factory=list)
+    pagination: dict[str, Any] = field(default_factory=dict)
 
 
 class AggTarget(BaseModel):
@@ -282,6 +283,7 @@ class AggregatorConnector(Connector):
             "page_url": page.url, "http_status": page.http_status, "body_sha256": page.body_sha256,
             "body_bytes": page.body_bytes, "data_sha256": page.data_sha256, "notes": page.notes,
             "enumeration_complete": page.complete, "page_proofs": page.page_proofs,
+            "pagination": page.pagination,
             "lead": {"lead_id": ld.lead_id, "title": ld.title, "seller": ld.seller, "price": ld.price,
                      "currency": ld.currency, "discount_percent": ld.discount_percent, "quantity": ld.quantity,
                      "availability": ld.availability, "region": ld.region, "seller_link": ld.seller_link,
@@ -321,7 +323,7 @@ class AggregatorConnector(Connector):
                      "robots_txt_checked": self.client.respect_robots, "source_role": self.ROLE.value,
                      "source_kind": self.KIND.value, "fetched_at_utc": raw.fetched_at.isoformat(),
                      "notes": pl["notes"], "enumeration_complete": pl["enumeration_complete"],
-                     "page_proofs": pl["page_proofs"]})]
+                     "page_proofs": pl["page_proofs"], "pagination": pl["pagination"]})]
         return NormalizedOffer(
             source=self.source, identity=item.product, unit_price=price if price is not None else "unknown",
             currency=ld["currency"] if price is not None else (ld["currency"] or "unknown"),
@@ -647,19 +649,21 @@ _BSV_ANCHOR = '"initialProductsList":'
 
 
 class BsvPage(AggTarget):
-    path: str  # /en/products/list/<category>/ - no query strings (robots: Disallow /*?)
+    path: str  # configured category root only; connector constructs normal ?page=N navigation
 
     @field_validator("path")
     @classmethod
     def _safe_path(cls, v: str) -> str:
-        if "?" in v or not v.startswith("/en/products/list/"):
-            raise ValueError("BSV pages must be /en/products/list/<category>/ without query (robots.txt)")
+        if not re.fullmatch(r"/en/products/list/[A-Za-z0-9_-]+/", v):
+            raise ValueError("BSV pages must be /en/products/list/<category>/ with one category segment and no query")
         return v
 
 
 class BsvListConfig(AggregatorConfigBase):
     host: str = "www.buysellvouchers.com"
     pages: list[BsvPage] = Field(default_factory=list)
+    max_pages_per_category: int = Field(default=1, ge=1, le=30)
+    max_additional_pages: int = Field(default=0, ge=0, le=30)
 
 
 def rsc_flight_text(html: str) -> str:
@@ -724,9 +728,13 @@ def parse_bsv_list(key: str, t: BsvPage, url: str, http_status: int, body: bytes
         else:
             raise UnexpectedEmpty(key, f"initialProductsList empty on {url}", url=url, http_status=http_status)
     leads = []
+    seen_ids = set()
     for p in arr:
         if not isinstance(p, dict) or not p.get("id") or p.get("price") is None or not p.get("currency"):
             raise ParserBroken(key, f"BSV product without id/price/currency on {url}", url=url, http_status=http_status)
+        if str(p["id"]) in seen_ids:
+            raise ParserBroken(key, "duplicate BSV product id on one page", url=url)
+        seen_ids.add(str(p["id"]))
         name = str(p.get("name") or "")
         face, fcur = face_from_title(name)
         qty = int(p["quantity"]) if str(p.get("quantity", "")).isdigit() else "unknown"
@@ -740,23 +748,25 @@ def parse_bsv_list(key: str, t: BsvPage, url: str, http_status: int, body: bytes
             raw={"id": p.get("id"), "name": name, "price": p.get("price"), "currency": p.get("currency"),
                  "quantity": p.get("quantity"), "sold": p.get("sold"), "discount_percent_pub": p.get("discount_percent_pub"),
                  "nominal_sum_pub": p.get("nominal_sum_pub"), "auction": p.get("auction"),
-                 "is_api_product": p.get("is_api_product"), "seller": bsv_seller(p), "region": bsv_region(p)}))
-    # Query pagination is robots-disallowed. The SSR first page is not a full category inventory.
+                 "is_api_product": p.get("is_api_product"), "seller": bsv_seller(p), "region": bsv_region(p),
+                 "listing_page_url": url}))
+    # A single SSR response is not proof that all category pages were enumerated.
     total, page_count = pag.get("total"), pag.get("pageCount")
     def nonnegative_integer(value):
         return not isinstance(value, bool) and str(value).isdigit()
     complete = (nonnegative_integer(total) and nonnegative_integer(page_count)
                 and int(page_count) == (1 if int(total) > 0 else 0) and int(total) == len(leads))
     if not complete:
-        notes.append("Partial category listing; query pagination is not followed (robots); no disappearance inference")
+        notes.append("Partial category listing; whole-category enumeration not established; no disappearance inference")
     data = json.dumps([x.raw for x in leads], sort_keys=True, separators=(",", ":")).encode()
     return AggPage(target_id=t.id, url=url, http_status=http_status, leads=leads, body_sha256=_sha(body),
-                   body_bytes=len(body), data_sha256=_sha(data), notes=notes, complete=complete)
+                   body_bytes=len(body), data_sha256=_sha(data), notes=notes, complete=complete,
+                   pagination={k: pag[k] for k in ("total", "pageCount", "pageSize", "currentPage") if k in pag})
 
 
 class BsvListConnector(AggregatorConnector):
     PARSER_NAME = "bsv-rsc-list"
-    PARSER_VERSION = "bsv-rsc-list/1.1.0"
+    PARSER_VERSION = "bsv-rsc-list/1.2.0"
     config: BsvListConfig
 
     def describe(self) -> str:
@@ -767,10 +777,84 @@ class BsvListConnector(AggregatorConnector):
         return [p.model_copy(update={"id": p.id or slugify(p.path.rstrip('/').rsplit('/', 1)[-1])})
                 for p in self.config.pages]
 
+    def __init__(self, config: BsvListConfig, *, client: SafeHttpClient | None = None) -> None:
+        super().__init__(config, client=client)
+        self._pagination_day = 0
+        self._extra_remaining = config.max_additional_pages
+
+    def selected_targets(self) -> list[AggTarget]:
+        targets = super().selected_targets()
+        # Rotate category priority so the source-wide request budget does not starve later roots.
+        offset = self._pagination_day % len(targets) if targets else 0
+        return targets[offset:] + targets[:offset]
+
+    def discovery(self, now: datetime) -> list[DiscoveryItem]:
+        self._pagination_day = now.date().toordinal()
+        self._extra_remaining = self.config.max_additional_pages
+        return super().discovery(now)
+
+    def _listing_page(self, t: BsvPage, base: str, number: int) -> AggPage:
+        url = base if number == 1 else f"{base}?page={number}"
+        res = self._html_get(url)  # normal robots check for EVERY page, never bypassed
+        if urlsplit(res.url).path != urlsplit(base).path or urlsplit(res.url).query != urlsplit(url).query:
+            raise ParserBroken(self.key, "unexpected category/page redirect", url=res.url)
+        return parse_bsv_list(self.config.source_key, t, res.url, res.status, res.body)
+
+    def _page_metadata(self, page: AggPage, number: int) -> tuple[int, int, int] | None:
+        fields = ("total", "pageCount", "pageSize", "currentPage")
+        if not all(k in page.pagination for k in fields):
+            return None
+        values = []
+        for field in fields:
+            value = page.pagination[field]
+            if isinstance(value, bool) or not str(value).isdigit():
+                raise ParserBroken(self.key, f"invalid BSV pagination field {field}", url=page.url)
+            values.append(int(value))
+        total, count, size, current = values
+        if (size < 1 or current != number or count != (total + size - 1) // size
+                or len(page.leads) != min(size, max(0, total - (number - 1) * size))):
+            raise ParserBroken(self.key, "inconsistent BSV page metadata or repeated page", url=page.url)
+        return total, count, size
+
     def fetch_target(self, t: AggTarget) -> AggPage:
         assert isinstance(t, BsvPage)
-        res = self._html_get(urljoin(f"https://{self.config.host}/", t.path))
-        return parse_bsv_list(self.config.source_key, t, res.url, res.status, res.body)
+        base = urljoin(f"https://{self.config.host}/", t.path)
+        first = self._listing_page(t, base, 1)
+        metadata = self._page_metadata(first, 1)
+        if metadata is None:
+            first.complete = False
+            first.notes.append("Pagination metadata incomplete; no additional page requests")
+            return first
+        total, count, size = metadata
+        extra_count = min(max(0, count - 1), self.config.max_pages_per_category - 1, self._extra_remaining)
+        offset = (self._pagination_day * max(1, extra_count)) % (count - 1) if count > 1 else 0
+        numbers = [1] + [2 + (offset + i) % (count - 1) for i in range(extra_count)]
+        pages = [first]
+        for number in numbers[1:]:
+            self._extra_remaining -= 1  # failed requests consume budget too
+            page = self._listing_page(t, base, number)
+            if self._page_metadata(page, number) != metadata:
+                raise ParserBroken(self.key, "BSV inventory totals changed during enumeration", url=page.url)
+            pages.append(page)
+        leads = {}
+        for page in pages:
+            for lead in page.leads:
+                if lead.lead_id in leads:
+                    raise ParserBroken(self.key, "duplicate BSV product across pages", url=page.url)
+                leads[lead.lead_id] = lead
+        complete = len(leads) == total and len(pages) >= max(1, count)
+        proofs = [{"page": number, "url": page.url, "body_sha256": page.body_sha256,
+                   "body_bytes": page.body_bytes, "http_status": page.http_status,
+                   "pagination": page.pagination} for number, page in zip(numbers, pages)]
+        notes = [f"total={total}; enumerated_pages={numbers}; page_count={count}; enumeration_complete={complete}"]
+        if not complete:
+            notes.append("Daily rotating page budget reached; partial inventory cannot prove disappearance")
+        data = json.dumps([lead.raw for lead in leads.values()], sort_keys=True, separators=(",", ":")).encode()
+        manifest = json.dumps(proofs, sort_keys=True, separators=(",", ":")).encode()
+        return AggPage(t.id, base, first.http_status, list(leads.values()),
+                       _sha(manifest) if len(pages) > 1 else first.body_sha256,
+                       sum(page.body_bytes for page in pages), _sha(data), notes=notes, complete=complete,
+                       page_proofs=proofs, pagination=first.pagination)
 
 
 # ============================================================================== CardBear (brand table)

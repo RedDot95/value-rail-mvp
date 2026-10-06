@@ -1,3 +1,5 @@
+> BuySellVouchers-Pagination ergänzt: robots-erlaubte `?page=N`-Navigation, täglich rotierende Seiten-/Kategorie-Budgets und unveränderliche Seitenbelege. **389 Offline-Tests bestanden**; Amazon-Vollscan: 476 Angebote auf 24 Seiten, 0 belegte profitable Routen. [Validierung und Produktionsgrenzen](discovery_pagination.md).
+
 > Weitere Fehlerbehebung: mehrseitige CoinGate-Suche, begrenzte tägliche Markenrotation und keine Verschwunden-Erkennung aus Teilinventuren. Aktuell **370 Offline-Tests bestanden**. Details: [Discovery/Pagination](discovery_pagination.md).
 
 > Ergänzung: Lease-Erneuerung/Fencing und serialisierter Versand mit dauerhaften Kanalquittungen sind im Folgepatch umgesetzt. Siehe [Ziel/Abdeckung](liquid_value_scope.md) und [Betrieb](compose_operation.md). Das unten beschriebene At-least-once-Crashfenster bleibt; Engine jetzt 1.4.0; Gebührenbedingungen ersetzen keinen ausführbaren Exit-Quote (siehe [Quote-Import](quote_intake.md)). Die folgenden Testergebnisse beziehen sich auf den ersten Review-Patch.
