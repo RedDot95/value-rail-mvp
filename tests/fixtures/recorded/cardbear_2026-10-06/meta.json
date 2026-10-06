@@ -1,0 +1,53 @@
+{
+  "recorded_by": "scripts/record_fixtures.py cardbear (SafeHttpClient, robots.txt honoured)",
+  "note": "Minimal extracts only (no cookies, no response headers, no personal data: BSV usernames/user ids replaced by hashes, only public store names kept; CoinGate: no email ever sent, long texts dropped). Box egress is US.",
+  "kind": "cardbear_html",
+  "files": {
+    "robots.txt": {
+      "url": "https://www.cardbear.com/robots.txt",
+      "http_status": 200,
+      "content_type": "text/plain",
+      "fetched_at_utc": "2026-10-06T10:40:01+00:00"
+    },
+    "steam.html": {
+      "url": "https://www.cardbear.com/gift-card-discount/616/steam",
+      "http_status": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "fetched_at_utc": "2026-10-06T10:40:09+00:00",
+      "original_body_sha256": "cdc8f054c6f076d223859e6c6190f5859231c027c317dc3d639c9962be0df5e8",
+      "original_body_bytes": 126473
+    },
+    "playstation-network.html": {
+      "url": "https://www.cardbear.com/gift-card-discount/606/playstation-network",
+      "http_status": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "fetched_at_utc": "2026-10-06T10:40:16+00:00",
+      "original_body_sha256": "4c8ace699a428ecb7b69485db3dd65bea5d1bc90a66bb60cbc633505ed847dcf",
+      "original_body_bytes": 132681
+    },
+    "google-play.html": {
+      "url": "https://www.cardbear.com/gift-card-discount/225/google-play",
+      "http_status": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "fetched_at_utc": "2026-10-06T10:40:23+00:00",
+      "original_body_sha256": "ba419ac38206caeb853e6f916ee2a4fcff2189a681830268a0bd3ec6a87a238e",
+      "original_body_bytes": 132667
+    },
+    "razer-gold.html": {
+      "url": "https://www.cardbear.com/gift-card-discount/853/razer-gold",
+      "http_status": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "fetched_at_utc": "2026-10-06T10:40:30+00:00",
+      "original_body_sha256": "5ec0e20569f3c1fd574aa50316e8473358b476fb1b71ada5e72afbf8b25f1b57",
+      "original_body_bytes": 115699
+    },
+    "amazon.html": {
+      "url": "https://www.cardbear.com/gift-card-discount/111/amazon",
+      "http_status": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "fetched_at_utc": "2026-10-06T10:40:37+00:00",
+      "original_body_sha256": "22f1d703c64ac88c4363d4ca65a1ffeb8690270e6ec751e932ef238127a10ae2",
+      "original_body_bytes": 132681
+    }
+  }
+}

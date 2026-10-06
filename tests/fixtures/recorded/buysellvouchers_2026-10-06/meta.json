@@ -1,0 +1,53 @@
+{
+  "recorded_by": "scripts/record_fixtures.py buysellvouchers (SafeHttpClient, robots.txt honoured)",
+  "note": "Minimal extracts only (no cookies, no response headers, no personal data: BSV usernames/user ids replaced by hashes, only public store names kept; CoinGate: no email ever sent, long texts dropped). Box egress is US.",
+  "kind": "bsv_list",
+  "files": {
+    "robots.txt": {
+      "url": "https://www.buysellvouchers.com/robots.txt",
+      "http_status": 200,
+      "content_type": "text/plain",
+      "fetched_at_utc": "2026-10-06T10:41:36+00:00"
+    },
+    "bitsa-gift-card.html": {
+      "url": "https://www.buysellvouchers.com/en/products/list/bitsa-gift-card/",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-06T10:41:43+00:00",
+      "original_body_sha256": "cbbc41b834cbeb1fad001f77473b64e8768a3470de59187a8abe0358719d3b25",
+      "original_body_bytes": 539280
+    },
+    "paysafe-virtual-cards.html": {
+      "url": "https://www.buysellvouchers.com/en/products/list/paysafe-virtual-cards/",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-06T10:41:49+00:00",
+      "original_body_sha256": "8196091be38ef39f86956b3dcac9d79baa85eec37c01841fc98486f6e264c221",
+      "original_body_bytes": 646362
+    },
+    "bitnovo-voucher.html": {
+      "url": "https://www.buysellvouchers.com/en/products/list/bitnovo-voucher/",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-06T10:41:55+00:00",
+      "original_body_sha256": "7daea5be41aa1328afd432591f9a817c80904ad9e2e90224f0a62d35d29f0a56",
+      "original_body_bytes": 360365
+    },
+    "neosurf-voucher.html": {
+      "url": "https://www.buysellvouchers.com/en/products/list/neosurf-voucher/",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-06T10:42:04+00:00",
+      "original_body_sha256": "e3cf692d6363b7dfa7d8ea5735e7c942dc3369b1ba72f559dd8648481d66f17d",
+      "original_body_bytes": 639926
+    },
+    "prepaid-vouchers-azteco.html": {
+      "url": "https://www.buysellvouchers.com/en/products/list/Prepaid_Vouchers-Azteco/",
+      "http_status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "fetched_at_utc": "2026-10-06T10:42:11+00:00",
+      "original_body_sha256": "3c116d1680d12d28a6edc9a93c1fec0a262cfb9086eca16dff32ceea0384c784",
+      "original_body_bytes": 409821
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "recorded_by": "scripts/record_fixtures.py giftcardwiki (SafeHttpClient, robots.txt honoured)",
+  "note": "Minimal extracts only (no cookies, no response headers, no personal data: BSV usernames/user ids replaced by hashes, only public store names kept; CoinGate: no email ever sent, long texts dropped). Box egress is US.",
+  "kind": "gcw_hotdeals",
+  "files": {
+    "robots.txt": {
+      "url": "https://www.giftcardwiki.com/robots.txt",
+      "http_status": 200,
+      "content_type": "text/plain",
+      "fetched_at_utc": "2026-10-06T10:40:03+00:00"
+    },
+    "hot-deals.html": {
+      "url": "https://www.giftcardwiki.com/hot-deals/",
+      "http_status": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "fetched_at_utc": "2026-10-06T10:40:10+00:00",
+      "original_body_sha256": "739a84b419c880cafe2e408a2a5d79e38fa641256ba400e01173d39c37f56ccf",
+      "original_body_bytes": 43046
+    }
+  }
+}

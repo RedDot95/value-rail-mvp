@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..settings import ConnectorConfig, Settings
+from .aggregators import AGGREGATOR_KINDS, build_aggregator
 from .base import Connector
 from .fixture import FixtureConnector
 from .placeholders import PlaceholderConnector
@@ -23,6 +24,8 @@ def build_one(settings: Settings, c: ConnectorConfig, *, down_sources: set[str] 
         return RechargeConnector(RechargeConfig.model_validate(c.options), **kw)
     if c.kind == "jsonld_shop":
         return JsonLdShopConnector(JsonLdShopConfig.model_validate(c.options), **kw)
+    if c.kind in AGGREGATOR_KINDS:  # always discovery_only (hard-wired in the connector class)
+        return build_aggregator(c.kind, c.options, **kw)
     if c.kind in ("placeholder", "blocked"):
         raise RuntimeError(f"connector {c.key!r} is a placeholder (not implemented) and cannot be enabled")
     raise RuntimeError(f"unknown connector kind {c.kind!r}")
@@ -47,6 +50,8 @@ def describe_connectors(settings: Settings) -> list[dict]:
             caps = RechargeConnector(RechargeConfig.model_validate(c.options)).capabilities()
         elif c.kind == "jsonld_shop":
             caps = JsonLdShopConnector(JsonLdShopConfig.model_validate(c.options)).capabilities()
+        elif c.kind in AGGREGATOR_KINDS:
+            caps = build_aggregator(c.kind, c.options).capabilities()
         else:
             caps = PlaceholderConnector(c.key, c.product_family or "unknown", c.notes).capabilities()
         rows.append({"key": c.key, "kind": c.kind, "enabled": c.enabled, "notes": c.notes,

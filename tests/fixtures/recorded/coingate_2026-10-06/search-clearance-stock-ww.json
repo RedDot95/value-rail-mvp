@@ -1,0 +1,34 @@
+{
+ "jsonrpc": "2.0",
+ "id": 0,
+ "result": {
+  "structuredContent": {
+   "query": null,
+   "country": "WW",
+   "category": "clearance-stock",
+   "page": 1,
+   "per_page": 25,
+   "total_results": 1,
+   "total_pages": 1,
+   "results": [
+    {
+     "brand_slug": "google-play-sale",
+     "name": "Google Play SALE",
+     "categories": [
+      "store",
+      "gaming",
+      "clearance-stock",
+      "valentines-sale"
+     ],
+     "max_discount_percent": 20.0,
+     "average_rating": 4.5,
+     "available_in_country": false,
+     "in_stock_in_country": false,
+     "url": "https://coingate.com/gift-cards/google-play-sale?region=WW"
+    }
+   ],
+   "next_step": "Call get_gift_card with a brand slug and the country to see purchasable products and prices."
+  },
+  "isError": false
+ }
+}

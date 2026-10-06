@@ -1,4 +1,4 @@
-# Quellen (Stand 06.10.2026 – Marktplätze/Aggregatoren; darunter Delivery 2 vom 05.10.2026)
+# Quellen (Stand 06.10.2026 – Marktplätze/Aggregatoren inkl. Vergleichsseiten 12:47 CEST; darunter Delivery 2 vom 05.10.2026)
 
 ## 0. Marktplatz-/Aggregator-Prüfung 06.10.2026 (00:20–00:45 CEST, Box-Egress USA)
 
@@ -21,8 +21,64 @@ Browser-Automation steht dem Worker nicht zur Verfügung; Quellen, die sie bräu
 
 **Folgen:**
 - Kein Marktplatz mit Seller-Angeboten ist derzeit legal und ohne Umgehung live abrufbar. Der Seller-Offer-Pfad (je Seller eine Route, `seller_offers` und `seller_offer_events`) ist implementiert und mit dem GAMIVO-Fixture offline getestet. Live läuft er für die Direktverkäufer, wo er neue oder entfernte Stückelungen erkennt.
-- Aggregatoren: keiner nutzbar ⇒ kein täglicher Aggregator-Job. Der Parser setzt bei `source_kind = "aggregator"` die Rolle `discovery_only`, solche Preise können nie Alerts auslösen.
+- Aggregatoren (Stand 00:45): keiner nutzbar. **Update 12:47 CEST:** siehe Abschnitt 0b. CoinGate (offizieller MCP), BuySellVouchers, CardBear und GiftCardWiki laufen jetzt als tägliche Discovery-Jobs (`discovery_only`, nie Alert). GCX und GG.deals sind blocked.
 - Krypto-Watchlist: **Azteco BTC** (eindeutiges Asset) ist nur bei Eneba/Kinguin (blocked) und CoinsBee (kein Preis) gelistet, bei dundle derzeit ohne Angebot (wird im 30-min-Sweep beobachtet). Zusätzlich beobachtet: Recharge **Crypto Voucher**. Dessen Asset wird erst beim Einlösen gewählt, es ist also **kein eindeutiges Asset**; das ist so dokumentiert und es gibt keine Exit-Regel ⇒ `blocked`.
+
+## 0b. Aggregator-/Vergleichsseiten 06.10.2026 (12:29–12:47 CEST, Box-Egress USA)
+
+Auftrag: sechs Vergleichs- und Aggregatorseiten als **Discovery-Quellen** prüfen. Geprüft wurden jeweils robots.txt, AGB/ToS, ob es eine offizielle API oder einen Feed gibt, und ob die Seiten ohne Login und ohne JS strukturierte Daten liefern.
+Rohdaten liegen in `research/2026-10-06/aggregators/`. Abgerufen wurde mit dem SafeHttpClient: UA `ValueRailMVP/0.3`, nur https, Host-Allowlist, Public-IP-Pinning, ≥ 5 s pro Host + Jitter.
+
+**Grundsatz:** Alle integrierten Quellen sind im Code fest auf `kind = aggregator` und `role = discovery_only` gesetzt (Klassenkonstante; die Config hat dafür kein Feld, `extra = forbid`).
+Ein Aggregatorpreis ist nur ein **Hinweis**:
+- Er ist nie Preisbasis, nie Preisfund und nie Alert. Die Engine blockt mit `direct_price_unverified:only_discovery_only_offers`; bei reinen Rabatt-Leads greift schon vorher `face_value_unknown`.
+- Zusätzlich hängt an jedem Lead eine Pflichtgebühr `unknown`.
+- **Eine verifizierte Route kann aus diesen Quellen allein nie entstehen.** Vorher muss ein price_basis-Connector den Direktpreis beim Verkäufer belegen.
+
+| Quelle (Prüf-URL) | Status | robots.txt / AGB / API (Abruf 06.10.2026) | Daten | Integration |
+|---|---|---|---|---|
+| **CoinGate Gift Cards**: https://coingate.com/gift-cards/clearance?country%5B0%5D=WW&country%5B1%5D=DE&page=2 | **zugänglich über die offizielle API ⇒ integriert** (`coingate`, `kind = coingate_mcp`, Parser `coingate-mcp/1.0.0`) | **Web:** https://coingate.com/robots.txt sperrt u. a. `/*?country=*`, `/checkout/` und `*/feed*`; es gibt zwei `User-agent: *`-Gruppen (siehe Robots-Fix unten). Die Clearance-Seite liefert zwar 200, die Produktliste wird aber clientseitig gerendert (kein JSON-LD, im RSC nur Navigation) ⇒ der Web-Pfad wird **nicht** genutzt, auch keine Country-Filter-URLs. **Offizieller Weg:** https://coingate.com/gift-cards/mcp und `llms.txt` dokumentieren einen kostenlosen MCP-Server **ohne Login/API-Key**: `https://giftcards-api.coingate.com/api/mcp` (Streamable HTTP, JSON-RPC, Protokoll 2025-06-18, zustandslos). Dessen robots.txt: `User-agent: * / Disallow:` (alles erlaubt). Gift-Card-AGB https://coingate.com/gift-cards/terms-and-conditions (Stand 31.03.2025, UAB Rewards Distributed): keine Robots- oder Scraping-Klausel; der Weiterverkauf gekaufter Karten ist untersagt. Das Business-API (https://www.gifq.com/platform/api) braucht ein Business-Konto ⇒ nicht genutzt. | Über `get_gift_card(brand, country)`: Produkte mit `gift_card_id`, Stückelung, **EUR-Preis**, Lagerbestand, Region und `clearance_offers[]`. Über `search_gift_cards(category, country)`: Marken mit `max_discount_percent`. Die Kategorie **`clearance-stock`** ist die Clearance-Liste: am 06.10. für DE **0 Treffer**, für WW 1 Treffer (Google Play SALE, 20 %, in WW nicht auf Lager). **CoinGate verkauft selbst** (UAB Rewards Distributed); es gibt keinen Fremd-Seller. Der Link zeigt auf die eigene Produktseite. Preise im Smoke (12:45 CEST): Bitsa DE 5–250 € mit 5,4–8,0 % **Aufschlag**, Paysafecard DE mit 4,8–7,8 %, Flexepin DE mit 3,25–5,8 %, CASHlib DE mit 5,0–6,6 %. Kein Rabatt auf die Zielfamilien. | Ziele: get_gift_card für bitsa, paysafecard, flexepin und cashlib (jeweils DE); search_gift_cards für clearance-stock DE und WW (`empty_ok`: explizit 0 Treffer ist eine Beobachtung, keine Störung) sowie payment-cards DE. Der Client ruft nur die Tools `search_gift_cards`, `get_gift_card` und `list_categories` auf. `quote_order`, `create_order`, `get_order`, `notify_when_in_stock` und `list_payment_methods` sowie jedes `email`-Argument werden mit `PermissionError` verweigert. Es werden keine Cookies gesendet und nur die Protokoll-Header `mcp-protocol-version`/`mcp-session-id` erlaubt. |
+| **CardBear**: https://www.cardbear.com/ | **zugänglich ⇒ integriert** (`cardbear`, `cardbear_html`, Parser `cardbear-html/1.0.0`), US-Markt | https://www.cardbear.com/robots.txt sperrt nur `/r.php` (Outbound-Redirector) und `/emailalert.php`. AGB https://www.cardbear.com/terms (gültig ab 15.07.2026): „personal, non-commercial comparison … Do not … scrape at unreasonable volume … Automated access, API use, or data reuse should be reasonable and must not disrupt CardBear or misrepresent CardBear data“ ⇒ maßvoller automatisierter Zugriff ist ausdrücklich zulässig. Es gibt keine offizielle API. JSON-LD enthält nur Organization/WebSite/Product mit `AggregateOffer` (nur `offerCount`, kein Preis). | Pro Marke (Sitemap: 981 Markenseiten) eine serverseitige Tabelle: **Marktplatz** (CardCash, Cardcenter, Carddepot, Raise, DoorDash, …) mit **Rabatt-%** und Schutz. **Keine Preise, kein Nennwert, USD/US-Karten**, keine EU-Produkte, kein paysafecard/Bitsa. Der Seller-Link läuft über `/r.php?storeid=…&giftstore=…`: er wird nur gespeichert, **nie aufgerufen** (robots-gesperrt). | 5 Markenseiten: Steam, PlayStation Network, Google Play, Razer Gold, Amazon (alle US). Smoke: 10 Leads, z. B. PSN bei Cardcenter 15,8 %, Raise 12,6 %, Carddepot 12 %; Google Play bei DoorDash 10 %. Steam und Razer Gold hatten keinen Marktplatz auf Lager (in den Notes). |
+| **GiftCardWiki**: https://www.giftcardwiki.com/ | **zugänglich ⇒ integriert** (`giftcardwiki`, `gcw_hotdeals`, Parser `gcw-hotdeals/1.0.0`), US-Markt | https://www.giftcardwiki.com/robots.txt sperrt `/buy/`, `/sell/` und `/club/`. ToS https://forum.giftcardwiki.com/t/terms-of-service/4 (Discourse, Stand 31.05.2015, CC-BY-SA): keine Scraping- oder Robots-Klausel. Es gibt keine offizielle API; `/api/v1/gift-cards/search-hints/` ist intern und wird nicht genutzt. Die Karten-Tabellen sind JS (Handlebars). | `/hot-deals/` serverseitig: **Marke, Rabatt-%, Kartenanzahl** und ein Link auf `/gift-cards/<Marke>`. Kein Preis, kein Nennwert, **kein Verkäufer** im HTML (Marktfilter CardCash/CardCookie/GiftCardSaving nur als Zähler). Nur US-Händler (Restaurants, Retail). | Nur 1 Seite pro Tag. Smoke: 23 Marken, z. B. Steak n Shake 33,4 %, Buca di Beppo 25 %, Build-A-Bear 24 %. |
+| **GCX (Raise)**: https://gcx.app/ | **blocked** | https://gcx.app/robots.txt sperrt `/cart`, `/checkouts`, `/users` und Query-Parameter. **AGB https://gcx.app/terms (Raise Marketplace, LLC, „Last Updated: June 15, 2026“)**: Abschnitt (c) verbietet „any automated or non-automated means of data gathering, data mining or extraction … including any use of "robots", "scrapers", "spiders"“; Abschnitt (h) verbietet „Aggregate or scrape any content … without our express written permission“. Außerdem ist die Startseite eine reine JS-SPA (777 Byte, „You need to enable JavaScript to run this app“), über plain HTTP kommen keine Daten. | – | **nicht integriert** (`gcx`, `kind = blocked`). Für eine Nutzung bräuchte es eine schriftliche Erlaubnis von Raise. |
+| **BuySellVouchers**: https://hub.buysellvouchers.com/ | **zugänglich (Listen-Seiten) ⇒ integriert** (`buysellvouchers`, `bsv_list`, Parser `bsv-rsc-list/1.0.0`); **offizielle Buyer-API braucht den Nutzer** | hub: robots.txt `Allow: /`, reine Landingpage. www: https://www.buysellvouchers.com/robots.txt hat `Allow: /*?page=` und `Disallow: /*?`, sperrt außerdem `/*/products/buy/`, `processPayment`, `feedbacks/show` und `getDescription` ⇒ **nur Kategorie-Pfade ohne Query**. AGB https://www.buysellvouchers.com/en/terms-and-conditions/ (Stand 01.09.2026, Overmorrow Trading Solutions OPC): keine Robots- oder Scraping-Klausel. §13.1 untersagt die unbefugte Nutzung von Plattform-IP (wir veröffentlichen nichts, private Preisrecherche); §4.5/§9.1.3 verbieten VPNs (wir nutzen keine). **Buyer-API** https://hub.buysellvouchers.com/giftcard-api/: braucht ein bestehendes Käuferkonto und eine Zugangsprüfung, „no public self-serve signup“ ⇒ **nur durch den Nutzer**. | `/en/products/list/<Kategorie>/` liefert im HTML den RSC-Payload `initialProductsList`: je Angebot Name, **EUR-Preis**, Menge, verkauft, `discount_percent_pub`, Aktivierungsregion/-land und **Verkäufer** (öffentlicher Store-Name, z. B. EliteLoops; Einzelverkäufer ohne Store werden zu `bsv-seller-<hash>` pseudonymisiert). Kein Kauf-Link wird aufgerufen. Smoke (12:46 CEST): Bitsa EU 5–250 € bei EliteLoops mit 2,6–5,1 % Aufschlag (ein Einzelverkäufer: 50 € für 57 €); **Paysafe DE/FR/ES** 5–100 € bei EliteLoops mit 4,0–5,1 % Aufschlag; Neosurf EU/GB mit 1,5–2,5 % Aufschlag; Azteco (USD) mit 2–4 % Aufschlag. Auffällig: **Neosurf 20 € für 14,00 € (30 %)** von einem Einzelverkäufer mit Menge 2 und 0 Verkäufen. Das ist nur ein Hinweis mit hohem Marktplatzrisiko. `bitnovo-voucher`: explizit 0 Produkte. | 5 Kategorien: bitsa-gift-card, paysafe-virtual-cards, bitnovo-voucher (`empty_ok`), neosurf-voucher, Prepaid_Vouchers-Azteco. `Paysafecard-virtual-cards` ist leer, die Angebote liegen unter `paysafe-virtual-cards`. |
+| **GG.deals**: https://gg.deals/prepaids/?regions=de,eu | **blocked** | robots.txt (Cloudflare-managed, `Content-Signal: search=yes,ai-train=no,use=reference`, `Allow: /`) ist lesbar. **Die Prüf-URL antwortet mit HTTP 403, `cf-mitigated: challenge`, `server: cloudflare`** (Cloudflare Managed Challenge, erneut geprüft am 06.10.2026 ca. 12:31 CEST). | – | **nicht integriert** (`ggdeals`, `kind = blocked`). Die Challenge wird nicht umgangen: kein anderer Client, kein UA-Wechsel, kein Browser. |
+
+**Brauchen den Nutzer:** BuySellVouchers Buyer-API (Konto + Freigabe); CoinGate/GIFQ Business-API (Business-Konto; nicht nötig, weil der MCP-Server frei ist); GCX nur mit schriftlicher Erlaubnis von Raise.
+
+**Robots-Fix (RFC 9309):** `urllib.robotparser` hatte zwei Schwächen und hat dadurch zu wenig gesperrt:
+- Es kennt keine `*`/`$`-Wildcards, z. B. matchte `Disallow: /*?country=*` nie.
+- Es nutzt nur die **erste** `User-agent: *`-Gruppe; CoinGate hat zwei.
+
+Neu: `net/robots.py` (`RobotsRules`):
+- führt Gruppen zusammen und matcht `*`/`$`;
+- längste Regel gewinnt, bei Gleichstand gewinnt Allow;
+- normalisiert Prozent-Encoding und unterstützt Crawl-delay;
+- Tests in `tests/test_robots_rfc9309.py`.
+
+`SafeHttpClient` nutzt den Matcher für alle Connectoren. `post_json` kann jetzt `Accept` setzen und erlaubt nur MCP-Protokoll-Header.
+
+**Fehlerarten** (alle Connectoren dieser Gruppe):
+- 429 ⇒ `RateLimited`
+- 403 (inkl. Cloudflare) ⇒ `AccessDenied`
+- 401/Login-Redirect ⇒ `AuthLost`
+- robots-Sperre ⇒ `RobotsDisallowed`
+- 404/5xx/JSON-RPC-Fehler/MCP-`isError` ⇒ `UpstreamError`
+- fehlender Anker oder Schemaänderung ⇒ `ParserBroken`
+- leere Liste ohne explizite 0-Meldung ⇒ `UnexpectedEmpty`
+
+Jede gestörte Seite wird zu einer `:page`-Route mit Fehler (Scan `degraded`), nie zu „0 Angebote“.
+
+**Evidence:** Parser-Version, Body- und Daten-Hash, der Lead, ob robots.txt geprüft wurde, `source_role = discovery_only`, `source_kind = aggregator` und `fetched_at_utc`.
+
+**Fixtures:** `tests/fixtures/recorded/{coingate,buysellvouchers,cardbear,giftcardwiki}_2026-10-06/` (aufgenommen mit `scripts/record_fixtures.py <key>`). Gespeichert sind nur minimale Auszüge:
+- BSV: Usernamen und User-IDs gehasht, nur öffentliche Store-Namen behalten;
+- CoinGate: lange Texte entfernt, nie eine E-Mail gesendet;
+- CardBear/GCW: nur die Tabelle.
+
+**Jobs:** je ein täglicher Job (`*_aggregator_daily`, `interval_seconds = 86400`, `min_interval_seconds = 43200`). Er wirkt erst nach einem Worker-Neustart.
+
+**Live-Smokes:** `docs/live_smoke_2026-10-06_{coingate,buysellvouchers,cardbear,giftcardwiki}.md`.
 
 ### Generischer JSON-LD-Connector (`kind = "jsonld_shop"`, Parser `jsonld-offers/1.0.0`)
 - Liest nur die konfigurierten Produktseiten: kein Crawling, keine Such- oder Sitemap-Seiten, keine internen APIs, nie Warenkorb, Checkout oder Konto.

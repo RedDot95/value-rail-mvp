@@ -1,0 +1,141 @@
+{
+ "jsonrpc": "2.0",
+ "id": 0,
+ "result": {
+  "structuredContent": {
+   "brand": {
+    "slug": "flexepin",
+    "name": "Flexepin",
+    "category": "payment-cards",
+    "average_rating": 4.6,
+    "url": "https://coingate.com/gift-cards/flexepin?region=DE"
+   },
+   "requested_country": "DE",
+   "region": "DE",
+   "products": [
+    {
+     "gift_card_id": 29942,
+     "name": "Flexepin DE",
+     "region": "DE",
+     "currency": "EUR",
+     "in_stock": true,
+     "delivery": "instant",
+     "denominations": [
+      {
+       "value": 10.0,
+       "label": "10 EUR",
+       "price": 10.33
+      }
+     ]
+    },
+    {
+     "gift_card_id": 29941,
+     "name": "Flexepin DE",
+     "region": "DE",
+     "currency": "EUR",
+     "in_stock": true,
+     "delivery": "instant",
+     "denominations": [
+      {
+       "value": 20.0,
+       "label": "20 EUR",
+       "price": 20.65
+      }
+     ]
+    },
+    {
+     "gift_card_id": 29940,
+     "name": "Flexepin DE",
+     "region": "DE",
+     "currency": "EUR",
+     "in_stock": true,
+     "delivery": "instant",
+     "denominations": [
+      {
+       "value": 30.0,
+       "label": "30 EUR",
+       "price": 30.98
+      }
+     ]
+    },
+    {
+     "gift_card_id": 29939,
+     "name": "Flexepin DE",
+     "region": "DE",
+     "currency": "EUR",
+     "in_stock": true,
+     "delivery": "instant",
+     "denominations": [
+      {
+       "value": 50.0,
+       "label": "50 EUR",
+       "price": 51.63
+      }
+     ]
+    },
+    {
+     "gift_card_id": 29938,
+     "name": "Flexepin DE",
+     "region": "DE",
+     "currency": "EUR",
+     "in_stock": true,
+     "delivery": "instant",
+     "denominations": [
+      {
+       "value": 100.0,
+       "label": "100 EUR",
+       "price": 103.25
+      }
+     ]
+    },
+    {
+     "gift_card_id": 41558,
+     "name": "Flexepin DE",
+     "region": "DE",
+     "currency": "EUR",
+     "in_stock": true,
+     "delivery": "instant",
+     "denominations": [
+      {
+       "value": 150.0,
+       "label": "150 EUR",
+       "price": 158.7
+      }
+     ]
+    },
+    {
+     "gift_card_id": 29937,
+     "name": "Flexepin DE",
+     "region": "DE",
+     "currency": "EUR",
+     "in_stock": true,
+     "delivery": "instant",
+     "denominations": [
+      {
+       "value": 200.0,
+       "label": "200 EUR",
+       "price": 206.5
+      }
+     ]
+    },
+    {
+     "gift_card_id": 29936,
+     "name": "Flexepin DE",
+     "region": "DE",
+     "currency": "EUR",
+     "in_stock": true,
+     "denominations": [
+      {
+       "value": 250.0,
+       "label": "250 EUR",
+       "price": 258.13
+      }
+     ]
+    }
+   ],
+   "clearance_offers": [],
+   "next_step": "Call quote_order with items [{gift_card_id, denomination, country: region, quantity}] to get the exact total, then create_order to buy."
+  },
+  "isError": false
+ }
+}

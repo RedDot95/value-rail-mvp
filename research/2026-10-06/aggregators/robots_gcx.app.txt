@@ -1,0 +1,20 @@
+User-agent: *
+Disallow: /profiles/*
+Disallow: /cart
+Disallow: /checkouts
+Disallow: /orders
+Disallow: /password_resets
+Disallow: /user/password/edit?reset_password_token=*
+Disallow: /user_sessions
+Disallow: /users
+
+Disallow: /*?cash_back=*
+Disallow: /*?category=*
+Disallow: /*?card_type=*
+Disallow: /*?type_sort=*
+Disallow: /*?value_sort=*
+Disallow: /*?per=*
+Disallow: /*?price_sort=*
+Disallow: /*?page=*
+
+Sitemap: https://gcx.raise.com/sitemap.xml

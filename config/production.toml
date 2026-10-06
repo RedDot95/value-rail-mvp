@@ -155,6 +155,91 @@ pages = [
   { path = "/product/jetoncash-card-eur-eu-gift-cards-prepaid-eu-standard-50eur", family = "jetoncash", redemption_program = "jetoncash", region = "EU", tier = "discover" },
 ]
 
+# ---------------------------------------------------------------------------------------------------------
+# Aggregator / comparison sites (06.10.2026). Connector classes are HARD-WIRED kind=aggregator,
+# role=discovery_only: leads only, never a price basis, never a Preisfund/alert on their own. A direct seller
+# price must be re-verified by a price_basis connector. Access basis per site: docs/sources.md section 0b.
+[[connectors]]
+key = "coingate"
+kind = "coingate_mcp"
+enabled = true
+notes = "aggregator/discovery_only: official no-auth CoinGate Gift Cards MCP server, read-only tools only (search_gift_cards, get_gift_card). CoinGate itself is the seller."
+[connectors.options]
+source_key = "coingate"
+source_name = "CoinGate Gift Cards (MCP, discovery)"
+host = "giftcards-api.coingate.com"
+endpoint_path = "/api/mcp"
+min_interval_s = 6.0
+jitter_s = 2.0
+brands = [
+  { brand = "bitsa", country = "DE", family = "bitsa", redemption_program = "bitsa", region = "DE" },
+  { brand = "paysafecard", country = "DE", family = "paysafecard", redemption_program = "paysafecard", region = "DE" },
+  { brand = "flexepin", country = "DE", family = "flexepin", redemption_program = "flexepin", region = "DE" },
+  { brand = "cashlib", country = "DE", family = "cashlib", redemption_program = "cashlib", region = "DE" },
+]
+searches = [
+  { category = "clearance-stock", country = "DE", empty_ok = true, family = "clearance", region = "DE", note = "Clearance-Liste (Web: /gift-cards/clearance?country=DE)" },
+  { category = "clearance-stock", country = "WW", empty_ok = true, family = "clearance", region = "WW", note = "Clearance-Liste (Web: /gift-cards/clearance?country=WW)" },
+  { category = "payment-cards", country = "DE", family = "payment-cards", region = "DE" },
+]
+
+[[connectors]]
+key = "buysellvouchers"
+kind = "bsv_list"
+enabled = true
+notes = "aggregator/discovery_only (marketplace listings used as hints): public category list pages, RSC initialProductsList; robots allows paths without query. Buyer API needs account + approval (user)."
+[connectors.options]
+source_key = "buysellvouchers"
+source_name = "BuySellVouchers (Listen, discovery)"
+host = "www.buysellvouchers.com"
+min_interval_s = 6.0
+jitter_s = 2.0
+pages = [
+  { path = "/en/products/list/bitsa-gift-card/", family = "bitsa", redemption_program = "bitsa", region = "EU" },
+  { path = "/en/products/list/paysafe-virtual-cards/", family = "paysafecard", redemption_program = "paysafecard", region = "unknown", note = "region per product (DE/FR/ES)" },
+  { path = "/en/products/list/bitnovo-voucher/", family = "bitnovo", redemption_program = "bitnovo", region = "unknown", empty_ok = true, note = "06.10.2026: category explicitly empty (total 0)" },
+  { path = "/en/products/list/neosurf-voucher/", family = "neosurf", redemption_program = "neosurf", region = "unknown" },
+  { path = "/en/products/list/Prepaid_Vouchers-Azteco/", family = "azteco", redemption_program = "azteco", region = "WW" },
+]
+
+[[connectors]]
+key = "cardbear"
+kind = "cardbear_html"
+enabled = true
+notes = "aggregator/discovery_only: US comparison site (discount % per marketplace, no prices, USD market). ToS allows reasonable automated access. /r.php outbound links never followed."
+[connectors.options]
+source_key = "cardbear"
+source_name = "CardBear (US, discovery)"
+host = "www.cardbear.com"
+min_interval_s = 6.0
+jitter_s = 2.0
+pages = [
+  { path = "/gift-card-discount/616/steam", family = "steam", redemption_program = "steam-us", region = "US" },
+  { path = "/gift-card-discount/606/playstation-network", family = "playstation", redemption_program = "psn-us", region = "US" },
+  { path = "/gift-card-discount/225/google-play", family = "google-play", redemption_program = "google-play-us", region = "US" },
+  { path = "/gift-card-discount/853/razer-gold", family = "razer-gold", redemption_program = "razer-gold-us", region = "US" },
+  { path = "/gift-card-discount/111/amazon", family = "amazon", redemption_program = "amazon-us", region = "US" },
+]
+
+[[connectors]]
+key = "giftcardwiki"
+kind = "gcw_hotdeals"
+enabled = true
+notes = "aggregator/discovery_only: US comparison site, /hot-deals/ brand summary (discount %, card count); no prices/sellers in server HTML."
+[connectors.options]
+source_key = "giftcardwiki"
+source_name = "GiftCardWiki (US, discovery)"
+host = "www.giftcardwiki.com"
+min_interval_s = 6.0
+jitter_s = 2.0
+pages = [ { id = "hot-deals", family = "us-retail", redemption_program = "unknown", region = "US" } ]
+
+[[connectors]]
+key = "gcx"
+kind = "blocked"
+enabled = false
+notes = "blocked (aggregator, discovery-only): gcx.app ToS (Raise Marketplace, 15.06.2026) forbid robots/scrapers/data mining and aggregation without written permission; site is a JS-only SPA (no data over plain HTTP)."
+
 # Blocked sources (documented, never built): see docs/sources.md
 [[connectors]]
 key = "eneba"
@@ -185,7 +270,7 @@ notes = "blocked (aggregator, discovery-only): TLS connection closed by server (
 key = "ggdeals"
 kind = "blocked"
 enabled = false
-notes = "blocked (aggregator, discovery-only): Cloudflare managed challenge (403, cf-mitigated: challenge) on all pages."
+notes = "blocked (aggregator, discovery-only): Cloudflare managed challenge (HTTP 403, cf-mitigated: challenge) incl. /prepaids/?regions=de,eu (re-checked 06.10.2026); never bypassed."
 [[connectors]]
 key = "bitrefill"
 kind = "blocked"
@@ -199,7 +284,7 @@ max_catchup_runs = 1
 heartbeat_file = "data/live/heartbeat.json"
 stale_factor = 3
 
-# Watchlist 5 min / new-seller sweep 30 min (from the brief). Aggregators daily: none usable (all blocked).
+# Watchlist 5 min / new-seller sweep 30 min (from the brief). Aggregators daily (discovery_only, never alerts).
 [[jobs]]
 name = "recharge_watch"
 connector = "recharge"
@@ -239,6 +324,34 @@ interval_seconds = 1800
 min_interval_seconds = 1800
 options = { tiers = ["watch", "discover"] }
 enabled = false   # connector blocked (see above)
+
+[[jobs]]
+name = "coingate_aggregator_daily"
+connector = "coingate"
+interval_seconds = 86400
+min_interval_seconds = 43200
+enabled = true
+
+[[jobs]]
+name = "buysellvouchers_aggregator_daily"
+connector = "buysellvouchers"
+interval_seconds = 86400
+min_interval_seconds = 43200
+enabled = true
+
+[[jobs]]
+name = "cardbear_aggregator_daily"
+connector = "cardbear"
+interval_seconds = 86400
+min_interval_seconds = 43200
+enabled = true
+
+[[jobs]]
+name = "giftcardwiki_aggregator_daily"
+connector = "giftcardwiki"
+interval_seconds = 86400
+min_interval_seconds = 43200
+enabled = true
 
 [[jobs]]
 name = "backup_daily"

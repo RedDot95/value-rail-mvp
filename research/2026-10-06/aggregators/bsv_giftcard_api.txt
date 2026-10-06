@@ -1,0 +1,115 @@
+ 
+ BuySellVouchers API — Gift Cards API for Bulk Buyers 
+ Explore catalog 
+ Request API access 
+ BUYSELLVOUCHERS GIFT CARDS API 
+ BuySellVouchers API — a faster way to buy gift cards at scale.
+ Streamline the entire buying process with the BuySellVouchers Buyer API. Find live gift cards and digital products, pay from your wallet, place orders, and retrieve codes through one integration.
+ Request API access 
+ Move from live marketplace offers to delivered codes with fewer manual steps
+ Automate catalogue search, wallet payments, purchases, and code delivery
+ Available to current BuySellVouchers buyers after access review
+ const offer = await find({
+ brand: "Steam" ,
+ region: "EU" ,
+ inStock: true ,
+ })
+ const wallet = await balance()
+ const order = await buy({ offer, qty: 50 , wallet })
+ // marketplace stock → codes 
+ return order.codes
+ completed 
+ 50 codes ready 
+ Steam · EU 
+ qty 50 
+ wallet USDT 
+ STEAM-••••-K4P2
+ STEAM-••••-M9Q1
+ STEAM-••••-R7H8
+ WHAT YOU GET 
+ One BuySellVouchers API for catalogue, wallet, purchases, and codes.
+ Live catalogue.
+ Browse live gift cards and digital products with region, denomination, list price, stock, seller ratings, and payment methods — filterable by category, seller, or product.
+ Inner wallet.
+ Read available and pending balances on your marketplace wallets. Purchase uses those wallets only — not card checkout.
+ Programmatic purchase.
+ Place an order with product, quantity, and wallet. The API accepts the purchase, then you poll until the order completes.
+ Purchased codes.
+ After completion, fetch your order items. Text codes and image URLs are returned to the buyer of that order only.
+ Who is this for 
+ Built for bulk buyers who already move volume.
+ You already buy on BuySellVouchers. The API is how you do it at scale — browse, pay, and deliver from your own systems.
+ For Bulk
+Buyers
+ You already move volume on BuySellVouchers. Keep the same account, wallets, and catalogue — and buy at the pace your business needs.
+ For Resellers &
+Storefronts
+ Keep inventory, pricing, and fulfillment in your own systems. Sync offers, buy when stock appears, and deliver codes automatically.
+ For Ops &
+Finance
+ Read wallets, list your own orders, and pull delivered codes for reconciliation — without exporting from the marketplace UI.
+ VERSION TIMELINE 
+ How the BuySellVouchers Buyer API grew.
+ Current client guide is v2.3 — catalogue and trade in one contract.
+ v1.x 
+ Catalogue first
+ Read-only marketplace catalogue, then regions, denominations, and reliable filter errors.
+ Field pack 
+ Richer offer data
+ Times sold, payment methods, seller volume, and seller ratings on each product.
+ v2.1 
+ Trade added
+ Balances, purchase from inner wallet, own orders, and retrieval of purchased codes.
+ v2.3 
+ Current guide
+ Unified scopes, dual rate limits, wallet currency_code , and completed-order mapping.
+ From request to integration.
+ You need an existing BuySellVouchers buyer account. Once approved, you receive a key and the client guide — no public self-serve signup.
+ 01 
+ Confirm your account
+ You’re already buying on BuySellVouchers. We connect the API to the account and wallets you already use — no new signup to learn.
+ Already a buyer 
+ 02 
+ Request access
+ Tell us your use case, expected volume, and whether you need catalogue only or trade (purchase) scope.
+ Same day 
+ 03 
+ Integrate & buy
+ Keep the key server-side, browse the catalogue, pay from inner balance, and poll for codes after purchase.
+ Ongoing 
+ Scope 
+ Clear boundaries, fewer surprises.
+ Included: the BuySellVouchers API covers the full live marketplace catalogue, regions, inner-wallet balances, programmatic purchases, own orders, and purchased codes.
+ Existing users only: keys are issued to current BuySellVouchers buyers after review. There is no public developer signup.
+ Not included: card or Tazapay checkout, buying manual-delivery offers, changing catalogue data, or seller-side APIs.
+ Already a BuySellVouchers buyer?
+ Request API access.
+ Fill in the request form. We’ll follow up after we confirm your account.
+ Request API access 
+ Looking for something else? 
+ Want gift cards sourced by us?
+ The BuySellVouchers API connects to marketplace offers from independent sellers. For official BSV-sourced supply, use the BSV Business API.
+ Explore BSV Business 
+ Overmorrow Trading Solutions OPC, Reg. number 2022030046768-05, registered 9th Floor, V Corporate Centre, L.P. Leviste Street, Salcedo Village, Makati, 1227 Metro Manila, Philippines
+ About
+ About us 
+ News 
+ Site Updates 
+ Sell gift cards 
+ Buy gift cards 
+ Official store 
+ BSV Business 
+ BuySellVouchers API 
+ Support
+ FAQ 
+ How it works 
+ Help Center 
+ Dispute Center 
+ Video Tutorial 
+ Sitemap 
+ © 2026 Buysellvouchers.com All Rights Reserved
+ All product names are trademark of their respective companies
+ Privacy & Cookies Policy 
+ Terms & Conditions 
+ AML Policy 
+ Cookie Preferences 

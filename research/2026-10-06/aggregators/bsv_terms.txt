@@ -1,0 +1,1575 @@
+ 
+ Terms and Conditions 
+ Last
+Updated: September 1, 2026 
+ Definitions 
+ BuySellVouchers ("Platform",
+"Company", "We", "Us", "Our"): Overmorrow Trading Solutions OPC, Reg. number
+2022030046768-05, registered 9th Floor, V Corporate Centre, L.P. Leviste
+Street, Salcedo Village, Makati, 1227 Metro Manila, Philippines. 
+ Buyer
+("You", "Client", "Customer") : Any natural or legal person purchasing Products on the Platform. 
+ Seller : Registered users offering digital products for sale on the Platform. 
+ Product : Digital items including gift cards, vouchers, and similar products
+listed by Sellers or BuySellVouchers . 
+ User : Any individual accessing the Platform, including guests and
+registered users. 
+ 1.         
+ Acceptance of Terms 
+ 1.1.         
+ By using BuySellVouchers ,
+you agree to comply fully with these Terms and Conditions. 
+ 1.2.         
+ If you do not agree with these
+Terms, you must cease all use of the Platform immediately. 
+ 2.         
+ General Provisions 
+ 2.1.         
+ BuySellVouchers operates exclusively as a digital marketplace connecting Buyers and
+Sellers for secure peer-to-peer (P2P) transactions. 
+ 2.2.         
+ BuySellVouchers does not own, store, or physically handle products sold by third-party
+Sellers and thus is not responsible for their quality, legality, or
+authenticity. 
+ 2.3.         
+ Payment processing is handled
+by licensed third-party payment processors, including cryptocurrency payment
+processor Finassets.io 
+(TROPIC GATEWAY SOLUTION S.A.) and approved fiat payment gateways (including
+but not limited to Tazapay.com ).
+ 2.4.         
+ BuySellVouchers is not a party to transactions between Buyers and Sellers and only
+provides the interface and escrow services. 
+ 3.         
+ Services Provided 
+ 3.1.         
+ Marketplace Role and
+Responsibilities 
+ 3.1.1.         
+ Platform Intermediary Role. BuySellVouchers operates as an online marketplace
+facilitating transactions between independent Sellers and Buyers. The Platform
+is neither the buyer nor seller of Products listed and does not own, control,
+or sell any Products itself, except when explicitly indicated. 
+ 3.1.2.         
+ Limited Liability
+All sales contracts are made exclusively between the Buyer and the Seller. BuySellVouchers does not guarantee or endorse the accuracy,
+quality, safety, legality, or reliability of any Seller, Product, or
+transaction listed or completed through the Platform. The Platform explicitly
+disclaims all liability for losses, damages, or claims arising from any
+transactions conducted via the Platform. 
+ 3.2.         
+ Peer-to-Peer (P2P)
+Transactions 
+ 3.2.1.         
+ Escrow Facilitation
+ BuySellVouchers (or its designated Payment Processor)
+may temporarily hold funds paid by the Buyer as part of its marketplace service
+to ensure secure transaction fulfillment. The Platform will hold such payments
+for up to 36 hours or until the Buyer explicitly confirms receipt and
+acceptance of the Product. 
+ 3.2.2.         
+ Buyers agree and acknowledge
+that: 
+ 3.2.2.1.         
+ Such holding of funds is
+solely for transactional safety and does not constitute a fiduciary custodial
+relationship or bank deposit. 
+ 3.2.2.2.         
+ The company does not operate
+as a licensed escrow or payment institution. Funds are temporarily held only as
+a part of transactional facilitation and not under any fiduciary or custodial
+obligation. 
+ 3.2.2.3.         
+ Funds held during transactions
+do not earn interest and are not insured by any governmental or private agency. 
+ 3.2.2.4.         
+ The Platform may commingle or
+otherwise manage held funds in its ordinary course of business operations,
+subject to applicable law, and Buyers shall have no claim to any interest or
+other benefit arising from such held funds. 
+ 3.2.3.         
+ Release and Refund of Funds 
+ Funds will be released to the Seller upon Buyer's
+confirmation of Product delivery or automatically after 36 hours if no dispute
+or claim has been raised by the Buyer within that period. In case of a dispute,
+the Platform reserves the right to retain funds until a resolution is reached.
+Decisions made by the Platform regarding disputes are final and binding on both
+Buyer and Seller. 
+ 3.3.         
+ Direct Sales by Platform
+Products sold directly by BuySellVouchers (clearly
+identified as such on the Platform) are governed separately, and the Platform
+explicitly guarantees accurate descriptions and timely delivery solely for
+these direct sales. 
+ 3.4.         
+ Seller Listings and
+Information
+Sellers are exclusively responsible for providing complete, accurate, truthful,
+and updated Product descriptions, conditions, restrictions, regional
+limitations and other relevant details. Buyers must thoroughly review these
+details prior to purchase. The Platform disclaims any responsibility for
+inaccuracies or omissions in listings provided by Sellers. 
+ 3.5.         
+ Communication Tools and User
+Reviews
+Buyers and Sellers must utilize only Platform-provided communication channels.
+Communication outside the Platform for transaction purposes is strictly
+prohibited. Users may provide feedback, reviews, and ratings after each
+transaction to enhance transparency and trust. The Platform reserves the right,
+at its discretion, to remove feedback that violates its policies or is
+determined to be abusive, manipulative, or fraudulent. 
+ 3.6.         
+ Third-party Payment Processors 
+ 3.6.1.         
+ Payment processing is handled
+by licensed third-party payment processors, including cryptocurrency payment
+processor Finassets.io 
+(TROPIC GATEWAY SOLUTION S.A.) and approved fiat payment gateways (including
+but not limited to Tazapay.com ),
+among others. 
+ 3.6.2.         
+ By utilizing payment methods
+provided by these third-party gateways, you acknowledge and agree to be bound
+by their respective terms and conditions, which can be found on their official
+websites. 
+ 3.6.3.         
+ BuySellVouchers assumes no responsibility or liability for any payment processing
+failures, errors, delays, fees, or other issues that arise as a result of a Client's failure to adhere to the terms and conditions of
+the respective payment provider. 
+ 4.         
+ Account Types and Registration 
+ 4.1.         
+ Account types: 
+ 4.1.1.         
+ Guest Users: Can perform
+limited purchases without an account. 
+ 4.1.2.         
+ Registered Buyers: Basic
+account with enhanced purchase history and features. 
+ 4.1.3.         
+ Verified Buyers: Higher
+transaction limits after verification. 
+ 4.2.         
+ Account registration requires
+providing accurate personal details. 
+ 4.3.         
+ Users must update personal
+details within 14 calendar days of changes. 
+ 4.4.         
+ Only one account per
+individual or legal entity is allowed unless explicitly authorized by BuySellVouchers . The Platform reserves the right to
+identify and irrevocably close any and all duplicate accounts without prior
+notice. 
+ 4.5.         
+ Using VPN or similar location
+masking without prior approval is prohibited. 
+ 4.6.         
+ Recreating a Suspended
+Account. Users whose accounts have been previously suspended or terminated are
+prohibited from creating new accounts. If the Platform discovers that a
+previously suspended user has registered a new account, we reserve the right to
+immediately and permanently close that new account without notice. 
+ 4.7.         
+ BuySellVouchers reserves the right, at its sole discretion, to modify, reset, or assign a new username to any User account if the selected username; such modification may be made unilaterally and without prior notice, and the previous username may not be restored: 
+ 4.7.1.         
+ contains or references external contact details or third-party platforms; 
+ 4.7.2.         
+ may facilitate off-platform communication or transactions; 
+ 4.7.3.         
+ impersonates another person or entity, or is misleading; or 
+ 4.7.4.         
+ is associated with suspected violations of these Terms. 
+ 5.         
+ Buyer Responsibilities 
+ 5.1.         
+ Carefully review product
+descriptions, terms of sale, and Seller details before purchasing. 
+ 5.2.         
+ Confirm that the chosen
+cryptocurrency network (e.g., USDT TRC20, ERC20, Polygon) matches the intended
+transaction; incorrect transactions may be unrecoverable. 
+ 5.3.         
+ Immediately report
+unauthorized use of accounts or suspicious activities to the support team. 
+ 6.         
+ Payments and Cryptocurrency
+Balance 
+ 6.1.         
+ Accepted Payment Methods 
+ 6.1.1.         
+ Payments on BuySellVouchers are exclusively processed through: 
+ 6.1.1.1.         
+ Supported cryptocurrencies via
+our approved crypto payment processors (including Finassets.io ). 
+ 6.1.1.2.         
+ Approved third-party fiat
+payment gateways (including but not limited to Tazapay.com ). 
+ 6.1.2.         
+ When using third-party payment
+methods (credit cards, e-wallets, etc.), users must agree to the respective
+third-party’s terms and conditions. BuySellVouchers 
+is not responsible or liable for any errors, failures, fees, or additional
+costs incurred due to third-party payment providers. 
+ 6.2.         
+ Cryptocurrency Payment
+Disclaimer 
+ 6.2.1.         
+ Cryptocurrency payments are
+irreversible. Users are solely responsible for ensuring the correct
+cryptocurrency type, amount, and network (e.g., TRC20, ERC20, Polygon) are
+selected when initiating a payment. 
+ 6.2.2.         
+ BuySellVouchers is not responsible for cryptocurrency payments sent to incorrect
+wallet addresses or through unsupported blockchain networks. Such transactions
+may lead to permanent loss of funds with no possibility of recovery or refund. 
+ 6.2.3.         
+ Users may request a crypto
+transaction tracking service provided by the Platform at a fee of $100.
+However, this service does not guarantee fund recovery. 
+ 6.3.         
+ Buyer USD Balance (Platform
+Credit) 
+ 6.3.1.         
+ Nature of Balances. The
+Platform allows Users to hold balances in specific cryptocurrencies, such as
+USDT TRC20, USDT BEP20, and USDT Polygon ("Cryptocurrency Balances").
+These balances are recorded on an internal ledger corresponding to your account. 
+ 6.3.2.         
+ No Conversion. The Platform
+does not perform any currency conversion. The asset you deposit is the exact
+asset type credited to your balance. The final credited amount will be the
+amount you deposited minus any applicable platform top-up fees. These fees will
+be clearly disclosed to you before you confirm the transaction. 
+ 6.3.3.         
+ Buyer Deposits. For Buyers,
+Cryptocurrency Balances that are topped up or deposited are considered
+closed-loop funds intended solely for purchasing Products on the Platform.
+These deposited balances are non-withdrawable and cannot be exchanged for other
+currencies. 
+ 6.3.4.         
+ Seller Earnings. Balances
+accrued by Sellers from completed sales are distinct and governed by the Seller
+Terms and Conditions regarding withdrawals. Sellers receive the same
+cryptocurrency that the Buyer used for the purchase and may withdraw that specific
+cryptocurrency. 
+ 6.4.         
+ Disclaimers 
+ 6.4.1.         
+ No Interest or Insurance.
+Cryptocurrency Balances held on the Platform do not earn interest and are not
+insured by any governmental or private agency. They
+do not constitute a bank deposit or an electronic money account. 
+ 6.4.2.         
+ Not a Wallet Service. The
+Platform is not a cryptocurrency wallet provider. Balances should only be held
+for the purpose of transacting on BuySellVouchers . We
+are not responsible for any risks associated with the volatility or security of
+the underlying cryptocurrency assets. 
+ 6.5.         
+ Currency Conversion Costs and
+Risks 
+ 6.5.1.         
+ Any fees, costs, or losses
+resulting from currency conversions or fluctuations in cryptocurrency market
+values are solely borne by the user. BuySellVouchers 
+does not compensate users for any losses or additional costs related to
+currency conversions or exchange rate volatility. 
+ 7.         
+ Product Delivery 
+ 7.1.         
+ Delivery Methods Overview
+Products listed on BuySellVouchers are delivered via
+either Instant Automatic Delivery or Manual Delivery. The applicable delivery
+method is clearly indicated on each Product page. Buyers must review the
+delivery method before finalizing their purchase. 
+ 7.2.         
+ Instant Automatic Delivery 
+ 7.2.1.         
+ Immediate Digital Fulfillment
+Products designated as "Instant Automatic Delivery" are delivered
+digitally to the Buyer upon successful payment confirmation and availability of
+the Platform’s relevant payment processing and delivery systems. Delivery
+typically occurs within minutes but may vary due to network conditions,
+transaction volume, payment processing delays, security checks, technical
+availability, or other circumstances outside the Platform’s reasonable control. 
+ 7.2.1.1.         
+ Delayed Instant Delivery Due to
+Technical or Payment Processing Disruptions
+Where payment confirmation, payment processing, Platform systems, delivery
+systems, blockchain networks, third-party payment processors, hosting providers,
+third-party APIs, or other third-party service providers are affected by delays,
+outages, cyberattacks, DDoS attacks, maintenance, transaction volume, technical
+malfunctions, or other disruptions outside the Platform’s reasonable control,
+delivery of Instant Automatic Delivery Products may be delayed until the
+relevant issue is resolved.
+In such cases, the order may be processed and delivered after payment
+confirmation or technical processing becomes available to the Platform. Such
+delay shall not, by itself, constitute non-delivery, failed delivery, or
+grounds for cancellation or refund, provided that the Product is delivered
+after processing is restored.
+Successful delivery after restoration of payment or technical processing shall
+be considered fulfillment of the delivery obligation for Instant Automatic
+Delivery Products. The Buyer’s rights after such delivery remain subject to the
+applicable Buyer Protection period and standard refund rules for Digital
+Products, including the requirement to provide evidence of an actual
+Product-related issue. 
+ 7.2.2.         
+ Delivery Method
+The delivery method for Digital Products depends on the User's status at the
+time of purchase. 
+ 7.2.2.1.         
+ For Registered Users: Products
+are delivered to the Buyer’s account on the Platform. An email notification
+will be sent containing a secure link that directs the User to their account to
+view and access the Product details. 
+ 7.2.2.2.         
+ For Guest Users: Products are
+delivered directly to the email address provided during checkout. This email
+will contain all the necessary Product details for immediate use. 
+ 7.2.3.         
+ Buyer Verification Obligation
+Buyers must verify the accuracy and functionality of the Digital Product
+immediately upon delivery. Any discrepancies or issues must be reported within
+24 hours of delivery, as defined in the Buyer Protection Policy (see Clause 8). 
+ 7.3.         
+ Manual Delivery 
+ 7.3.1.         
+ Seller Processing and
+Fulfillment 
+ Products designated as "Manual Delivery" require the Seller to
+manually deliver the Digital Product within 24 hours following payment
+confirmation. The specific delivery timeframe and the Seller’s operational
+hours will be indicated clearly on the Product listing. 
+ 7.3.2.         
+ Applicability of Manual
+Delivery 
+ Manual Delivery applies to Digital Products that require direct Seller
+involvement and cannot be automatically fulfilled at the time of payment. 
+ 7.3.3.         
+ Delivery Expectations and
+Obligations 
+ 7.3.3.1.         
+ Buyers agree that the Seller
+has a maximum of 24 hours to deliver the Product. 
+ 7.3.3.2.         
+ Buyers must allow the full
+24-hour window to elapse before reporting non-delivery issues. 
+ 7.3.3.3.         
+ Sellers must provide
+confirmation of delivery via the Platform, including proof if requested by BuySellVouchers . 
+ 7.3.4.         
+ Late Delivery and Automatic
+Refund
+If the Seller fails to deliver the Digital Product within the stipulated
+24-hour delivery window, the order will be automatically cancelled by the
+Platform, and the Buyer will automatically receive a full refund to their
+Platform account balance. No manual action by the Buyer is required to initiate
+this refund. 
+ 7.4.         
+ Delivery Communications
+All delivery-related notifications are conducted via Platform messaging and
+email notifications. Communication regarding delivery must take place
+exclusively through Platform-provided methods. Off-platform delivery or
+communications violate Platform policy and Buyer Protection coverage. 
+ 8.         
+ Refunds, Buyer Protection, and
+Dispute Resolution 
+ 8.1.         
+ General Refund Policy 
+ 8.1.1.         
+ All sales are generally final.
+Refunds are only provided under specific circumstances described explicitly in
+this section. 
+ 8.1.2.         
+ Refund eligibility scenarios
+include: 
+ 8.1.2.1.         
+ Non-delivery of purchased Digital
+Products within the promised timeframe. For Instant Automatic Delivery Products,
+the promised timeframe is immediate delivery upon successful payment
+confirmation and availability of the Platform’s relevant payment processing and
+delivery systems, subject to Clause 7.2.1.1. For Manual Delivery Products, the
+promised timeframe is within 24 hours following payment confirmation. A delay
+affecting Instant Automatic Delivery Products under Clause 7.2.1.1 shall not,
+by itself, constitute non-delivery where the Product is delivered after payment
+or technical processing is restored. 
+ 8.1.2.2.         
+ Delivered products that
+significantly differ from their listed description, including invalid,
+previously redeemed, or otherwise unusable vouchers or keys. 
+ 8.1.3.         
+ Refunds are not provided for
+reasons including, but not limited to: 
+ 8.1.3.1.         
+ Buyer dissatisfaction or
+change of mind after the product has been viewed, redeemed, or otherwise
+consumed. 
+ 8.1.3.2.         
+ Transactions completed or
+communicated off-platform. 
+ 8.1.3.3.         
+ Products confirmed by the
+Buyer as received and valid, after the 24-hour inspection period. 
+ 8.1.4.         
+ Refund Method. The method for
+processing an approved refund depends on the User's status at the time of
+purchase: 
+ 8.1.4.1.         
+ For Registered Users:
+Refunds are exclusively credited to the User's corresponding Cryptocurrency
+Balance on the Platform. The refund will be issued in the same asset that was
+used for the original purchase (e.g., a transaction paid with USDT TRC20 will
+be refunded as USDT TRC20). 
+ 8.1.4.2.         
+ For Guest Users: 
+To receive an approved refund, users who made a purchase without a registered
+account ("Guest Users") must first register an account on the
+Platform. Once the account is successfully created, the refund will be credited
+to the User's corresponding Cryptocurrency Balance in the same asset used for
+the purchase, following the same procedure as for Registered Users (outlined in
+Clause 8.1.4.1). No refunds are processed to external wallets for guest
+purchases. 
+ 8.2.         
+ Buyer Protection – 24-Hour
+Inspection Period 
+ 8.2.1.         
+ Upon delivery, Buyers have 24
+hours to verify the product's validity, accuracy, and conformity with its
+description. 
+ 8.2.2.         
+ After the 24-hour inspection
+period expires, the transaction is considered complete, confirmed, and
+non-refundable. 
+ 8.3.         
+ Initiating a Dispute 
+ 8.3.1.         
+ Buyers must initiate disputes
+within the 24-hour inspection period, starting from the exact timestamp the
+product was marked as delivered or the payment was completed. 
+ 8.3.2.         
+ Disputes can be initiated
+directly through the Platform’s dispute system interface by providing detailed
+and clear evidence substantiating the claim. Evidence may include: 
+ 8.3.2.1.         
+ Screenshots demonstrating
+product invalidity. 
+ 8.3.2.2.         
+ Official communications with
+relevant third-party services verifying issues. 
+ 8.3.2.3.         
+ Any other objectively
+verifiable documentation. 
+ 8.3.3.         
+ The Platform automatically
+notifies the Seller once a dispute is initiated. Sellers have 24 hours from
+this notification to respond to the dispute by providing their own evidence or
+offering resolution. Once a dispute has been
+closed, whether resolved through refund, replacement, or buyer inaction, it
+cannot be reopened or re-initiated on the same grounds. 
+ 8.3.4.         
+ If a dispute concerns more than
+one delivered Product, code, voucher, account, subscription, or other item
+within the same order, the Buyer must clearly identify each disputed item and
+provide separate and sufficient evidence for each disputed item. General
+statements, unsupported claims, or evidence relating only to part of the order
+may be insufficient to support a claim for the entire order. 
+ 8.3.5.         
+ BuySellVouchers reserves the right to request additional evidence, including but not
+limited to full screenshots, screen recordings, official third-party
+confirmation, redemption information, account region information, error messages,
+or any other documentation necessary to verify the Buyer’s claim. Failure to
+provide requested evidence within the timeframe specified by the Platform may
+result in the dispute being partially or fully resolved in the Seller’s favor. 
+ 8.4.         
+ Dispute Resolution Process 
+ 8.4.1.         
+ If the Seller does not respond
+within 24 hours, the Buyer may escalate the dispute directly to Platform
+administration for investigation. 
+ 8.4.2.         
+ During escalations, Platform
+administration will evaluate evidence provided by both Buyer and Seller. Buyers
+and Sellers may be requested to provide additional information or
+clarification. Such additional evidence must be submitted within 48 working
+hours (calculated as 2 full working days, Monday to Friday, excluding
+weekends) of the request, or the dispute will be resolved in favor of the other
+party. 
+ 8.4.2.1.         
+ If a dispute requires input
+from a third-party provider and a response cannot be obtained within 48
+working hours, the Seller is required to update the Buyer through the Platform.
+Sellers must continue to provide updates every 48 working hours (Monday to
+Friday) until the dispute is resolved. 
+ 8.4.2.2.         
+ Failure by the Seller to provide
+such updates may result in the Platform administration proceeding with a
+resolution in favor of the Buyer without waiting for the third-party provider’s
+response. 
+ 8.4.3.         
+ The Platform administration
+retains the sole right to make final, binding decisions in all escalated
+disputes and any dispute reviewed at the Platform’s own initiative under Clause
+8.4.5, based on the evidence, correspondence, transaction data, and other
+information available to the Platform. 
+ 8.4.4.         
+ Resolutions may include: 
+ 8.4.4.1.         
+ Full or partial refund to the
+Buyer’s platform balance. 
+ 8.4.4.2.         
+ Re-delivery of an equivalent
+or replacement digital product from the Seller. 
+ 8.4.4.3.         
+ Closure of the dispute without
+compensation if evidence does not substantiate the claim. 
+ 8.4.4.4.         
+ In exceptional dispute cases,
+where the Platform determines that a loss may have occurred but the available
+evidence does not allow responsibility to be conclusively established for
+either party, the Platform reserves the right, at its sole discretion, to
+resolve the dispute by allocating fifty percent (50%) of the disputed amount
+to the Buyer and fifty percent (50%) to the Seller. 
+ 8.4.4.5.         
+ Such a resolution may be
+applied where the available evidence does not support either a full refund to
+the Buyer or a full release of the held funds to the Seller, and the parties
+have not reached a mutual settlement. 
+ 8.4.4.6.         
+ Any such resolution shall be
+based solely on the information available to the Platform during the complaint
+process and shall not constitute a finding, admission, or determination of
+fault, liability, or wrongdoing by either party. The Platform is under no
+obligation to apply such a resolution in any particular case, and any such
+decision shall be final unless the Platform determines otherwise. 
+ 8.4.5.         
+ If a dispute remains unresolved
+and without meaningful progress for 30 calendar days or more, Platform
+administration reserves the right to review and resolve the dispute at its own
+initiative, regardless of whether either party has escalated the dispute. Such
+dispute may be resolved based on the evidence, correspondence, transaction data,
+and other information available to the Platform at the time of review. Platform
+administration is not required to request additional evidence or clarification
+from either party unless deemed necessary for the resolution of the dispute. 
+ 8.5.         
+ Limitations and Exclusions 
+ 8.5.1.         
+ Buyers who initiate external
+chargebacks (e.g., via bank, cryptocurrency exchanges, payment processors, or
+other third-party financial institutions) will have their disputes
+automatically closed by the Platform, with the possibility of immediate account
+suspension. 
+ 8.5.2.         
+ Disputes initiated or
+escalated after the 24-hour inspection period will not be considered by
+Platform administration under any circumstances. 
+ 8.5.3.         
+ Disputes initiated after the
+24-hour inspection period will not be accepted. However, while the Platform is
+under no obligation to do so, it reserves the sole right to investigate claims
+submitted after this timeframe in exceptional circumstances and at its absolute
+discretion. Any decision to review a late claim does not establish a precedent
+for future cases. 
+ 8.5.4.         
+ Disputes from Users with
+Duplicate Accounts. If, during a dispute investigation, the Platform discovers
+that the Buyer has created or is using multiple unauthorized accounts, the
+Platform reserves the right to immediately close the dispute in the Seller’s
+favor. The Platform is under no obligation to review any evidence submitted by
+a Buyer found to be operating duplicate accounts. 
+ 8.5.5.         
+ Long-Term and High-Risk Digital
+Products 
+ 8.5.5.1.         
+ For Products intended for
+long-term use, including but not limited to subscriptions, accounts,
+memberships, upgrades, access-based services, and other time-based digital
+goods, the Buyer Protection period covers the initial receipt, access,
+activation, validity, and usability of the Product during the applicable
+inspection period. 
+ 8.5.5.2.         
+ After the Buyer Protection
+period has expired and the transaction is considered complete, continued access
+to or functionality of long-term and high-risk digital Products may be affected
+by factors outside the Platform, including third-party provider rules, account
+activity, usage conditions, regional restrictions, technical changes, or other
+external circumstances. In many cases, it may not be possible for the Platform
+to objectively determine whether a later issue was caused by the Product itself,
+the Seller, the Buyer’s use, or a third-party provider. 
+ 8.5.5.3.         
+ Due to the nature of long-term
+and high-risk digital Products and the factors described in Clause 8.5.5.2, BuySellVouchers does not provide an automatic guarantee of
+refund, replacement, uninterrupted access, continued functionality, renewal, or
+availability of long-term and high-risk digital Products for the full period
+stated in the Seller’s listing after the Buyer Protection period has expired. 
+ 8.5.5.4.         
+ The limitation of Platform Buyer
+Protection coverage described in Clause 8.5.5.3 does not limit or exclude the
+Seller’s obligations under these Terms. 
+ 8.5.5.5.         
+ Reports submitted after the
+Buyer Protection period may be reviewed by BuySellVouchers 
+at its sole discretion. As part of the review of a post-completion report, the
+Platform may require the Seller to provide evidence, resolve the matter, issue
+a replacement, make funds available, or take other corrective action. Review of
+a post-completion report and marketplace enforcement measures described in this
+Clause are performed for compliance and risk-control purposes only and do not
+constitute an admission of liability by BuySellVouchers 
+or a separate guarantee of refund or compensation by the Platform. 
+ 8.6.         
+ Fraudulent or False Claims 
+ 8.6.1.         
+ Submission of falsified,
+misleading, manipulated, or intentionally deceptive evidence will result in
+immediate suspension or permanent termination of the Buyer’s account. 
+ 8.6.2.         
+ Platform administration
+reserves the right to refuse future service to any Buyer found to engage in
+fraudulent claims or disputes. 
+ 8.6.3.         
+ Abuse of the dispute system is
+strictly prohibited. Buyers must use the dispute system only for genuine
+Product-related issues and must provide accurate, complete, and objectively
+verifiable information regarding each disputed Product or code. 
+ 8.6.4.         
+ A Buyer may not initiate,
+support, coordinate, or participate in false, misleading, abusive, retaliatory,
+malicious, or bad-faith disputes against any Seller. This includes, but is not
+limited to, creating or using multiple accounts, fake accounts, coordinated
+accounts, or third-party accounts to submit complaints, negative feedback, or
+claims intended to harm a Seller’s rating, reputation, sales, account status, or
+access to funds. 
+ 8.6.5.         
+ BuySellVouchers may treat repeated, similar, coordinated, or pattern-based complaints
+as dispute abuse where the available information indicates that the complaints
+are not supported by sufficient evidence, are connected to unauthorized
+duplicate accounts, are submitted for the purpose of harming a Seller, or
+otherwise appear to be fraudulent, misleading, retaliatory, or made in bad
+faith. 
+ 8.6.6.         
+ Where a Buyer submits a dispute
+involving multiple Products, codes, vouchers, accounts, subscriptions, or other
+delivered items within one order, the Buyer must provide separate and sufficient
+evidence for each disputed item. Evidence provided for one item does not
+automatically apply to other items in the same order unless the Platform
+determines that the evidence is clearly applicable to all disputed items. 
+ 8.6.7.         
+ If a Buyer disputes multiple
+items but fails to provide sufficient evidence for each item, BuySellVouchers may limit the investigation and any possible
+refund, replacement, or other resolution only to the items for which sufficient
+evidence has been provided. Items not supported by sufficient evidence may be
+excluded from the dispute review or resolved in the Seller’s favor. 
+ 8.6.8.         
+ If BuySellVouchers 
+determines that a Buyer has abused the dispute system, submitted false or
+misleading claims, coordinated complaints, created or used multiple accounts
+for dispute manipulation, or otherwise acted in bad faith, the Platform may
+close the dispute in the Seller’s favor, remove or amend related feedback,
+restrict the Buyer’s account, suspend or permanently terminate the Buyer’s
+account, refuse future service, withhold or revoke Buyer Protection, and take
+any other measure deemed necessary by BuySellVouchers . 
+ 8.7.         
+ Off-Platform Transactions 
+ 8.7.1.         
+ Transactions or communications
+occurring outside of the Platform’s provided interface are explicitly excluded
+from Buyer protection. No refunds, resolutions, or dispute assistance will be
+provided for off-platform activity. 
+ 8.7.2.         
+ Both Buyers and Sellers are
+strictly prohibited from encouraging, arranging, or facilitating transactions
+outside of the Platform. Violations will result in immediate account
+suspension. 
+ 8.8.         
+ Feedback and Dispute Outcome 
+ 8.8.1.         
+ Buyers can leave feedback
+reflecting their experience, which will directly influence Seller ratings. 
+ 8.8.2.         
+ Negative feedback related to a
+dispute will be reviewed by Platform administration upon dispute resolution. If
+the dispute is resolved positively (e.g., full refund or replacement), negative
+feedback may be amended or removed to accurately reflect resolution status. 
+ 8.8.3.         
+ Feedback must reflect the
+Buyer’s genuine experience with the specific transaction and must not be false,
+abusive, manipulative, retaliatory, coordinated, or submitted for the purpose of
+harming a Seller’s rating or reputation. 
+ 8.8.4.         
+ BuySellVouchers reserves the right, at its sole discretion, to remove, amend, or
+disregard feedback connected to false claims, unsupported disputes, duplicate
+accounts, coordinated activity, abusive conduct, off-platform conflicts, or any
+other violation of these Terms. 
+ 9.         
+ Prohibited Activities and Products 
+ 9.1.         
+ Prohibited Activities 
+ 9.1.1.         
+ Offsite trading, exchanging
+personal contact details, or bypassing the Platform’s payment and resolution
+mechanisms are strictly prohibited. 
+ 9.1.2.         
+ Harassment, abuse, threats,
+aggressive language, or inappropriate conduct towards other users or Platform
+support staff. 
+ 9.1.3.         
+ Creating multiple accounts
+without explicit authorization or using VPNs or location-masking tools without
+prior approval. 
+ 9.1.4.         
+ Manipulating evidence or
+providing false, misleading, or fraudulent information during dispute
+resolution or account verification. 
+ 9.1.5.         
+ Initiating chargebacks or payment
+disputes with third-party payment providers without first attempting resolution
+through the Platform. 
+ 9.1.6.         
+ Attempting to purchase restricted or
+prohibited items, including counterfeit or stolen goods. 
+ 9.1.7.         
+ Refusing to complete a confirmed
+transaction without valid reason or repeatedly initiating purchases with no
+intention to follow through. 
+ 9.1.8.         
+ Penalties for Violations: 
+ 9.1.8.1.         
+ A first violation may result in a formal warning and/or temporary account suspension pending administrative review. 
+ 9.1.8.2.         
+ A second violation will result in a monetary penalty of not less than $100 USD. 
+ 9.1.8.3.         
+ Repeated or subsequent violations may result in a significantly higher monetary penalty, extended account suspension, restriction of account functionality (including withdrawal limitations), or permanent account termination at BuySellVouchers’ sole discretion. 
+ 9.1.8.4.         
+ Any monetary penalty imposed under these Terms must be fully paid before any account reactivation, restoration of access, or withdrawal of remaining funds. A User may not avoid or bypass an imposed penalty by requesting voluntary account closure or abandoning the account. 
+ 9.1.8.5.         
+ Severe or intentional violations may result in immediate account termination, permanent withholding or forfeiture of funds, reporting to relevant authorities, and/or initiation of legal proceedings at BuySellVouchers’ sole discretion. 
+ 9.2.         
+ Prohibited Products 
+ 9.2.1.         
+ Products or services violating
+local or international laws, including sanctioned jurisdictions. 
+ 9.2.2.         
+ Malware, spyware, hacking
+tools, or unauthorized access software. 
+ 9.2.3.         
+ Fraudulent, counterfeit, or
+stolen vouchers, gift cards, or accounts (e.g., PayPal, Binance, Skrill, Neteller ). 
+ 9.2.4.         
+ Illegal, explicit,
+adult-oriented content, or products of erotic nature. 
+ 9.2.5.         
+ Gambling, lottery, betting,
+investment schemes, securities, insurance products, and speculative
+investments. 
+ 9.2.6.         
+ Products facilitating money
+laundering or illegal financial activities. 
+ 9.2.7.         
+ Personal data, spam tools,
+phishing software, or unauthorized data collection products. 
+ 9.2.8.         
+ Charity, fundraising, pyramid
+schemes, MLMs, or fraudulent investments. 
+ 9.2.9.         
+ External advertising materials
+redirecting buyers off-platform. 
+ 9.2.10.         
+ Prescription medications,
+drugs, narcotics, controlled substances, or medical-related products. 
+ 9.2.11.         
+ Weapons, firearms, explosives,
+materials promoting violence, terrorism, or extremism. 
+ 9.2.12.         
+ VPN accounts, shared
+subscriptions (Netflix, Grammarly, etc.), physical bank cards, or identity
+documents. 
+ 9.2.13.         
+ Sale or trading of BuySellVouchers accounts or balances. 
+ 9.2.14.         
+ Products without guaranteed
+timely delivery. 
+ 9.2.15.         
+ Enforcement Measures: 
+ 9.2.15.1.         
+ BuySellVouchers reserves the right to immediately remove offending products, suspend
+accounts, or permanently ban users violating these product restrictions without
+prior notice. 
+ 9.2.15.2.         
+ Users are encouraged to
+immediately report prohibited products or activities. Verified reports may
+result in rewards at BuySellVouchers ’ discretion. 
+ 10.         
+ Feedback System 
+ 10.1.         
+ Buyers can leave and edit
+feedback on purchased products. 
+ 10.2.         
+ Negative feedback triggering a
+dispute will be removed upon satisfactory resolution. 
+ 11.         
+ Liability Limitation 
+ 11.1.         
+ BuySellVouchers explicitly disclaims any liability for indirect, incidental,
+consequential, special, exemplary, punitive, or other similar damages arising
+out of or related to your use of the Platform, including but not limited to
+loss of profits, business interruption, loss of data, or damages arising from
+transactions, disputes, or interactions between Users. 
+ 11.2.         
+ The Platform is provided on an
+"AS IS" and "AS AVAILABLE" basis without warranties of any
+kind, either express or implied. BuySellVouchers does
+not warrant uninterrupted service, security, accuracy, reliability, timeliness,
+or suitability of the Platform for a particular purpose. 
+ 11.3.         
+ BuySellVouchers shall not be liable or responsible for any errors, omissions,
+interruptions, deletions, defects, delays, or technical malfunctions occurring
+during your use of the Platform 
+ 11.4.         
+ Notwithstanding anything to
+the contrary herein, the maximum aggregate liability of BuySellVouchers 
+for any claims arising from the use of the Platform shall not exceed the total
+amount paid by the Buyer for the relevant Product or Service directly giving
+rise to the claim. 
+ 12.         
+ Privacy & Data Protection 
+ 12.1.         
+ Personal Information Handling 
+ 12.1.1.         
+ BuySellVouchers respects user privacy and is committed to protecting the personal
+information of its Users. All personal information collected, stored, or
+processed by the Platform shall comply with applicable data protection
+regulations, including but not limited to GDPR and other relevant local data
+protection laws. 
+ 12.1.2.         
+ Users' personal data will be
+used exclusively for transaction facilitation, customer service, account
+management, fraud prevention, and compliance with legal obligations. 
+ 12.1.3.         
+ To enhance security, prevent
+fraud, and ensure compliance, the Platform may automatically collect and store
+certain technical data. This includes, but is not limited to, users' IP
+addresses, device information (such as browser type and operating system), and
+access timestamps. 
+ 12.2.         
+ Data Sharing and Third Parties 
+ 12.2.1.         
+ Personal information may be
+shared with third-party service providers such as payment processors, fraud
+detection services, or compliance verification providers strictly for the
+purposes mentioned above. 
+ 12.2.2.         
+ BuySellVouchers ensures contractual agreements with third-party providers include
+confidentiality obligations and data protection compliance. 
+ 12.3.         
+ User Rights 
+ 12.3.1.         
+ Users have the right to
+request access to, correction of, deletion of, or restriction of their personal
+information held by BuySellVouchers . Requests can be
+directed through the Platform’s support channels. 
+ 12.3.2.         
+ Users can opt-out of marketing
+communications or data processing activities where legally permitted by
+notifying BuySellVouchers directly via the provided
+support contacts. 
+ 12.4.         
+ Security Measures 
+ 12.4.1.         
+ BuySellVouchers employs industry-standard technical and organizational security
+measures to safeguard personal information against unauthorized access,
+disclosure, alteration, or destruction. 
+ 12.4.2.         
+ Despite robust measures, Users
+acknowledge that no internet-based data transmission or electronic storage can
+guarantee absolute security. 
+ 12.5.         
+ Email Communications and
+Consent 
+ 12.5.1.         
+ By creating an account or
+making a purchase on the Platform, you provide your consent to receive
+electronic communications from BuySellVouchers . 
+ 12.5.2.         
+ These communications include,
+but are not limited to, transactional emails regarding your orders and
+deliveries, security notifications, and informational or promotional content
+such as newsletters and special offers. 
+ 12.5.3.         
+ You may opt out of promotional
+emails by using the "unsubscribe" link found in the communication.
+Please be aware that unsubscribing may result in the cessation of all email
+deliveries from the Platform, including essential transactional and security
+notifications. BuySellVouchers is not liable for any
+issues that arise from your failure to receive essential communications after
+unsubscribing. 
+ 13.         
+ Intellectual Property 
+ 13.1.         
+ Platform Intellectual
+Property. 
+All rights, title, and interest in and to the BuySellVouchers 
+Platform—including its software, logos, designs, graphics, text, and other
+content created by the Company—are and will remain the exclusive property of BuySellVouchers ( Overmorrow 
+Trading Solutions OPC). Unauthorized use of the Platform's intellectual
+property is strictly prohibited and may be subject to legal action. 
+ 13.2.         
+ Third-Party Intellectual
+Property.
+All trademarks, brand names, and logos of the products (e.g., gift cards,
+vouchers) listed for sale on the Platform are the property of their respective
+owners. BuySellVouchers claims no ownership rights
+over the intellectual property of these third parties and uses them solely for
+the purpose of identifying the products sold by sellers. 
+ 14.         
+ Restricted Territories and
+Compliance 
+ 14.1.         
+ The Platform does not provide
+services to users residing in restricted or prohibited jurisdictions. For a
+comprehensive and up-to-date list of these territories, please refer to our
+official Anti-Money Laundering (AML) Policy . 
+ 14.2.         
+ Buyers must comply with all
+applicable local, regional, and international laws when using the Platform. 
+ 15.         
+ Amendments and Updates 
+ 15.1.         
+ BuySellVouchers reserves the right to modify these Terms at any time, with changes
+effective immediately upon publication on the Platform. 
+ 16.         
+ Governing Law 
+ 16.1.         
+ These Terms shall be governed
+by, and construed in accordance with, the laws of the Philippines without
+regard to any choice or conflict of laws rules. 
+ 16.2.         
+ Claim Notice. To the extent
+permitted by law, you agree to waive your rights to any jury trial and for any
+dispute arising out of or related to these Terms resolved in court. For any
+dispute or claim that you have against Company or relating in any way to these
+Terms, you agree to first contact Company and attempt to resolve the claim
+informally by sending a written notice of your claim ("Notice") to us
+by email at info@buysellvouchers.com. 
+ 17.         
+ General 
+ 17.1.         
+ Notices. By using the
+Services, we may provide you with any notice or communication, relating to your
+use of Services by email via the email account associated with your account. It
+is your responsibility to ensure that you have provided an accurate and up-to-date
+email account. Notices may be given, and are deemed to be received, if sent to
+your email account, whether or not a notice of delivery failure is received.
+Any notices, consent or other communication given under these Terms must be in
+writing, in English, and signed or otherwise authorized by the party giving it. 
+ 17.2.         
+ Entire agreement. The Terms
+constitute the entire agreement between you and Company with respect to the
+Services. Each party acknowledges that it has not relied on, and shall have no
+right or remedy in respect of, any statement, representation, assurance or
+warranty (whether made negligently or innocently) other than as expressly set
+out in these Terms or any Product Terms. 
+ 17.3.         
+ Assignment. You may not assign
+or transfer any of your rights or delegate any of your obligations hereunder,
+in whole or in part, without our prior written consent. However, we may assign
+or transfer any of our rights or obligations under these Terms at any time to
+anyone else, including, without limitation, in connection with any merger,
+acquisition, or other corporate reorganization involving Company. 
+ 17.4.         
+ Severance. If, at any time,
+any clause of these Terms is or becomes illegal, invalid, or unenforceable,
+neither the legality, validity or enforceability of the remaining clauses will,
+in any way, be affected or impaired. 
+ 17.5.         
+ Recordings. Subject to
+applicable law, you agree that Company may, without further disclosure, or
+consent from you, record any communication that we have with you in relation to
+these Terms, including communication used to give instructions or effect transactions.
+Any recordings we keep will constitute evidence of the communications between
+you and us. You agree that we may use the recorded conversations, transcripts,
+messages, or other records of communication to allow us to ensure compliance
+with applicable law, provide customer support, deal with any dispute in
+connection with these Terms and in any other manner not prohibited by
+applicable law. These recordings will be Company's sole property. 
+ 17.6.         
+ Third-party rights. Other than
+in relation to the affiliates or 3rd parties, nothing expressed or referred to
+in these Terms will be construed to give any person other than the parties to
+these Terms any legal or equitable right, remedy, or claim under or with
+respect to these Terms or any clause of these Terms. These Terms are for the
+sole and exclusive benefit of the parties to these Terms and their successors
+and permitted assigns. 
+ 17.7.         
+ Survival. All clauses of these
+Terms, which by their nature extend beyond the expiration or termination of
+these Terms, will continue to be binding after such termination or expiration. 
+ 17.8.         
+ Relationship of the parties.
+Company is not an agent of you in the performance of these Terms. These Terms
+shall not be interpreted as facts or evidence of an association, joint venture,
+partnership, or franchise between the parties. 
+ 17.9.         
+ Digital Assets. We record in
+your Account the quantity and type of Digital Assets that are held to your
+credit. Such Digital Assets will not be
+segregated on-chain in different wallets from Digital Assets held to the credit
+of other users or Digital Assets maintained by Company for business purposes.
+An internal ledger is used to record the quantity and type of Digital Assets a
+customer is entitled to. Each user will have a ledger-based off-chain account
+or sub-account with a unique identifier (UID) and associated login credentials,
+against which the relevant user credit balances are recorded. Company is not a
+trustee of, and does not owe any trustee duties in relation to, any Digital
+Assets held to your credit. When you instruct us to transfer or otherwise deal
+with Digital Assets, we will not use any specifically identifiable Digital
+Assets to act on such Instructions. 
+ Subject to these Terms, Company will use Digital Assets in the same
+quantity and of the same type as those credited to your Account when acting on
+your Instructions. You will have the right to receive the same quantity and
+same type of Digital Assets as those credited to your Account. 
+ 17.10.         
+ Force Majeure. We will not be
+liable for any failure or delay in the performance as required by these Terms
+due to causes beyond its reasonable control, including, but not limited to,
+labor disputes, strikes, lockouts, shortages of or inability to obtain energy,
+raw materials or supplies, war, terrorism, riot, or pandemics. 
+ 17.11.         
+ Waiver. No delay or omission
+by Company in exercising any right or remedy under these Terms shall be
+construed to be a waiver of that right or remedy or of any other rights or
+remedies thereafter to enforce such rights or remedies. The rights and remedies
+as set out in these Terms are cumulative and not exclusive of any rights or
+remedies provided by Applicable Law. 
+ 17.12.         
+ Amount set-off. In addition to
+any other right or remedy available under these Terms or by law, we may set off
+any amounts you owe to us under these Terms or otherwise. Save as may be
+required by Applicable Law, you must pay all sums that you owe to us free and
+clear without any set-off, counterclaim, deduction or withholding of any kind. 
+ 17.13.         
+ Privacy. If you receive
+information about another user through the Platform or from using the Services,
+you must keep the information confidential and only use it in connection with
+the Services and in accordance with Applicable Law. You must not disclose or
+distribute any user information to a third party or use the information in any
+manner except as reasonably necessary to effect a
+Transaction. 
+ 17.14.         
+ Death of Account Holder. In
+the event of your death or incapacity, we may suspend your Account if we have
+reason to believe that you have deceased. Your Account will be suspended until:
+( i ) a representative or beneficiary of your estate
+completes a successful inheritance application to receive the assets in your
+Account in accordance with Company's requirements (which may be updated from
+time to time without notice); or (ii) you provide satisfactory proof that you
+are not deceased. The transfer of the assets to your Account under this clause
+is subject to the restrictions imposed by Applicable Law and these Terms. We
+make no commitment to any particular timeline for the transfer of assets held
+to the credit of your Account. 
+ 17.15.         
+ Tax. It is your responsibility
+to determine what, if any, taxes apply to the payments you make or receive, and
+to collect, report, and remit the correct tax to the appropriate tax authority.
+Company is not responsible for determining whether any tax is applicable to the
+use of the Services, or for collecting, reporting or remitting any tax arising
+from any Transaction or use of the Services. You acknowledge that we may make
+certain reports to the relevant tax authorities regarding Transactions made on
+the Platform. Company may, in its sole discretion or as required by Applicable
+Law, provide you with additional documentation for the calculation of any tax
+obligations. We may also withhold and deduct any tax at source due under
+Applicable Law in our sole discretion. 
+ 17.16.         
+ The Company reserves the
+right, at its sole discretion, to participate on the Platform as both a buyer
+and a seller, either directly or through its affiliated entities. When acting
+in such a capacity, the Company and its affiliates shall not be bound by the
+same terms, conditions, or fee structures applicable to other users. This may
+include, without limitation, privileged access to Platform and user data,
+alternative pricing, and the use of different technical interfaces. 
+ 18.         
+ Terms and Conditions (Sellers) 
+ 18.1.         
+ Seller Account Types and Verification 
+ 18.1.1.         
+ Individual Seller Accounts
+(KYC) 
+ 18.1.1.1.         
+ All individual Sellers must
+complete a mandatory Know Your Customer (KYC) verification process. 
+ 18.1.1.2.         
+ KYC verification requires submission of valid
+government-issued photo identification, proof of residential address, and a
+live verification selfie or video call, subject to Platform requirements. 
+ 18.1.1.3.         
+ Sellers failing to complete
+KYC within the stipulated timeframe (14 days from registration) will have their
+accounts restricted or suspended. 
+ 18.1.1.4.         
+ Individual Sellers will have
+transaction and withdrawal limits according to their verification level. 
+ 18.1.2.         
+ Business Seller Accounts (KYB) 
+ 18.1.2.1.         
+ Business entities registering
+as Sellers must complete a mandatory Know Your Business (KYB) verification
+procedure. 
+ 18.1.2.2.         
+ Required documentation
+includes, but is not limited to: 
+ 18.1.2.2.1.         
+ Certificate of Incorporation
+and Articles of Association 
+ 18.1.2.2.2.         
+ Proof of business address
+(e.g., utility bill, lease agreement) 
+ 18.1.2.2.3.         
+ Identification documents of
+beneficial owners and authorized representatives 
+ 18.1.2.2.4.         
+ Business bank account details 
+ 18.1.2.3.         
+ Additional due diligence may
+be requested at Platform discretion. 
+ 18.1.2.4.         
+ Successfully verified Business
+Seller Accounts benefit from significantly higher transaction limits, enhanced
+account features, and promotional possibilities compared to individual
+accounts. 
+ 18.2.         
+ Seller Registration Obligations 
+ 18.2.1.         
+ Sellers must provide complete,
+accurate, truthful, and updated information during registration and maintain
+such information in an updated state within 14 calendar days of any changes. 
+ 18.2.2.         
+ Only one Seller account per
+individual or entity is allowed unless explicitly authorized by BuySellVouchers . 
+ 18.2.3.         
+ Recreating a Suspended
+Account. Sellers whose accounts have been previously suspended or terminated
+are prohibited from creating new accounts. If the Platform discovers that a
+previously suspended Seller has registered a new account, we reserve the right
+to immediately and permanently close that new account without notice and may
+forfeit any pending balances associated with it. 
+ 18.3.         
+ Listing and Product Responsibilities 
+ 18.3.1.         
+ Product Listings 
+ 18.3.1.1.         
+ Sellers must clearly and
+accurately describe the Products offered, including all restrictions, value,
+validity periods, regional limitations, conditions of use, and any activation
+details. 
+ 18.3.1.2.         
+ All Products listed must
+adhere strictly to the Platform’s Prohibited Products list (Clause 9.2).
+Violation of this requirement will result in immediate listing removal,
+penalties, and possible account termination. 
+ 18.3.1.3.         
+ Subscription-Based Products.
+Sellers are not permitted to list subscription-based Products as fixed-term services (including but not limited to “3 months”, “6 months”, or “12 months”) unless the subscription is fully prepaid and technically secured for the entire stated period at the time of delivery.
+Subscription Products advertised with a fixed duration must be preloaded with the full subscription period.
+Products that rely on monthly renewals, recurring payments, manual renewals, or future actions by the Seller are not considered fully delivered fixed-term subscriptions and are not permitted under the Platform’s Buyer Protection Policy. 
+ 18.3.1.4.         
+ Product Denomination and Split
+Fulfilment.
+A Product listed with a specific denomination must be fulfilled in the exact denomination as advertised.
+Fulfilment of the total value using multiple codes or vouchers is permitted only where the Seller clearly and explicitly discloses this in the Product description prior to purchase. For Manual Delivery, the Seller must additionally inform the Buyer of the split denomination before sending any codes.
+The disclosure must be clear, prominent, and unambiguous to allow the Buyer to make an informed purchasing decision. If the Seller fails to provide such disclosure and the Buyer raises a complaint that the split denomination is unsuitable or does not meet their needs, the Platform reserves the right to treat the delivery as non-conforming and resolve the dispute in the Buyer’s favor. 
+ 18.3.1.5.         
+ High-Risk and Long-Term Digital Products. Certain categories of Products, including but not limited to accounts, subscriptions, upgrades, access-based services, and other time-based or long-term digital goods, may be classified by the Platform as high-risk Products due to their dependency on third-party platforms, payment validation, regional restrictions, account usage conditions, or other external factors. 
+ 18.3.1.6.         
+ Sellers listing such Products acknowledge and agree that their responsibility is not limited to the moment of delivery, activation, or initial access. The Seller remains responsible for ensuring that the Product remains valid, usable, and materially consistent with the advertised description for the entire duration stated in the listing. 
+ 18.3.1.7.         
+ Successful activation, initial access, or proof that a Product was functional at the time of delivery does not, by itself, constitute full and proper fulfillment of the Seller’s obligations where the Product was advertised as having a fixed duration or ongoing validity. 
+ 18.3.1.8.         
+ A Seller may not disclaim, exclude, or shift responsibility for the early removal, restriction, downgrade, invalidation, or loss of access to a high-risk or long-term Product solely by stating in the Product description that no warranty is provided, that the Buyer assumes all risk, or that the issue may depend on third-party platform policies. 
+ 18.3.2.         
+ Accuracy and Liability 
+ 18.3.2.1.         
+ Sellers are solely responsible
+and liable for ensuring that all information presented in their Product
+listings is truthful, accurate, complete, and not misleading. 
+ 18.3.2.2.         
+ Sellers acknowledge that BuySellVouchers is not responsible or liable for
+inaccuracies or errors in Seller-generated content. 
+ 18.3.3.         
+ Proof of Purchase and Product Legitimacy 
+ 18.3.3.1.         
+ All Products must originate
+from legitimate and lawful sources. The sale of Products obtained through
+fraudulent or unauthorized means is strictly prohibited. 
+ 18.3.3.2.         
+ BuySellVouchers reserves the right, at any time and at its sole discretion, to request
+proof of purchase for any Product listed for sale or previously sold. The
+Seller must provide this proof promptly upon request. 
+ 18.3.3.3.         
+ Acceptable proof of purchase
+includes, but is not limited to, official invoices, bank statements, or digital
+receipts and platform extracts from the original retailer that clearly
+demonstrate the legitimate acquisition of the Product. 
+ 18.3.3.4.         
+ Failure to provide
+satisfactory proof of purchase may result in immediate actions by the Platform,
+including but not limited to, removing the relevant Product listing,
+restricting the Seller’s ability to sell certain products, or the temporary
+suspension or permanent closure of the Seller’s account. 
+ 18.3.3.5.         
+ The submission of forged,
+manipulated, misleading, or otherwise falsified proof of purchase is a severe
+violation of these Terms. Any such action will result in the immediate
+temporary suspension or permanent termination of the Seller’s account at the Platform’s
+sole discretion. 
+ 18.3.4.         
+ Product Listing Accuracy and Corrective Actions 
+ 18.3.4.1.         
+ Sellers must ensure that each
+Product listing, including the Product name, category, denomination, region,
+delivery method, description, validity period, subscription period, redemption
+conditions, usage restrictions, and any other relevant details, is accurate,
+complete, truthful, and not misleading. 
+ 18.3.4.2.         
+ A Product listing may be
+considered inaccurate, misleading, or non-compliant if the Product name,
+description, category, denomination, region, delivery method, validity period,
+subscription period, or any other stated condition does not accurately reflect
+the Product actually delivered to the Buyer. 
+ 18.3.4.3.         
+ Misleading or non-compliant
+listings include, but are not limited to, Products listed with an incorrect or
+unclear denomination, approximate or conditional value presented as a fixed
+value, incorrect region, incorrect category, unclear redemption conditions,
+undisclosed usage restrictions, or subscription/access terms that depend on
+future renewals, recurring payments, shared access, or further Seller action
+not clearly disclosed before purchase. 
+ 18.3.4.4.         
+ Sellers may not use wording
+such as "Global", "Worldwide", "1 Year",
+"Lifetime", "Private", "Full Access",
+"Instant", "Automatic", "Stockable", or similar
+wording unless such wording accurately reflects the actual Product conditions
+and can be fulfilled as described. 
+ 18.3.4.5.         
+ BuySellVouchers reserves the right, at its sole discretion and without prior notice,
+to reject, edit, rename, re-categorize, temporarily disable, permanently remove,
+hide from search, or place under manual review any Product listing that appears
+inaccurate, incomplete, misleading, high-risk, unstable, non-compliant, or
+inconsistent with these Terms or Platform requirements. 
+ 18.3.4.6.         
+ Where BuySellVouchers 
+requests a Seller to correct, clarify, rename, re-categorize, update, remove, or
+otherwise amend a Product listing, the Seller must comply within the timeframe
+specified by the Platform. Unless otherwise stated, the standard timeframe for
+such corrective action is 48 working hours from the Platform’s request. For
+urgent, high-risk, or buyer-affecting matters, BuySellVouchers 
+may require immediate correction or correction within 24 hours. 
+ 18.3.4.7.         
+ Failure to complete the
+requested corrective action within the specified timeframe may result in Product
+removal, disabling of similar Products, listing restrictions, temporary
+suspension of selling privileges, withdrawal holds, refund deductions, monetary
+penalties under Clause 18.14, permanent account termination, or any other
+measure deemed appropriate by BuySellVouchers . 
+ 18.3.4.8.         
+ A Seller may not re-list,
+duplicate, rename, re-upload, or otherwise reintroduce a Product that has been
+rejected, disabled, removed, or restricted by BuySellVouchers 
+unless the underlying issue has been fully corrected and the Product has been
+approved by the Platform. Re-listing a non-compliant Product without
+correction may be treated as an intentional violation of these Terms. 
+ 18.3.4.9.         
+ If an inaccurate, misleading,
+or non-compliant listing results in Buyer complaints, refunds, chargebacks,
+Platform losses, reputational damage, or additional administrative review, BuySellVouchers reserves the right to deduct the relevant
+amounts from the Seller’s available balance, pending balance, future balance,
+or any other amounts payable to the Seller, to the extent permitted by
+applicable law, in addition to any other penalties or restrictions applied
+under these Terms. 
+ 18.3.5.         
+ Product Availability and Listing Eligibility 
+ 18.3.5.1.         
+ BuySellVouchers reserves the right, at its sole discretion, to determine the
+availability of particular Products, Product categories, brands, denominations,
+regions, delivery methods, or other listing options on the Platform. Such
+availability may depend on Platform requirements, Product risk, Product source,
+Seller performance, compliance history, technical or operational requirements,
+or other circumstances relevant to the Platform. 
+ 18.3.5.2.         
+ BuySellVouchers may establish, modify, or apply specific requirements for the listing
+or sale of particular Products or Product categories and may determine whether
+a Seller meets such requirements. The availability of a Product or listing
+option on the Platform does not guarantee that the same Product or listing
+option will be available to every Seller. 
+ 18.3.5.3.         
+ Any approval, permission,
+exception, or other arrangement applicable to a particular Seller, Product,
+Product category, or listing shall apply only to the circumstances for which it
+was granted. Such approval, permission, exception, or arrangement shall not
+establish a general practice, precedent, waiver, or entitlement applicable to
+any other Seller, Product, or listing. 
+ 18.3.5.4.         
+ BuySellVouchers may enter into separate commercial, operational, technical, or other
+arrangements with individual Sellers in relation to their use of the Platform
+or the Products offered by them. Unless required by applicable law, such
+arrangements shall not create any rights, obligations, or entitlement in favor
+of other Sellers. 
+ 18.3.5.5.         
+ BuySellVouchers reserves the right, at its sole discretion, to modify, restrict,
+suspend, or discontinue the availability of any Product, Product category,
+listing option, or Seller’s ability to offer particular Products where deemed
+necessary for compliance, risk management, quality control, operational,
+technical, commercial, or other Platform purposes. 
+ 18.4.         
+ Order Processing and Delivery Obligations 
+ 18.4.1.         
+ Instant Automatic Delivery 
+ 18.4.1.1.         
+ Sellers utilizing Instant
+Delivery must upload Products (voucher codes, digital files) in advance. 
+ 18.4.1.2.         
+ Products must be immediately
+available upon purchase completion by the Buyer. 
+ 18.4.2.         
+ Manual Delivery 
+ 18.4.2.1.         
+ Sellers offering Products via
+Manual Delivery must deliver the Product within a maximum of 24 hours after
+payment confirmation. 
+ 18.4.2.2.         
+ Sellers must clearly indicate
+their operational hours and expected delivery times on each Product listing. 
+ 18.4.2.3.         
+ Failure to deliver within 24
+hours will result in automatic order cancellation and full refund issuance to
+the Buyer, negatively impacting Seller's account rating. 
+ 18.5.         
+ Seller Conduct and
+Communication 
+ 18.5.1.         
+ Sellers must strictly use
+Platform-provided communication tools for all interactions with Buyers.
+Off-platform trading or communication related to transactions is strictly
+prohibited. 
+ 18.5.2.         
+ Sellers must conduct business
+professionally and courteously. 
+ 18.5.3.         
+ Abusive, threatening,
+harassing, or fraudulent conduct towards Buyers or Platform staff will result
+in immediate suspension or permanent termination of the Seller account. 
+ 18.6.         
+ Payment & Settlement 
+ 18.6.1.         
+ Payments from completed
+transactions will be credited to Seller’s Platform account balance within 36
+hours following Buyer confirmation or automatic acceptance (post-delivery
+window). 
+ 18.6.2.         
+ Funds held during transactions
+do not accrue interest, nor do they constitute any form of fiduciary
+relationship or insured deposits. 
+ 18.6.3.         
+ Sellers may withdraw available
+balances through Platform-supported withdrawal methods, subject to processing
+times, fees, and withdrawal limits based on the Seller’s verification level. 
+ 18.7.         
+ Seller Fees and Charges 
+ 18.7.1.         
+ Sellers agree to pay
+applicable Platform fees (listing fees, transaction fees, withdrawal fees),
+clearly indicated on the Seller’s dashboard and fee schedule. 
+ 18.7.2.         
+ BuySellVouchers reserves the right to modify fees, providing Sellers 
+advance notice via email or platform announcements. 
+ 18.8.         
+ Returns, Refunds, and Disputes 
+ 18.8.1.         
+ Sellers must actively
+cooperate and respond promptly (within 24 hours) to any Buyer-initiated
+disputes or Platform investigations. Sellers acknowledge that Buyers have a
+24-hour period after purchase to initiate a dispute. 
+ 18.8.2.         
+ Sellers may be required to
+provide clear evidence of Product delivery, authenticity, and validity. This
+includes the potential for a mandatory request for the proof of purchase as
+defined in Clause 18.3.3. Should the Seller fail to provide satisfactory proof
+of purchase during a dispute, the case may be resolved in the Buyer's favor by
+Platform administration. 
+ 18.8.2.1.         
+ In disputes involving high-risk or long-term digital Products, the Seller may be required to provide sufficient evidence demonstrating that the reported issue was not related to the Product itself, its sourcing, its payment chain, or the activation method used. 
+ 18.8.2.2.         
+ Such evidence may include, but is not limited to, proof of valid and legitimate payment, absence of reversals, chargebacks, disputes, or payment-related irregularities, confirmation of lawful sourcing, and evidence that the activation method complied with the applicable requirements of the relevant third-party platform. 
+ 18.8.2.3.         
+ Where the Seller fails to provide sufficient supporting evidence, the Platform reserves the right to reasonably conclude that the Product was not delivered as described or did not remain valid for the advertised period, and may resolve the matter accordingly. 
+ 18.8.3.         
+ If a dispute initiated within
+the 24-hour period is resolved in the Buyer’s favor, the transaction amount
+will be deducted from the Seller's account balance to refund the Buyer. Failure
+to cooperate can also result in a ruling in the Buyer's favor. 
+ 18.8.4.         
+ If a refund is determined to be
+due to the Seller’s fault, or if the Seller initiates a refund, the full amount
+received by the Seller will be deducted from the Seller’s account.
+BuySellVouchers covers all associated fees, including the buyer’s service fee
+and payment processor fee. The Buyer will receive a full refund, which includes
+the product amount, service fee, and payment provider fee. 
+ 18.8.5.         
+ Communication During Disputes.
+During an active dispute investigation, the Seller is obligated to provide the
+Buyer with daily updates regarding the status of their inquiry through the
+Platform's official communication channels. Should the Seller fail to provide
+these regular updates, the Platform reserves the right to resolve the dispute
+in the Buyer’s favor on the grounds of non-cooperation. 
+ 18.8.6.         
+ Extended Seller Liability. The
+Seller acknowledges that their liability for the authenticity and long-term
+validity of a Product extends beyond the Buyer's 24-hour dispute window. The
+Platform reserves the sole right, at its discretion, to investigate issues
+reported after this period (e.g., a gift card being revoked or found invalid at
+a later date). If the Platform support team determines the Seller is at fault, BuySellVouchers may deduct the corresponding amount from
+the Seller's account balance to refund the Buyer. The Platform's decision in
+such cases is final and binding. 
+ 18.8.6.1.         
+ In cases involving high-risk or long-term digital Products, where the exact root cause of the issue cannot be conclusively determined, the Platform reserves the sole right, at its discretion, to assess the case based on the available information, the actual outcome experienced by the Buyer, the Seller’s cooperation, the Seller’s ability to substantiate the legitimacy and compliance of the Product, and any pattern of similar complaints across multiple orders. 
+ 18.8.6.2.         
+ Repeated similar complaints concerning the same Seller, Product type, or fulfillment method may be treated by the Platform as evidence of Product instability, delivery failure, or non-compliance, even where individual cases cannot be conclusively attributed to a single technical cause. 
+ 18.8.6.3.         
+ In such cases, the Platform may, at its sole discretion, issue a full or partial refund, deduct the relevant amount from the Seller’s account balance, restrict the Seller’s ability to list similar Products, or apply any other corrective measure deemed appropriate under these Terms. 
+ 18.8.7.         
+ Disputes Involving Sellers
+with Duplicate Accounts. If, during a dispute investigation, the Platform
+discovers that the Seller has created or is using multiple unauthorized
+accounts, the Platform reserves the right to immediately close the dispute in
+the Buyer’s favor and issue a full refund. The Platform is under no obligation
+to review any evidence submitted by a Seller found to be operating duplicate
+accounts. 
+ 18.9.         
+ Intellectual Property
+Compliance 
+ 18.9.1.         
+ Sellers warrant that they have
+full ownership, rights, or legitimate licenses to sell listed Products. 
+ 18.9.2.         
+ Sellers agree not to infringe
+on any third-party intellectual property rights. 
+ 18.9.3.         
+ Proven infringement will lead
+to immediate Product removal and potential suspension or termination of the
+Seller account. 
+ 18.10.         
+ Privacy and Data Protection 
+ 18.10.1.         
+ Sellers must comply with all
+applicable privacy laws (including GDPR for EU buyers). 
+ 18.10.2.         
+ Personal information of Buyers
+must not be misused, shared, or stored outside of Platform purposes. 
+ 18.10.3.         
+ Violation of Buyer privacy
+will result in immediate account suspension, penalties, or legal action. 
+ 18.11.         
+ Prohibited Activities and
+Penalties 
+ 18.11.1.         
+ Prohibited Seller activities
+include, but are not limited to: 
+ 18.11.1.1.         
+ Listing prohibited Products 
+ 18.11.1.2.         
+ Manipulating Platform ratings
+or feedback 
+ 18.11.1.3.         
+ Engaging in fraudulent
+transactions or intentionally misleading Buyers 
+ 18.11.1.4.         
+ Attempting off-platform
+transactions or communications 
+ 18.11.2.         
+ Penalties for violations may
+include temporary suspension, permanent account termination, fines (minimum
+$100 USD), or legal actions at BuySellVouchers ’
+discretion. 
+ 18.12.         
+ Seller Performance Standards
+and Consequences 
+ 18.12.1.         
+ BuySellVouchers monitors Seller performance based on various metrics, including but
+not limited to: 
+ 18.12.1.1.         
+ Delivery timeliness as
+outlined in Clause 18.4. 
+ 18.12.1.2.         
+ Dispute frequency and
+resolution related to Clause 18.8. 
+ 18.12.1.3.         
+ Listing accuracy per Clause 18.3. 
+ 18.12.1.4.         
+ Customer feedback, and overall
+compliance with these Terms. 
+ 18.12.2.         
+ Sellers are expected to
+maintain satisfactory performance levels as determined by BuySellVouchers .
+ 18.12.3.         
+ Failure to maintain adequate
+performance standards may result in corrective actions by BuySellVouchers ,
+at its discretion. Such actions may include warnings, account limitations (such
+as listing restrictions or withdrawal holds), temporary account suspension, or
+permanent account termination as described in Clause 18.13. 
+ 18.13.         
+ Termination of Seller Accounts
+ 18.13.1.         
+ BuySellVouchers reserves the right to suspend or terminate Seller accounts for
+violations of these Terms (including failure to meet performance standards as
+described in Clause 18.12), fraudulent activities, legal compliance issues, or
+for actions causing reputational damage to the Platform. 
+ 18.13.2.         
+ Upon termination, any funds in
+the Seller’s account balance may be withheld for investigation or used to
+compensate affected Buyers or cover Platform losses. 
+ 18.14.         
+ Seller Penalties, Deductions, and Recovery of Losses 
+ 18.14.1.         
+ BuySellVouchers may impose monetary penalties on Sellers for violations of these Terms,
+including but not limited to inaccurate or misleading Product listings, repeated
+non-compliance, failure to complete requested corrective actions, re-listing
+removed or restricted Products, failure to cooperate in disputes or Platform
+investigations, submission of misleading or unverifiable evidence, or any
+conduct causing Buyer harm, Platform losses, reputational damage, or additional
+administrative review. 
+ 18.14.2.         
+ Unless otherwise determined by
+ BuySellVouchers , the minimum monetary penalty for a
+Seller violation is USD 100. BuySellVouchers may impose
+a higher penalty depending on the severity of the violation, whether the
+violation was intentional or repeated, the number of affected Buyers, the total
+transaction value, the Seller’s cooperation, the impact on the Platform, and
+any losses caused by the violation. 
+ 18.14.3.         
+ Monetary penalties, refund
+amounts, chargeback-related losses, compensation to affected Buyers, and other
+amounts owed by the Seller may be deducted from the Seller’s available balance,
+pending balance, future balance, or any other amounts payable to the Seller, to
+the extent permitted by applicable law. 
+ 18.14.4.         
+ BuySellVouchers may place a temporary withdrawal hold on the Seller’s account while
+investigating suspected violations, reviewing Product legitimacy, determining
+affected Buyer exposure, or calculating applicable penalties, refunds,
+deductions, or corrective measures. 
+ 18.14.5.         
+ Payment of a penalty does not
+limit BuySellVouchers ’ right to apply additional
+enforcement measures, including Product removal, listing restrictions, withdrawal
+holds, account suspension, permanent account termination, refund deductions, or
+legal action where appropriate. 
+ 18.14.6.         
+ A Seller may not avoid
+penalties, refund deductions, withdrawal holds, or any other amounts owed under
+these Terms by deleting Products, abandoning the account, requesting voluntary
+account closure, creating another account, or otherwise attempting to bypass
+Platform enforcement. 
+ 19.         
+ Contact Information 
+ For
+support, dispute resolution, or any other inquiries, please contact:
+Company: Overmorrow Trading Solutions OPC
+Address: 9th Floor, V Corporate Centre, L.P. Leviste Street, Salcedo Village,
+Makati, 1227 Metro Manila, Philippines. 
+ 6:["$","div",null,{"className":"md:py-3 md:px-2 max-w-[1400px] flex flex-col gap-8 w-full mx-auto","children":["$","div",null,{"className":"bg-white border-gray-100 border-2 shadow-md min-h-screen rounded-lg flex w-full !list-none","children":["$","div",null,{"className":"py-8 flex flex-col items-start justify-center px-4 md:px-12 lg:px-24 w-full","children":["$","div",null,{"className":"flex flex-col gap-2 mt-4 w-full !list-none","children":["$","$L43",null,{"node":"$44"}]}]}]}]}]

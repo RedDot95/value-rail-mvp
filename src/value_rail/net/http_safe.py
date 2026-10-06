@@ -11,9 +11,11 @@ Guarantees
 - Per-host minimum interval (max(configured, robots Crawl-delay)) plus random jitter.
 - Retries with exponential backoff only for network errors and 5xx. 429/403/401 are reported
   immediately as distinct errors (we never hammer and never try to bypass a block).
-- Optional robots.txt check (fetched through this same guarded client and cached).
+- Optional robots.txt check (fetched through this same guarded client and cached), evaluated with the
+  RFC 9309 matcher in `robots.py` (wildcards, merged groups, longest match) - not urllib.robotparser.
 - Response headers are not persisted by callers (Set-Cookie etc. could carry client data); we
-  expose only status, final URL, content-type and body.
+  expose only status, final URL, content-type and body, plus explicitly requested protocol headers
+  (e.g. `mcp-session-id`) via `post_json(keep_headers=...)`.
 
 The transport and resolver are injectable so the whole client is testable offline.
 """
@@ -27,12 +29,12 @@ import random
 import socket
 import ssl
 import time
-import urllib.robotparser
 import zlib
 from dataclasses import dataclass, field
 from typing import Callable, Protocol
 from urllib.parse import urljoin, urlsplit
 
+from .robots import RobotsRules
 from .errors import (AccessDenied, AuthLost, BlockedUrl, NetworkError, RateLimited, RobotsDisallowed,
                      UpstreamError)
 
@@ -134,6 +136,8 @@ class FetchResult:
     fetched_monotonic: float
     redirects: list[str] = field(default_factory=list)
     attempts: int = 1
+    # only explicitly requested response headers (e.g. mcp-session-id); never persisted by callers
+    headers: dict[str, str] = field(default_factory=dict)
 
     def text(self) -> str:
         return self.body.decode("utf-8", errors="replace")
@@ -171,9 +175,10 @@ class SafeHttpClient:
         self.monotonic = monotonic
         self.rng = rng or random.Random()
         self._last_request: dict[str, float] = {}
-        self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
+        self._robots: dict[str, RobotsRules | None] = {}
         self._robots_at: dict[str, float] = {}
         self.robots_ttl_s = robots_ttl_s  # long-running worker re-reads robots.txt daily
+        self._last_headers: dict[str, str] = {}
         self.request_log: list[tuple[str, int | str]] = []  # (url, status|error) for diagnostics/tests
 
     # ---------- validation ----------
@@ -223,11 +228,11 @@ class SafeHttpClient:
                 self.sleep(wait)
         self._last_request[host] = self.monotonic()
 
-    def _robots_for(self, scheme: str, host: str) -> urllib.robotparser.RobotFileParser | None:
+    def _robots_for(self, scheme: str, host: str) -> RobotsRules | None:
         if host in self._robots and self.monotonic() - self._robots_at.get(host, 0.0) < self.robots_ttl_s:
             return self._robots[host]
         url = f"{scheme}://{host}/robots.txt"
-        rp = urllib.robotparser.RobotFileParser(url)
+        rp = RobotsRules()
         try:
             res = self._request("GET", url, check_robots=False)
         except (RateLimited, AccessDenied, AuthLost) as exc:
@@ -248,9 +253,16 @@ class SafeHttpClient:
     def get(self, url: str, *, accept: str = "text/html,application/xhtml+xml") -> FetchResult:
         return self._request("GET", url, headers={"Accept": accept})
 
-    def post_json(self, url: str, body: bytes) -> FetchResult:
-        return self._request("POST", url, headers={"Content-Type": "application/json",
-                                                   "Accept": "application/json"}, body=body)
+    def post_json(self, url: str, body: bytes, *, accept: str = "application/json",
+                  extra_headers: dict[str, str] | None = None, keep_headers: tuple[str, ...] = ()) -> FetchResult:
+        """POST a JSON body. `extra_headers` is limited to protocol headers (no cookies/auth/UA override)."""
+        extra = dict(extra_headers or {})
+        bad = [k for k in extra if k.lower() not in _ALLOWED_EXTRA_HEADERS]
+        if bad:
+            raise ValueError(f"header(s) {bad} not allowed")
+        res = self._request("POST", url, headers={"Content-Type": "application/json", "Accept": accept} | extra,
+                            body=body)
+        return res if not keep_headers else _with_headers(res, keep_headers, self._last_headers)
 
     def _request(self, method: str, url: str, *, headers: dict[str, str] | None = None, body: bytes | None = None,
                  check_robots: bool | None = None) -> FetchResult:
@@ -326,8 +338,19 @@ class SafeHttpClient:
             raise AuthLost(self.source_key, f"HTTP 401 from {url}", url=url, http_status=st)
         if st >= 500 or (st >= 400 and st != 404):
             raise UpstreamError(self.source_key, f"HTTP {st} from {url}", url=url, http_status=st)
+        self._last_headers = dict(resp.headers)
         return FetchResult(url=url, status=st, content_type=resp.headers.get("content-type", ""), body=resp.body,
                            fetched_monotonic=self.monotonic(), redirects=redirects, attempts=attempts)
+
+
+# Protocol headers a connector may send (MCP Streamable HTTP). Never Cookie/Authorization/User-Agent.
+_ALLOWED_EXTRA_HEADERS = {"mcp-session-id", "mcp-protocol-version"}
+
+
+def _with_headers(res: FetchResult, names: tuple[str, ...], hdrs: dict[str, str]) -> FetchResult:
+    low = {k.lower(): v for k, v in hdrs.items()}
+    res.headers = {n.lower(): low[n.lower()] for n in names if n.lower() in low}
+    return res
 
 
 def _parse_retry_after(v: str | None) -> float | None:
