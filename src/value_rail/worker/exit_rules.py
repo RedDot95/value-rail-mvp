@@ -1,4 +1,4 @@
-"""Derive an exit quote from a sourced, versioned ExitRule (no network).
+"""Derive a fee/proceeds projection from a sourced ExitRule (no network).
 
 Only used when the connector itself has no exit capability. The derived quote is stamped with the
 evaluation time and expires at the rule's `review_by` date, so unreviewed terms turn routes `expired`.
@@ -38,11 +38,13 @@ def exit_quote_from_rule(params: RuleParams, item: DiscoveryItem, now: datetime)
     face = item.product.face_value
     unit_price = face if (not is_unknown(face) and item.product.face_currency == rule.payout_currency) else "unknown"
     src = rule_source(rule)
+    # A published request/day limit is not an executable quote or confirmed available depth.
     q = ExitQuoteInput(quote_ref="pending", venue_key=src.key, identity=item.product, unit_price=unit_price,
-                       currency=rule.payout_currency, depth_quantity=derived_depth(rule, face), fees=list(rule.fees),
+                       currency=rule.payout_currency, depth_quantity="unknown", fees=list(rule.fees),
                        captured_at=now, valid_until=rule.review_by)
     ev = EvidenceDraft(kind=EvidenceKind.FEE_SCHEDULE, source_key=src.key, captured_at=now,
                        scope=f"rule:{params.label}:{rule.key}",
                        summary=f"Exit-Regel {rule.key}: {rule.description}",
-                       payload={"rule_label": params.label, "rule": rule.model_dump(mode="json")})
+                       payload={"rule_label": params.label, "rule": rule.model_dump(mode="json"),
+                                "projected_max_depth": derived_depth(rule, face), "executable_quote": False})
     return QuoteBundle(source=src, quote=q, evidence=[ev]), rule

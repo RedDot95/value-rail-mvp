@@ -31,6 +31,42 @@ rules_app = typer.Typer(help="Versioned valuation rules")
 app.add_typer(rules_app, name="rules")
 
 
+@app.command("import-quotes")
+def import_quotes_command(path: Path = typer.Argument(..., exists=True, dir_okay=False)) -> None:
+    """Import real operator-reviewed quotes and hash-bound artifacts; never sends or buys."""
+    from .quote_import import import_quotes
+    from pydantic import ValidationError
+    ctx = _ctx()
+    try:
+        report = import_quotes(ctx, path, utcnow())
+    except ValidationError as exc:
+        errors = exc.errors(include_input=False, include_url=False)
+        typer.echo(json.dumps({"rejected": errors}, default=str), err=True)
+        raise typer.Exit(2) from None
+    except (ValueError, OSError) as exc:
+        typer.echo(f"Quote import rejected: {exc}", err=True)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(report, ensure_ascii=False))
+
+
+@app.command("quote-template")
+def quote_template(evaluation_id: int = typer.Argument(...)) -> None:
+    """Print an incomplete quote manifest with the stored product identity; never invent values."""
+    ctx = _ctx()
+    with ctx.session_factory() as s:
+        ev = s.get(RouteEvaluationRow, evaluation_id)
+        if ev is None or ev.is_synthetic:
+            typer.echo("A real evaluation is required", err=True)
+            raise typer.Exit(2)
+        quote = {"identity": ev.inputs["product"], "source_url": "", "source_name": "", "unit_price": "unknown",
+                 "currency": "EUR", "quantity": "unknown", "captured_at": None, "valid_until": None,
+                 "firm": False, "fees_complete": False, "fees": [], "artifact": "", "artifact_sha256": ""}
+        cfg = ctx.settings.file_config.operator
+        document = {"schema_version": 1, "evaluation_id": ev.id,
+                    "reviewed_by": cfg.name if cfg else "", "checkout": quote, "exit": quote.copy()}
+    typer.echo(json.dumps(document, indent=2, ensure_ascii=False))
+
+
 def _ctx(init: bool = True) -> AppContext:
     ctx = AppContext()
     configure_logging(ctx.settings.log_level)

@@ -1,4 +1,4 @@
-> Ergänzung: Lease-Erneuerung/Fencing und serialisierter Versand mit dauerhaften Kanalquittungen sind im Folgepatch umgesetzt. Siehe [Ziel/Abdeckung](liquid_value_scope.md) und [Betrieb](compose_operation.md). Das unten beschriebene At-least-once-Crashfenster bleibt; Engine jetzt 1.3.0. Die folgenden Testergebnisse beziehen sich auf den ersten Review-Patch.
+> Ergänzung: Lease-Erneuerung/Fencing und serialisierter Versand mit dauerhaften Kanalquittungen sind im Folgepatch umgesetzt. Siehe [Ziel/Abdeckung](liquid_value_scope.md) und [Betrieb](compose_operation.md). Das unten beschriebene At-least-once-Crashfenster bleibt; Engine jetzt 1.4.0; Gebührenbedingungen ersetzen keinen ausführbaren Exit-Quote (siehe [Quote-Import](quote_intake.md)). Die folgenden Testergebnisse beziehen sich auf den ersten Review-Patch.
 
 # Code-Review und Fehlerbehebung – 06.10.2026
 

@@ -89,7 +89,7 @@ def _operator(s: Session, name: str | None, *, synthetic: bool) -> OperatorProfi
     return s.scalar(q.order_by(OperatorProfileRow.id).limit(1))
 
 
-def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: RuleParams,
+def _persist_item(s: Session, f: _Fetched, *, scan_id: int | None, rv_id: int, params: RuleParams,
                   operator: OperatorProfileRow | None, settings: Settings, now: datetime) -> tuple[RouteEvaluationRow, EvaluationResult, bool]:
     item = f.item
     exit_bundle, exit_rule = f.exit, None
@@ -214,7 +214,10 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         s.add(scan)
         s.flush()
         scan_id = scan.id
-        op = _operator(s, operator_name, synthetic=caps.synthetic)
+        configured_operator = settings.file_config.operator
+        selected_name = operator_name or (configured_operator.name if configured_operator and not caps.synthetic else None)
+        op = (_operator(s, selected_name, synthetic=caps.synthetic)
+              if caps.synthetic or selected_name else None)
         op_id = op.id if op else None
 
     rep = ScanReport(scan_run_id=scan_id, status=ScanStatus.RUNNING)

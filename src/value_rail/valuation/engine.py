@@ -25,7 +25,7 @@ from ..domain.money import MONEY_CONTEXT, is_unknown
 from .models import (BreakdownLine, CheckoutQuoteInput, EvaluationResult, ExitQuoteInput, FeeComponent,
                      OfferInput, RouteInputs, RuleParams)
 
-ENGINE_VERSION = "1.3.0"  # Real routes require traceable quote, fee and prerequisite evidence.
+ENGINE_VERSION = "1.4.0"  # Published issuer terms never substitute for an executable exit quote.
 
 
 class UnknownFeeError(ValueError):
@@ -263,6 +263,8 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     if eq is None:
         v_missing.append("exit_quote")
     else:
+        if not inp.is_synthetic and eq.venue_key.startswith("rule-exit:"):
+            v_missing.append("firm_exit_quote")
         check_fx(eq.currency, "exit_quote")
         mm = inp.product.mismatches(eq.identity)
         if mm:

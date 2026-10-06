@@ -13,6 +13,8 @@ Das Ziel ist die Suche nach vollständig belegten, nach sämtlichen erforderlich
 
 ## Noch nicht gelöst: ausführbare profitable Exits
 
+Ergänzt: konservative Erstattungsmodelle für CASHlib, Flexepin und Neosurf sowie ein strenger Import geprüfter Quotes. Gebührenbedingungen allein bestätigen keine Auszahlungsmenge und schalten keine Route frei. Details und Primärquellen: [Quote-Belege](quote_intake.md).
+
 Die vorhandenen öffentlichen Connectoren liefern Preise/Discovery; keiner liefert einen vollständigen echten Checkout mit allen Gebühren und eine ausführbare Käuferquote mit ausreichender Tiefe. Die hinterlegten Emittenten-Regeln gelten nur für die exakt passende Variante und alle belegten persönlichen Voraussetzungen. Ein Preis von 100 EUR Nennwert ist kein Beleg für 100 EUR Barauszahlung. Ebenso beweist Wallet-Aufladung keine gebührenfreie Bankauszahlung.
 
 Es gibt derzeit kein belegtes Echtgeld-Betreiberprofil. `[operator]` kann Voraussetzungen mit Status und konkreter `evidence_ref` enthalten. Unbekannte Angaben bleiben unbekannt; synthetische Profile dürfen echte Scans nicht freischalten. Ein Profilname oder eine Zeichenkette allein ist kein unabhängiger Beweis: Der Betreiber muss den referenzierten Nachweis tatsächlich vorhalten und prüfen. Keine Passwörter, persönlichen Unterlagen oder Geheimnisse ins Repository schreiben.
@@ -26,7 +28,7 @@ status = "unknown"
 evidence_ref = "unknown"
 ```
 
-Die Engine 1.3.0 verlangt bei echten Routen Referenzen zu Angebots-, Checkout-/Exit-, Gebühren-, FX- und Voraussetzungsbelegen. Alte Pending-Meldungen werden beim Versand mit der aktiven Regelversion erneut bewertet; abgelaufene, unprofitable, inzwischen gestörte, synthetische oder außerhalb des Umfangs liegende Routen werden `suppressed`.
+Die Engine 1.4.0 verlangt bei echten Routen Referenzen zu Angebots-, Checkout-/Exit-, Gebühren-, FX- und Voraussetzungsbelegen. Alte Pending-Meldungen werden beim Versand mit der aktiven Regelversion erneut bewertet; abgelaufene, unprofitable, inzwischen gestörte, synthetische oder außerhalb des Umfangs liegende Routen werden `suppressed`.
 
 Für einen echten Gewinnalarm fehlen je Route weiterhin aktuelle Preis-/Gebührenbelege, bestätigte Kaufmenge, zulässige Einlösung, ausführbare Auszahlung bzw. Kaufgebot, Exit-Tiefe und persönliche Zugangsvoraussetzungen. Das System beschafft diese nicht durch Käufe oder erfundene Annahmen.
 

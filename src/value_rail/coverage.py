@@ -10,6 +10,7 @@ from .domain.enums import RouteStatus
 from .storage.orm import OperatorProfileRow, ProductRow, SourceRow
 from .storage.repo import active_rule_version, latest_evaluations, rule_params_of
 from .valuation.engine import evaluate_route
+from .valuation.current import with_current_prerequisites
 from .valuation.models import RouteInputs
 
 
@@ -38,7 +39,7 @@ def coverage_report(s, settings, now):
         if ev.is_synthetic:
             continue
         product = s.get(ProductRow, ev.product_id) if ev.product_id else None
-        inp = RouteInputs.model_validate(ev.inputs)
+        inp = with_current_prerequisites(s, ev, RouteInputs.model_validate(ev.inputs), settings)
         item = resolve_instrument(inp.product.redemption_program, inp.product.variant,
                                   product.product_family if product else "")
         if item is None:
@@ -71,7 +72,8 @@ def coverage_report(s, settings, now):
             "scope_enabled": cfg.scope.enabled, "candidate_count": len(rows),
             "explicitly_targeted_count": sum(bool(r["targeted_sources"]) for r in rows),
             "category_sweeps": sorted(set(sweeps)),
-            "real_operator_configured": s.scalar(select(OperatorProfileRow.id).where(OperatorProfileRow.is_synthetic.is_(False)).limit(1)) is not None,
+            "real_operator_configured": bool(cfg.operator and s.scalar(select(OperatorProfileRow.id).where(
+                OperatorProfileRow.name == cfg.operator.name, OperatorProfileRow.is_synthetic.is_(False)).limit(1))),
             "rule_label": params.label if params else None,
             "verified_min_profit_eur": str(params.verified_min_profit_eur) if params else None,
             "verified_min_edge": str(params.verified_min_edge) if params else None,

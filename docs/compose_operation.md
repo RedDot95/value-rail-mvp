@@ -43,7 +43,7 @@ Der aktive Worker erneuert seine DB-Sperre im Hintergrund und prüft Besitz vor/
 
 Ein gesonderter Dispatch-Lock verhindert parallele Zustellung derselben Pending-Zeilen. Netzwerkversand hält keine DB-Schreibtransaktion offen. Erfolgreiche Kanäle werden dauerhaft gespeichert und bei Retry ausgelassen. Ein Absturz nach externer Zustellung, aber vor der Quittung, kann weiterhin eine Nachricht doppelt zustellen; die Garantie bleibt **at least once**. Empfänger können die stabile `event_id` zur Deduplizierung verwenden.
 
-Unterdrückte veraltete Meldungen blockieren spätere neu belegte Routen nicht. Historische Bewertungen/Regeln bleiben unverändert. Replay nutzt die aktuelle Engine 1.3.0 und kann bei korrigierten Fällen vom historischen Ergebnis abweichen.
+Unterdrückte veraltete Meldungen blockieren spätere neu belegte Routen nicht. Historische Bewertungen/Regeln bleiben unverändert. Replay nutzt die aktuelle Engine 1.4.0 und kann bei korrigierten Fällen vom historischen Ergebnis abweichen.
 
 ## Prüfung in dieser Sitzung
 

@@ -54,7 +54,8 @@ def test_rules_are_sourced(tmp_path):
 def test_paysafecard_rule_quote(tmp_path):
     b, rule = exit_quote_from_rule(params(tmp_path), item("150", "paysafecard"), NOW)
     q = b.quote
-    assert rule.key == "paysafecard-de-issuer-refund" and q.unit_price == Decimal("150") and q.depth_quantity == 1
+    assert rule.key == "paysafecard-de-issuer-refund" and q.unit_price == Decimal("150") and q.depth_quantity == "unknown"
+    assert b.evidence[0].payload["projected_max_depth"] == 1
     assert b.source.role == SourceRole.EXIT and b.evidence[0].payload["rule"]["key"] == rule.key
 
 
@@ -73,7 +74,8 @@ def _route(tmp_path, face: str, program: str, checkout_unit: str) -> RouteInputs
                      identity=ident(face, program), unit_price=Decimal(checkout_unit), currency="EUR",
                      price_includes_fees=True, captured_at=NOW, evidence_refs=["HYPOTHETICAL offer evidence (test only)"])
     return RouteInputs(route_key="hyp", product=ident(face, program), offers=[off], checkout_quote=cq,
-                       exit_quote=b.quote.model_copy(update={"quote_ref": "quote:rule", "evidence_refs": ["HYPOTHETICAL rule evidence"]}),
+                       exit_quote=b.quote.model_copy(update={"quote_ref": "quote:hyp", "venue_key": "HYPOTHETICAL firm buyer",
+                           "depth_quantity": 1, "evidence_refs": ["HYPOTHETICAL firm quote evidence"]}),
                        prerequisites=[Prerequisite(name=n, status="proven", evidence_ref="HYPOTHETICAL account proof") for n in rule.prerequisites],
                        evaluated_at=NOW), p
 
@@ -90,3 +92,10 @@ def test_bitsa_rule_unknown_reload_fee_blocks_verification(tmp_path):
     res = evaluate_route(inp, p)
     assert res.status == "blocked" and "unknown_required_fee:bitsa_voucher_reload_fee" in res.block_reasons
     assert res.profit_eur == "unknown"
+
+
+def test_sourced_terms_cannot_claim_firm_exit_even_with_proven_operator(tmp_path):
+    inp, p = _route(tmp_path, "100", "paysafecard", "50")
+    inp = inp.model_copy(update={"exit_quote": inp.exit_quote.model_copy(update={"venue_key": "rule-exit:test"})})
+    result = evaluate_route(inp, p)
+    assert result.status != "verified_route" and "firm_exit_quote" in result.missing_evidence

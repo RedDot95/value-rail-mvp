@@ -2,6 +2,9 @@
 {% block title %}Bewertung #{{ ev.id }}{% endblock %}
 {% block content %}
 {{ eval_card(card) }}
+{% if ev.route_key.startswith('reviewed:') %}
+<div class="card"><b>Manuell geprüfte Quotes</b><div class="mut">Die Bewertung beruht auf Belegen, die der Betreiber geprüft hat. Dateihashes identifizieren diese Belege; sie bestätigen nicht die Echtheit des Ausstellers. Maßgeblich sind die ursprünglichen Quote-Zeitpunkte und die belegte Menge.</div></div>
+{% endif %}
 {% set o = card.outputs %}
 <div class="card"><b>Kennzahlen</b>
 <table>

@@ -9,7 +9,7 @@ timezone = "Europe/Berlin"
 # referencing the RuleVersion they were computed with (exact replay).
 # A new RuleVersion row is created on init-db when no stored version carries this label.
 [rules]
-label = "liquid-verified-2026-10-06-v1"
+label = "liquid-verified-2026-10-06-v2"
 price_find_min_discount = "0.25"     # Preisfund: >= 25 % proven nominal discount
 verified_min_edge = "0"              # User goal: every fully proven, strictly profitable route
 verified_min_profit_eur = "0.01"     # minimum positive EUR-cent profit after all required fees
@@ -64,6 +64,56 @@ fees = [
   { name = "bitsa_voucher_reload_fee", kind = "percent", amount = "unknown", required = true, evidence_ref = "bitsacard.com/en/plans footnote 3: 0 % - 6 % depending on the transaction (not determinable in advance)" },
   { name = "bitsa_sepa_transfer_fee", kind = "fixed_per_order", amount = "1.50", required = true, evidence_ref = "bitsacard.com/en/plans: 1 EUR commission; footnote 6: 1.50 EUR to another entity -> conservative upper bound 1.50" },
 ]
+
+# Issuer refund terms checked 2026-10-06. Each is conditional on route-specific proof;
+# no free cooling-off period, assumed unused balance or assumed country eligibility.
+[[rules.exit_rules]]
+key = "cashlib-de-conditional-bank-refund"
+family = "cashlib"
+redemption_program = "cashlib"
+regions = ["DE"]
+exit_kind = "issuer_refund_to_bank_account"
+payout_currency = "EUR"
+description = "Conditional CASHlib bank refund: country authorization, unused EUR voucher from an authorized partner, original receipt, identity/address and applicable total fees must be proven."
+depth_per_request_units = 1
+prerequisites = ["cashlib_refund_country_de_authorized", "cashlib_authorized_partner_original_receipt", "cashlib_unused_full_balance_before_use_by", "cashlib_identity_address_bank_refund_approved", "cashlib_applicable_terms_total_fees_confirmed"]
+sources = ["https://www.cashlib.com/en/terms-and-conditions (fetched 2026-10-06): 8.1-8.9, 20.2-20.4"]
+sourced_at = "2026-10-06"
+review_by = "2026-11-06T00:00:00Z"
+limits = { scope = "Single unused EUR voucher, before Use By Date, authorized DE refund only; no zero-fee cancellation assumption" }
+fees = [{ name = "cashlib_redemption_fee", kind = "fixed_per_unit", amount = "15.00", required = true, evidence_ref = "CASHlib terms 8.4; 15 EUR outside cancellation period" }]
+
+[[rules.exit_rules]]
+key = "flexepin-eea-conditional-bank-refund"
+family = "flexepin"
+redemption_program = "flexepin"
+regions = ["DE", "EEA", "EU"]
+exit_kind = "issuer_refund_to_bank_account"
+payout_currency = "EUR"
+description = "Conditional EEA Flexepin bank refund under terms dated 3 February 2026; approved distributor, original voucher, full unused balance before expiry and identity/address/bank refund approval required."
+depth_per_request_units = 1
+prerequisites = ["flexepin_eea_terms_applicable", "flexepin_approved_distributor_original_receipt", "flexepin_unused_full_balance_before_use_by", "flexepin_identity_address_bank_refund_approved", "flexepin_applicable_total_fees_confirmed"]
+sources = ["https://www.flexepin.com/flexepin-terms-and-conditions-eea/ (fetched 2026-10-06; dated 3 February 2026): 7.3-7.12"]
+sourced_at = "2026-10-06"
+review_by = "2026-11-06T00:00:00Z"
+limits = { scope = "Single unused EUR voucher before Use By Date; no zero-fee cooling-off assumption; monthly post-expiry charges excluded only with proof" }
+fees = [{ name = "flexepin_redemption_fee", kind = "fixed_per_unit", amount = "18.00", required = true, evidence_ref = "Flexepin EEA terms 7.8-7.9; 18 EUR outside cooling-off period" }]
+
+[[rules.exit_rules]]
+key = "neosurf-conditional-myneosurf-bank-refund"
+family = "neosurf"
+redemption_program = "neosurf"
+regions = ["DE", "EEA", "EU"]
+exit_kind = "myneosurf_bank_withdrawal"
+payout_currency = "EUR"
+description = "Deposit a valid full-balance EUR voucher to myNeosurf and withdraw to a same-name bank account; KYC required for all refunds. Country, account access and current capacity require proof."
+depth_per_request_units = 1
+prerequisites = ["neosurf_valid_unused_full_balance_eur", "myneosurf_country_account_kyc_verified", "myneosurf_same_name_bank_account", "myneosurf_refund_capacity_and_total_fees_confirmed"]
+sources = ["https://www.neosurf.com/faq/ (fetched 2026-10-06): How can I get a refund of my Neosurf Voucher?"]
+sourced_at = "2026-10-06"
+review_by = "2026-11-06T00:00:00Z"
+limits = { scope = "Single valid EUR voucher, same-name bank payout, full KYC and actual withdrawal capacity; wallet balance alone is not cash" }
+fees = [{ name = "myneosurf_refund_fee", kind = "percent", amount = "0.05", required = true, evidence_ref = "Neosurf FAQ refund section: 5 percent fee on refunded amount" }]
 
 [alerts]
 sink = "log"                         # "log" or "log,telegram" (telegram needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)

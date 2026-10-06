@@ -84,12 +84,13 @@ def test_full_scan_recorded_all_blocked_never_price_find(ctx):
         psc = next(e for e in evs if e.route_key == "recharge-de:paysafecard:100-eur")
         # sourced exit rule attached (5 % max 5 EUR), prerequisites unproven -> cannot verify
         assert psc.inputs["exit_quote"]["venue_key"] == "rule-exit:paysafecard-de-issuer-refund"
-        assert psc.inputs["exit_quote"]["depth_quantity"] == 1
+        assert psc.inputs["exit_quote"]["depth_quantity"] == "unknown"
+        assert "firm_exit_quote" in psc.outputs["missing_evidence"]
         assert "prerequisite:paysafecard_refund_identity_verification_de_bank_account" in psc.outputs["missing_evidence"]
         assert "checkout_quote" in psc.outputs["missing_evidence"]
         bitsa = next(e for e in evs if e.route_key == "recharge-de:bitsa:100-eur")
         assert "unknown_required_fee:bitsa_voucher_reload_fee" in bitsa.outputs["block_reasons"]
-        assert bitsa.inputs["exit_quote"]["depth_quantity"] == 5  # 500 EUR/day SEPA limit / 100 EUR face
+        assert bitsa.inputs["exit_quote"]["depth_quantity"] == "unknown"  # daily limit is not available quote depth
         src = s.scalar(select(SourceRow).where(SourceRow.key == "recharge-com-de"))
         assert src.health == "ok" and src.is_synthetic is False
         evidence = s.scalars(select(EvidenceRow).where(EvidenceRow.subject_ref.like("offer_snapshot:%"))).all()

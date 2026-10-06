@@ -1,5 +1,7 @@
 # Value Rail – belegte profitable Routen für liquide Werte
 
+Quote-Import und konservative Auszahlungsmodelle: [Belege aufnehmen](docs/quote_intake.md).
+
 Aktuelles Ziel: vollständig belegte profitable Wege für Zahlungs-/Kryptogutscheine und liquide Händlergutscheine. Die Produktionskonfiguration meldet nur verifizierte Routen mit positivem Gewinn. Der Katalog umfasst 75 unbewiesene Kandidaten; 15 Familien haben explizite Abrufziele. Umfang, Quellen und verbleibende Beleglücken: [Liquide Werte](docs/liquid_value_scope.md).
 
 Öffentliche Live-Abfragen lieferten Angebote, aber **noch keine vollständig belegte profitable Echtgeld-Route**. `value-rail coverage --json` und `/status` zeigen tatsächliche Abdeckung und fehlende Nachweise. Start auf einem dauerhaft verfügbaren Docker-Host: [Betrieb mit Compose](docs/compose_operation.md). Die folgenden Delivery- und Box-Angaben sind historische Projektberichte, kein Nachweis für laufenden Betrieb in dieser Sitzung.
@@ -40,7 +42,7 @@ cp .env.example .env                       # optional
 
 ## Tests (offline)
 ```bash
-.venv/bin/pytest            # 326 Offline-Tests; Live-Tests sind standardmäßig ausgeschlossen
+.venv/bin/pytest            # Offline-Regressionen; Live-Tests sind standardmäßig ausgeschlossen
 .venv/bin/pytest -m live    # LIVE-Tests (Netzwerk!) - nur bewusst ausführen
 ```
 

@@ -6,6 +6,7 @@ from ..domain.enums import RouteStatus
 from ..storage.orm import ProductRow, RouteEvaluationRow, SourceRow
 from ..storage.repo import active_rule_version, rule_params_of
 from ..valuation.engine import evaluate_route
+from ..valuation.current import with_current_prerequisites
 from ..valuation.models import RouteInputs
 
 
@@ -28,7 +29,7 @@ def delivery_check(settings):
         for ev in (original, latest):
             if ev.is_synthetic:
                 return False, "synthetic_not_a_real_route"
-            inp = RouteInputs.model_validate(ev.inputs)
+            inp = with_current_prerequisites(s, ev, RouteInputs.model_validate(ev.inputs), settings)
             product = s.get(ProductRow, ev.product_id) if ev.product_id else None
             if resolve_instrument(inp.product.redemption_program, inp.product.variant,
                                   product.product_family if product else "") is None:
