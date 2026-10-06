@@ -25,7 +25,9 @@ def instruments() -> list[dict]:
 EXCLUDED = ("steam", "playstation", "psn", "xbox", "nintendo", "razer", "roblox", "minecraft",
             "fortnite", "riot games", "valorant", "league of legends", "battle net", "battlenet",
             "netflix", "spotify", "disney", "dazn", "google play", "itunes", "app store",
-            "fansly", "onlyfans", "patreon", "twitch", "discord nitro")
+            "fansly", "onlyfans", "patreon", "twitch", "discord", "chaturbate", "midjourney",
+            "facebook ads", "fiverr", "buy me a coffee", "buymeacoffee", "gocash game card",
+            "cherry credits", "garena")
 
 
 def resolve_instrument(*values: str) -> dict | None:

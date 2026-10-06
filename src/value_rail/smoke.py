@@ -47,7 +47,8 @@ def run_smoke(ctx: AppContext, key: str, *, out_dir: Path | None, now: datetime 
              f"- Capability-Notiz: {caps.notes}",
              f"- Scan-Run #{rep.scan_run_id}: **{rep.status.value}** - {rep.items_seen} Kandidaten, "
              f"{rep.evaluations_created} Bewertungen, {rep.alerts_enqueued} Alerts",
-             f"- Gestoerte Quellen: {rep.sources_failed or 'keine'}", "", "## HTTP-Requests", ""]
+             f"- Gestoerte Quellen: {rep.sources_failed or 'keine'}",
+             f"- Unvollstaendige Listen (keine Verschwunden-Erkennung): {rep.incomplete_pages or 'keine'}", "", "## HTTP-Requests", ""]
     if req_log:
         lines += ["| # | URL | Status |", "|---|---|---|"]
         lines += [f"| {i} | {u} | {st} |" for i, (u, st) in enumerate(req_log, 1)]

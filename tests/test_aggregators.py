@@ -86,6 +86,8 @@ def make(key: str, routes=None, transport=None, **kw):
     cfg_cls, _ = AGGREGATOR_KINDS[e["kind"]]
     rec = {"buysellvouchers": BSV, "cardbear": CB, "giftcardwiki": GCW}.get(key)
     options = dict(e["options"])
+    if key == "coingate":
+        options.update(max_search_pages=1, max_discovered_brand_details=0)
     if key == "buysellvouchers":
         # Parser replay covers its recorded date, independently of later search expansion.
         recorded_urls = html_routes(rec)
@@ -179,7 +181,7 @@ def test_coingate_discovery_from_recorded_mcp():
     assert o.raw["seller"].startswith("CoinGate Gift Cards") and o.raw["seller_link"].startswith("https://coingate.com/")
     assert o.fees[0].required and o.fees[0].amount == "unknown"
     ev = o.evidence[0].payload
-    assert ev["parser_version"] == "coingate-mcp/1.0.0" and ev["source_role"] == "discovery_only"
+    assert ev["parser_version"] == "coingate-mcp/1.1.0" and ev["source_role"] == "discovery_only"
     assert ev["robots_txt_checked"] is True
     # clearance lists: explicit, schema-valid 0 results (DE) are an observation, not an error
     assert any("search-clearance-stock-de" in u or "clearance-stock" in u for u in c.ok_pages)
@@ -256,7 +258,7 @@ def test_bsv_parses_listings_with_seller_and_eur_prices():
     o = c.normalize(it, c.offer_fetch(it, NOW)[0], NOW)
     assert o.currency == "EUR" and o.unit_price != "unknown" and o.source.role == SourceRole.DISCOVERY_ONLY
     assert o.raw["seller"] == "EliteLoops"
-    assert o.evidence[0].payload["parser_version"] == "bsv-rsc-list/1.0.0"
+    assert o.evidence[0].payload["parser_version"] == "bsv-rsc-list/1.1.0"
     # politeness: >= 5 s between requests to the host, never a buy/feedback/query URL
     assert all(s >= 5 for s in clock.sleeps)
     urls = [call["url"] for call in transport.calls]

@@ -8,6 +8,8 @@ Das Ziel ist die Suche nach vollständig belegten, nach sämtlichen erforderlich
 
 - 75 ausdrücklich **unbewiesene** Instrument-Kandidaten, einschließlich der vom Nutzer genannten Familien. Der Katalog ist erweiterbar; Vollständigkeit oder Liquidität sämtlicher Einträge ist nicht nachgewiesen.
 - 15 Familien mit expliziten Abrufzielen; zusätzliche Kategorieabfragen bei CoinGate/GiftCardWiki. BuySellVouchers: 14 überprüfte Kategoriepfade, darunter Abon, PCS, Flexepin, Transcash, Cashlib, PayPal-beschriftete Angebote, OTTO, MediaMarkt und Amazon. CardBear: Amazon statt Gaming.
+- CoinGate-Suchen lesen bis zu vier API-Seiten und danach bis zu zwölf zusätzliche, tatsächlich von der API gelieferte, im Katalog erkannte Marken mit Stückelungen/Preisen. Das Detailbudget rotiert täglich über die erkannten Marken, damit spätere Suchtreffer ebenfalls erfasst werden. Budgets begrenzen die Arbeit; die erfassten Daten bleiben `discovery_only`. Pro Seite werden Antwort-Hash, Größe und Status als Beleg gespeichert.
+- Unvollständige CoinGate-Suchen und BuySellVouchers-Kategorielisten sind ausdrücklich als Teilinventur markiert; sie können verschwundene Angebote nicht belegen. BuySellVouchers bleibt bei den konfigurierten Pfaden ohne Query. Der Scanbericht und die gespeicherten Scan-Notizen nennen Teilinventuren.
 - Anzeige tatsächlicher Beobachtungen, fehlender Nachweise und aktueller profitabler Routen: `value-rail coverage --json`, authentifiziertes `/api/coverage` und `/status`.
 - Abon und Aircash, verschiedene Länder/Varianten sowie Rewarble und die Ziel-Wallets bleiben getrennte Produktidentitäten. PayPal-beschriftete Angebote beweisen keinen von PayPal ausgegebenen Guthabengutschein. Multi-Händler-Gutscheine brauchen für jeden Umwandlungsschritt Belege.
 

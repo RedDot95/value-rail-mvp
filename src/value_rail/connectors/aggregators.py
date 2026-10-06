@@ -25,7 +25,8 @@ Sources (access basis + date in docs/sources.md):
 
 Common rules: SafeHttpClient (https only, host allowlist, public-IP pinning, redirect re-validation,
 robots.txt RFC 9309, >= 5 s/host + jitter, 429/403/401 distinct), configured targets only (no crawling,
-no search pages, no sitemap walking, no internal/undocumented APIs), never cart/checkout/account/login,
+no HTML search pages, no sitemap walking, no internal/undocumented APIs; official MCP search pagination
+and bounded brand-detail reads from returned catalogue matches are supported), never cart/checkout/account/login,
 no cookies, no UA spoofing. A parser that cannot find its anchor raises ParserBroken; a listing that
 unexpectedly has no rows raises UnexpectedEmpty - neither is ever reported as "zero offers".
 """
@@ -126,6 +127,8 @@ class AggPage:
     body_bytes: int
     data_sha256: str
     notes: list[str] = field(default_factory=list)
+    complete: bool = True
+    page_proofs: list[dict[str, Any]] = field(default_factory=list)
 
 
 class AggTarget(BaseModel):
@@ -183,6 +186,8 @@ class AggregatorConnector(Connector):
         self._pages: dict[str, tuple[AggPage, datetime]] = {}
         self._errors: dict[str, SourceUnavailable] = {}
         self.ok_pages: set[str] = set()
+        self.observed_pages: set[str] = set()
+        self.incomplete_pages: set[str] = set()
 
     # ---- to implement ----
     @abstractmethod
@@ -223,12 +228,17 @@ class AggregatorConnector(Connector):
         return res
 
     def discovery(self, now: datetime) -> list[DiscoveryItem]:
-        items: list[DiscoveryItem] = []
         self._pages.clear()
         self._errors.clear()
         self.ok_pages = set()
+        self.observed_pages = set()
+        self.incomplete_pages = set()
+        return self._discover_targets(self.selected_targets(), now)
+
+    def _discover_targets(self, targets: list[AggTarget], now: datetime) -> list[DiscoveryItem]:
+        items: list[DiscoveryItem] = []
         key = self.config.source_key
-        for t in self.selected_targets():
+        for t in targets:
             try:
                 page = self.fetch_target(t)
             except SourceUnavailable as exc:
@@ -242,7 +252,8 @@ class AggregatorConnector(Connector):
                     meta={"target_id": t.id, "page_error": True}))
                 continue
             self._pages[t.id] = (page, now)
-            self.ok_pages.add(page.url)
+            self.observed_pages.add(page.url)
+            (self.ok_pages if page.complete else self.incomplete_pages).add(page.url)
             for ld in page.leads:
                 ident = ProductIdentity(
                     face_value=ld.face_value, face_currency=ld.face_currency if ld.face_value != "unknown" else "unknown",
@@ -270,6 +281,7 @@ class AggregatorConnector(Connector):
         return [RawOffer(source_key=self.config.source_key, fetched_at=fetched_at, payload={
             "page_url": page.url, "http_status": page.http_status, "body_sha256": page.body_sha256,
             "body_bytes": page.body_bytes, "data_sha256": page.data_sha256, "notes": page.notes,
+            "enumeration_complete": page.complete, "page_proofs": page.page_proofs,
             "lead": {"lead_id": ld.lead_id, "title": ld.title, "seller": ld.seller, "price": ld.price,
                      "currency": ld.currency, "discount_percent": ld.discount_percent, "quantity": ld.quantity,
                      "availability": ld.availability, "region": ld.region, "seller_link": ld.seller_link,
@@ -308,7 +320,8 @@ class AggregatorConnector(Connector):
                      "body_sha256": pl["body_sha256"], "body_bytes": pl["body_bytes"], "lead": ld,
                      "robots_txt_checked": self.client.respect_robots, "source_role": self.ROLE.value,
                      "source_kind": self.KIND.value, "fetched_at_utc": raw.fetched_at.isoformat(),
-                     "notes": pl["notes"]})]
+                     "notes": pl["notes"], "enumeration_complete": pl["enumeration_complete"],
+                     "page_proofs": pl["page_proofs"]})]
         return NormalizedOffer(
             source=self.source, identity=item.product, unit_price=price if price is not None else "unknown",
             currency=ld["currency"] if price is not None else (ld["currency"] or "unknown"),
@@ -344,6 +357,8 @@ class CoinGateMcpConfig(AggregatorConfigBase):
     endpoint_path: str = "/api/mcp"
     brands: list[CoinGateBrand] = Field(default_factory=list)
     searches: list[CoinGateSearch] = Field(default_factory=list)
+    max_search_pages: int = Field(default=1, ge=1, le=10)
+    max_discovered_brand_details: int = Field(default=0, ge=0, le=20)
 
 
 def _mcp_decode(body: bytes, content_type: str, want_id: int, key: str, url: str) -> dict:
@@ -450,7 +465,7 @@ def parse_coingate_search(key: str, t: CoinGateSearch, url: str, sc: dict) -> tu
     results = sc.get("results")
     if not isinstance(results, list) or "total_results" not in sc:
         raise ParserBroken(key, f"search_gift_cards({t.category},{t.country}): no results[]/total_results", url=url)
-    notes = [f"total_results={sc.get('total_results')} total_pages={sc.get('total_pages')} (nur Seite 1 gelesen)"]
+    notes = [f"total_results={sc.get('total_results')} total_pages={sc.get('total_pages')} page={sc.get('page')}"]
     if not results:
         if t.empty_ok and int(sc.get("total_results") or 0) == 0:
             return [], notes + ["API meldet explizit 0 Treffer (gueltiges Schema) - echte Beobachtung, keine Stoerung"]
@@ -472,7 +487,7 @@ def parse_coingate_search(key: str, t: CoinGateSearch, url: str, sc: dict) -> tu
 
 class CoinGateMcpConnector(AggregatorConnector):
     PARSER_NAME = "coingate-mcp"
-    PARSER_VERSION = "coingate-mcp/1.0.0"
+    PARSER_VERSION = "coingate-mcp/1.1.0"
     config: CoinGateMcpConfig
 
     def __init__(self, config: CoinGateMcpConfig, *, client: SafeHttpClient | None = None) -> None:
@@ -535,10 +550,7 @@ class CoinGateMcpConnector(AggregatorConnector):
             leads, notes = parse_coingate_gift_card(key, t, self.endpoint, sc), []
             tool = "get_gift_card"
         elif isinstance(t, CoinGateSearch):
-            args = {"category": t.category, "country": t.country.upper(), "per_page": t.per_page, "page": 1}
-            sc, msg = self.call_tool("search_gift_cards", args)
-            leads, notes = parse_coingate_search(key, t, self.endpoint, sc)
-            tool = "search_gift_cards"
+            return self._fetch_search(t)
         else:  # pragma: no cover
             raise ParserBroken(key, f"unknown target type {type(t).__name__}")
         blob = json.dumps(sc, sort_keys=True, separators=(",", ":")).encode()
@@ -546,6 +558,87 @@ class CoinGateMcpConnector(AggregatorConnector):
         return AggPage(target_id=t.id, url=url, http_status=msg["_status"], leads=leads,
                        body_sha256=msg["_body_sha256"], body_bytes=msg["_body_bytes"], data_sha256=_sha(blob),
                        notes=notes)
+
+
+    def _fetch_search(self, t: CoinGateSearch) -> AggPage:
+        key = self.config.source_key
+        args = {"category": t.category, "country": t.country.upper(), "per_page": t.per_page, "page": 1}
+        url = f"{self.endpoint}#search_gift_cards?" + "&".join(f"{k}={v}" for k, v in args.items())
+        leads: dict[str, AggLead] = {}
+        proofs, payloads, notes = [], [], []
+        total = pages = None
+        for number in range(1, self.config.max_search_pages + 1):
+            sc, msg = self.call_tool("search_gift_cards", args | {"page": number})
+            # A stale/repeated first page or drifting inventory cannot establish complete enumeration.
+            count, page_count = sc.get("total_results"), sc.get("total_pages")
+            if (type(count) is not int or count < 0 or type(page_count) is not int or page_count < 0
+                    or (count > 0 and page_count < 1) or sc.get("page") != number
+                    or type(sc.get("page")) is not int or type(sc.get("per_page")) is not int
+                    or sc.get("per_page") != t.per_page
+                    or page_count != (count + t.per_page - 1) // t.per_page):
+                raise ParserBroken(key, "invalid search pagination metadata", url=url)
+            if number == 1:
+                total, pages = count, page_count
+            elif (count, page_count) != (total, pages):
+                raise ParserBroken(key, "search pagination totals changed during enumeration", url=url)
+            found, page_notes = parse_coingate_search(key, t, url, sc)
+            if len(found) != min(t.per_page, max(0, total - (number - 1) * t.per_page)):
+                raise ParserBroken(key, "search page length disagrees with pagination metadata", url=url)
+            for lead in found:
+                if lead.lead_id in leads:
+                    raise ParserBroken(key, "duplicate brand across search pages", url=url)
+                leads[lead.lead_id] = lead
+            payloads.append(sc)
+            proofs.append({"page": number, "body_sha256": msg["_body_sha256"],
+                           "body_bytes": msg["_body_bytes"], "http_status": msg["_status"]})
+            notes.extend(page_notes)
+            if number >= pages:
+                break
+        complete = len(leads) == total
+        notes.append(f"enumerated_pages={len(proofs)}/{pages}; enumeration_complete={complete}")
+        if not complete:
+            notes.append("Search page budget reached; unseen offers are not disappearance evidence")
+        proof_blob = json.dumps(proofs, sort_keys=True, separators=(",", ":")).encode()
+        data_blob = json.dumps(payloads, sort_keys=True, separators=(",", ":")).encode()
+        return AggPage(target_id=t.id, url=url, http_status=proofs[-1]["http_status"], leads=list(leads.values()),
+                       body_sha256=_sha(proof_blob), body_bytes=sum(p["body_bytes"] for p in proofs),
+                       data_sha256=_sha(data_blob), notes=notes, complete=complete, page_proofs=proofs)
+
+    def discovery(self, now: datetime) -> list[DiscoveryItem]:
+        from ..catalog import resolve_instrument
+
+        items = super().discovery(now)
+        configured = {(t.brand, t.country.upper()) for t in self.config.brands}
+        candidates: list[tuple[CoinGateBrand, AggPage]] = []
+        seen = set(configured)
+        for target in self.selected_targets():
+            if not isinstance(target, CoinGateSearch) or target.id not in self._pages:
+                continue
+            page, _ = self._pages[target.id]
+            for lead in page.leads:
+                brand = lead.raw.get("brand_slug")
+                # Only actual API-returned slugs; classification never proves redemption or liquidity.
+                instrument = resolve_instrument(str(lead.raw.get("name") or ""), str(brand or ""))
+                pair = (brand, target.country.upper())
+                if not instrument or not isinstance(brand, str) or pair in seen:
+                    continue
+                seen.add(pair)
+                candidates.append((CoinGateBrand(
+                    id="detail-" + slugify(brand) + "-" + target.country.lower(), brand=brand,
+                    country=target.country, family=instrument["key"], redemption_program=brand,
+                    region=target.region, tier=target.tier), page))
+        limit = self.config.max_discovered_brand_details
+        # Rotate daily so a stable result list does not permanently starve later brands.
+        offset = (now.date().toordinal() * limit) % len(candidates) if candidates else 0
+        ordered = candidates[offset:] + candidates[:offset]
+        selected = ordered[:limit]
+        skipped: dict[str, tuple[AggPage, int]] = {}
+        for _, page in ordered[limit:]:
+            previous = skipped.get(page.target_id, (page, 0))[1]
+            skipped[page.target_id] = (page, previous + 1)
+        for page, count in skipped.values():
+            page.notes.append(f"discovered_brand_details_not_fetched={count}; daily rotating detail request budget reached")
+        return items + self._discover_targets([target for target, _ in selected], now)
 
 
 # ============================================================================== BuySellVouchers (RSC list)
@@ -648,14 +741,22 @@ def parse_bsv_list(key: str, t: BsvPage, url: str, http_status: int, body: bytes
                  "quantity": p.get("quantity"), "sold": p.get("sold"), "discount_percent_pub": p.get("discount_percent_pub"),
                  "nominal_sum_pub": p.get("nominal_sum_pub"), "auction": p.get("auction"),
                  "is_api_product": p.get("is_api_product"), "seller": bsv_seller(p), "region": bsv_region(p)}))
+    # Query pagination is robots-disallowed. The SSR first page is not a full category inventory.
+    total, page_count = pag.get("total"), pag.get("pageCount")
+    def nonnegative_integer(value):
+        return not isinstance(value, bool) and str(value).isdigit()
+    complete = (nonnegative_integer(total) and nonnegative_integer(page_count)
+                and int(page_count) == (1 if int(total) > 0 else 0) and int(total) == len(leads))
+    if not complete:
+        notes.append("Partial category listing; query pagination is not followed (robots); no disappearance inference")
     data = json.dumps([x.raw for x in leads], sort_keys=True, separators=(",", ":")).encode()
     return AggPage(target_id=t.id, url=url, http_status=http_status, leads=leads, body_sha256=_sha(body),
-                   body_bytes=len(body), data_sha256=_sha(data), notes=notes)
+                   body_bytes=len(body), data_sha256=_sha(data), notes=notes, complete=complete)
 
 
 class BsvListConnector(AggregatorConnector):
     PARSER_NAME = "bsv-rsc-list"
-    PARSER_VERSION = "bsv-rsc-list/1.0.0"
+    PARSER_VERSION = "bsv-rsc-list/1.1.0"
     config: BsvListConfig
 
     def describe(self) -> str:

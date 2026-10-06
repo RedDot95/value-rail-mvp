@@ -43,6 +43,7 @@ class ScanReport(BaseModel):
     offers_seen: int = 0
     seller_events: dict[str, int] = Field(default_factory=dict)
     items_out_of_scope: int = 0
+    incomplete_pages: list[str] = Field(default_factory=list)
 
 
 class _Fetched(BaseModel):
@@ -271,8 +272,10 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
     else:
         rep.status = ScanStatus.OK
     ok_pages = set(getattr(connector, "ok_pages", set()) or set())
+    observed_pages = set(getattr(connector, "observed_pages", ok_pages) or set())
+    rep.incomplete_pages = sorted(getattr(connector, "incomplete_pages", set()) or set())
     spec = getattr(connector, "source", None)
-    if ok_pages and spec is not None:
+    if observed_pages and spec is not None:
         ok_sources.add(spec.key)  # a proven empty page is a successful observation
     if seller_offers or ok_pages:
         with session_factory.begin() as s:
@@ -297,6 +300,8 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         scan.items_seen = rep.items_seen
         scan.evaluations_created = rep.evaluations_created
         scan.alerts_enqueued = rep.alerts_enqueued
+        if rep.incomplete_pages:
+            scan.notes += f"; {len(rep.incomplete_pages)} partial listings (no disappearance inference)"
         if rep.items_out_of_scope:
             scan.notes += f"; {rep.items_out_of_scope} candidates outside liquid-value scope (not evaluated)"
     if enricher is not None and enrich_jobs:
