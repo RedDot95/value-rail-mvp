@@ -57,7 +57,9 @@ Resolver = Callable[[str, int], list[str]]
 
 def system_resolver(host: str, port: int) -> list[str]:
     infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
-    return sorted({i[4][0] for i in infos})
+    # IPv4 first: the pinned connection uses ips[0], and hosts without an IPv6 route
+    # (e.g. this box since 06.10.2026) fail with ENETUNREACH on an AAAA address.
+    return sorted({i[4][0] for i in infos}, key=lambda ip: (":" in ip, ip))
 
 
 def ip_is_public(ip: str) -> bool:
