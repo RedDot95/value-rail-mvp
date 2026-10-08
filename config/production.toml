@@ -63,7 +63,7 @@ products = [
 [[connectors]]
 key = "dundle"
 kind = "jsonld_shop"
-enabled = true
+enabled = false   # DISABLED 2026-10-07 10:10 CEST by watchdog: blocked continuously >6h (HTTP 403 bot protection / HTTP 429 rate limit since 03:48:02 CEST); not bypassed
 notes = "dundle.com DE (direct seller, Korsit B.V.) - Product.offers JSON-LD per denomination; service fee only in cart."
 [connectors.options]
 source_key = "dundle-com-de"
@@ -256,7 +256,7 @@ connector = "dundle"
 interval_seconds = 300
 min_interval_seconds = 300
 options = { tiers = ["watch"] }
-enabled = true
+enabled = false   # connector blocked (see above)
 
 [[jobs]]
 name = "dundle_sellers"
@@ -264,7 +264,7 @@ connector = "dundle"
 interval_seconds = 1800
 min_interval_seconds = 1800
 options = { tiers = ["watch", "discover"] }
-enabled = true
+enabled = false   # connector blocked (see above)
 
 [[jobs]]
 name = "gamivo_watch"

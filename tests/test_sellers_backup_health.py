@@ -127,11 +127,13 @@ def test_health_json_fields_and_stale_source(tmp_path):
     with ctx.session_factory() as s:
         body, code = compute_health(s, ctx.settings, NOW + timedelta(hours=3))
     keys = {x["key"] for x in body["sources"]}
-    assert {"recharge-com-de", "dundle-com-de"} <= set(body["stale_sources"])  # scheduled, never succeeded
+    assert "recharge-com-de" in body["stale_sources"]  # scheduled, never succeeded
+    assert "dundle-com-de" not in body["stale_sources"]  # disabled after sustained access block
     assert "gamivo-com" in keys and "gamivo-com" not in body["stale_sources"]  # not scheduled (blocked)
     assert body["heartbeat"]["stale"] is True
     names = {j["name"] for j in body["jobs"]}
-    assert {"recharge_watch", "dundle_watch", "dundle_sellers", "backup_daily"} <= names
+    assert {"recharge_watch", "backup_daily"} <= names
+    assert not {"dundle_watch", "dundle_sellers"} & names
     assert not {"gamivo_watch", "gamivo_sellers"} & names
     ctx.dispose()
 
