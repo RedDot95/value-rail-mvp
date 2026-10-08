@@ -1,46 +1,18 @@
-# Liquide Werte: Ziel und tatsächliche Abdeckung (06.10.2026)
+# Liquide Werte: Screener-Ziel und Suchabdeckung (08.10.2026)
 
-Das Ziel ist die Suche nach vollständig belegten, nach sämtlichen erforderlichen Gebühren profitablen Wegen von Gutscheinen oder Guthaben zu liquidem Wert. Dazu zählen Zahlungs- und Kryptogutscheine sowie handelbare Gutscheine großer Händler. Gaming, Streaming und reine Content-Abos sind aus dem Produktionsumfang ausgeschlossen.
+Der Produktionsablauf sucht beobachtete Angebote unter Nennwert und meldet Arbitrage-Kandidaten per Telegram. Gebühren-, Auszahlungs- und persönliche Kontoprüfungen sind aus diesem Ablauf entfernt. Es werden keine Käufe oder Kontoanmeldungen ausgelöst. Wohnsitz Deutschland; Konten und Einsatz entscheidet der Nutzer je Angebot.
 
-`config/production.toml` aktiviert den Katalogfilter und meldet ausschließlich `verified_route`. Mindestgewinn: 0,01 EUR, Mindest-Edge: 0; der Versand verlangt zusätzlich strikt positiven Gewinn. Nominale Rabatte und Preisfunde bleiben Rechercheergebnisse. Der Offline-Standard und die synthetischen Fixtures behalten ihre bisherigen Regeln.
+`config/production.toml` aktiviert `evaluation_mode = "screener"`, den Liquiditäts-Katalogfilter und Alerts für `price_find`. Standard-Signalschwelle: 1 % nominaler Rabatt, frei einstellbar. Diese Meldungen heißen in Oberfläche und Push **Arbitrage-Kandidat**. Sie enthalten keinen berechneten Nettogewinn.
 
-## Suchvorgaben des Nutzers
+Für einen Kandidaten braucht es einen belegten konkreten Angebotspreis und Nennwert in derselben Währung oder mit aktuellen ECB-Referenzkursen, eine passende Produkt-/Händleridentität und eine aktuelle Beobachtung. Unbekannte Region oder Stückzahl werden angezeigt; Bestand null schließt ein Signal aus. Prozentangaben ohne konkrete bepreiste Stückelung reichen nicht. Veraltete Daten, Quellenfehler und Spiele-/Streamingangebote lösen keinen Versand aus.
 
-Bestätigt am 06.10.2026: Wohnsitz Deutschland; laut Nutzer sind Bankkonten innerhalb und außerhalb der EU vorhanden. Einzelne Bankländer und anbieterspezifische Berechtigungen sind damit nicht belegt.
+Der Katalog enthält 75 Instrumente und Marken, unter anderem Abon/Aircash, Paysafecard, Crypto Voucher, PCS, Flexepin, Cashlib, PayPal-bezogene Produkte, Amazon, Otto und MediaMarkt. 15 Familien haben explizite öffentliche Abrufziele; Kategorie-Sweeps erweitern die Suche. Ein Katalogeintrag bedeutet noch keine Quellenanbindung. Quellen mit Zugriffssperren bleiben deaktiviert. `value-rail coverage --json` meldet beobachtete Kandidaten und tatsächliche Abrufabdeckung.
 
-Die Recherche wird nicht auf vorhandene Anbieter-Konten oder ein vorab festgelegtes Kapital bzw. eine maximale Einsatzhöhe beschränkt. Der Nutzer kann sich für eine interessante Gelegenheit beim erforderlichen Anbieter anmelden und entscheidet den Einsatz pro Fall. Eine Kontenliste oder Kapitalangabe ist deshalb keine Voraussetzung für weitere Recherche. Fehlende Registrierung, KYC oder persönliche Freigaben bleiben konkret benannte offene Bedingungen und werden erst bei einer interessanten Route geprüft. Sie werden niemals automatisch als erfüllt angenommen.
+Direktquellen laufen alle 5 Minuten, übrige aktive Quellen alle 30 Minuten. Pagination und neue Markenabrufe sind begrenzt und rotieren. Teilinventuren markieren nicht beobachtete Angebote nicht als verschwunden. Vollständigkeit über sämtliche Anbieter wird nicht behauptet.
 
-Je Gelegenheit sind Kaufpreis, sämtliche bekannten und offenen Gebühren, tatsächlicher Exit, benötigter Einsatz, verfügbare Mengen und geltende Länder-/Kontobedingungen auszuweisen. Ein nominaler Rabatt oder ein theoretischer Gewinn ohne vollständige Belege ist kein bestätigter Gewinn. Gewinnalarme bleiben vollständig belegten ausführbaren Routen vorbehalten.
+Das Produkt benötigt für Handy-Pushes lediglich Telegram-Konfiguration und für dauerndes Tracking einen laufenden Host; siehe [Compose-Betrieb](compose_operation.md).
 
-## Was vorhanden ist
-
-- 75 ausdrücklich **unbewiesene** Instrument-Kandidaten, einschließlich der vom Nutzer genannten Familien. Der Katalog ist erweiterbar; Vollständigkeit oder Liquidität sämtlicher Einträge ist nicht nachgewiesen.
-- 15 Familien mit expliziten Abrufzielen; zusätzliche Kategorieabfragen bei CoinGate/GiftCardWiki. BuySellVouchers: 14 überprüfte Kategoriepfade, darunter Abon, PCS, Flexepin, Transcash, Cashlib, PayPal-beschriftete Angebote, OTTO, MediaMarkt und Amazon. CardBear: Amazon statt Gaming.
-- CoinGate-Suchen lesen bis zu vier API-Seiten und danach bis zu zwölf zusätzliche, tatsächlich von der API gelieferte, im Katalog erkannte Marken mit Stückelungen/Preisen. Das Detailbudget rotiert täglich über die erkannten Marken, damit spätere Suchtreffer ebenfalls erfasst werden. Budgets begrenzen die Arbeit; die erfassten Daten bleiben `discovery_only`. Pro Seite werden Antwort-Hash, Größe und Status als Beleg gespeichert.
-- Unvollständige CoinGate-Suchen und BuySellVouchers-Kategorielisten sind ausdrücklich als Teilinventur markiert; sie können verschwundene Angebote nicht belegen. BuySellVouchers liest jetzt auch robots-erlaubte normale `?page=N`-Seiten: höchstens vier Seiten je Kategorie und zwölf zusätzliche Seiten pro Scan, mit täglich rotierender Kategoriepriorität und Seitenfenstern. Die konfigurierten Pfade bleiben reine Kategorie-Wurzeln. Der Scanbericht und die gespeicherten Scan-Notizen nennen Teilinventuren.
-- Anzeige tatsächlicher Beobachtungen, fehlender Nachweise und aktueller profitabler Routen: `value-rail coverage --json`, authentifiziertes `/api/coverage` und `/status`.
-- Abon und Aircash, verschiedene Länder/Varianten sowie Rewarble und die Ziel-Wallets bleiben getrennte Produktidentitäten. PayPal-beschriftete Angebote beweisen keinen von PayPal ausgegebenen Guthabengutschein. Multi-Händler-Gutscheine brauchen für jeden Umwandlungsschritt Belege.
-
-## Noch nicht gelöst: ausführbare profitable Exits
-
-Ergänzt: konservative Erstattungsmodelle für CASHlib, Flexepin und Neosurf sowie ein strenger Import geprüfter Quotes. Gebührenbedingungen allein bestätigen keine Auszahlungsmenge und schalten keine Route frei. Details und Primärquellen: [Quote-Belege](quote_intake.md).
-
-Die vorhandenen öffentlichen Connectoren liefern Preise/Discovery; keiner liefert einen vollständigen echten Checkout mit allen Gebühren und eine ausführbare Käuferquote mit ausreichender Tiefe. Die hinterlegten Emittenten-Regeln gelten nur für die exakt passende Variante und alle belegten persönlichen Voraussetzungen. Ein Preis von 100 EUR Nennwert ist kein Beleg für 100 EUR Barauszahlung. Ebenso beweist Wallet-Aufladung keine gebührenfreie Bankauszahlung.
-
-Es gibt derzeit kein belegtes Echtgeld-Betreiberprofil. `[operator]` kann Voraussetzungen mit Status und konkreter `evidence_ref` enthalten. Unbekannte Angaben bleiben unbekannt; synthetische Profile dürfen echte Scans nicht freischalten. Ein Profilname oder eine Zeichenkette allein ist kein unabhängiger Beweis: Der Betreiber muss den referenzierten Nachweis tatsächlich vorhalten und prüfen. Keine Passwörter, persönlichen Unterlagen oder Geheimnisse ins Repository schreiben.
-
-```toml
-[operator]
-name = "mein-betreiberprofil"
-region = "DE"
-[operator.capabilities.paysafecard_refund_identity_verification_de_bank_account]
-status = "unknown"
-evidence_ref = "unknown"
-```
-
-Die Engine 1.4.0 verlangt bei echten Routen Referenzen zu Angebots-, Checkout-/Exit-, Gebühren-, FX- und Voraussetzungsbelegen. Alte Pending-Meldungen werden beim Versand mit der aktiven Regelversion erneut bewertet; abgelaufene, unprofitable, inzwischen gestörte, synthetische oder außerhalb des Umfangs liegende Routen werden `suppressed`.
-
-Für einen echten Gewinnalarm fehlen je Route weiterhin aktuelle Preis-/Gebührenbelege, bestätigte Kaufmenge, zulässige Einlösung, ausführbare Auszahlung bzw. Kaufgebot, Exit-Tiefe und persönliche Zugangsvoraussetzungen. Das System beschafft diese nicht durch Käufe oder erfundene Annahmen.
+Die folgenden Live-Prüfungen vom 06.10.2026 sind historische Quellenprüfungen des damaligen Route-Modus, keine aktuellen Verfügbarkeits- oder Gewinnzusagen.
 
 ## Live-Prüfung in dieser Sitzung
 
@@ -135,3 +107,5 @@ Die Zahlen sind gespeicherte Offer-Snapshots der Testläufe, keine 239 unabhäng
 | FlixBus | transport | needs_product_verification | offen |
 | Airbnb | travel | needs_product_verification | offen |
 | Booking.com | travel | needs_product_verification | offen |
+
+Währungsübergreifende Angebote werden mit öffentlichen täglichen ECB-Referenzkursen verglichen. Originalwährungen bleiben sichtbar; Kurse einschließlich Datum und Antwort-Hash werden mit der Bewertung gespeichert. Ohne passenden gültigen Kurs entsteht kein Signal. Referenzkurse sind keine verbindlichen Umtauschkurse.

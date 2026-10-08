@@ -1,32 +1,16 @@
-# Value Rail – belegte profitable Routen für liquide Werte
+# Value Rail – Screener für liquide Gutscheine
 
-Quote-Import und konservative Auszahlungsmodelle: [Belege aufnehmen](docs/quote_intake.md).
+Das Produkt beobachtet Zahlungs-/Kryptogutscheine und Gutscheine großer Händler und meldet konkrete Angebote unter Nennwert als **Arbitrage-Kandidaten**. Gaming, Streaming und Content-Abos sind ausgeschlossen. Auszahlung, vorhandene Konten und Gebühren werden im Produktions-Screener nicht geprüft.
 
-Aktuelles Ziel: vollständig belegte profitable Wege für Zahlungs-/Kryptogutscheine und liquide Händlergutscheine. Die Produktionskonfiguration meldet nur verifizierte Routen mit positivem Gewinn. Der Katalog umfasst 75 unbewiesene Kandidaten; 15 Familien haben explizite Abrufziele. Umfang, Quellen und verbleibende Beleglücken: [Liquide Werte](docs/liquid_value_scope.md).
+**Produktionsmodus:** `config/production.toml`, `evaluation_mode = "screener"`. Standardmäßig gibt es ab 1 % beobachtetem Rabatt ein Signal; `price_find_min_discount` ist einstellbar. Ein Signal enthält Angebotspreis, Nennwert, Währung, Händler, Region, angezeigten Bestand, Zeitpunkt und Angebotslink. Kein fiktiver Nettogewinn wird berechnet.
 
-Öffentliche Live-Abfragen lieferten Angebote, aber **noch keine vollständig belegte profitable Echtgeld-Route**. `value-rail coverage --json` und `/status` zeigen tatsächliche Abdeckung und fehlende Nachweise. Start auf einem dauerhaft verfügbaren Docker-Host: [Betrieb mit Compose](docs/compose_operation.md). Die folgenden Delivery- und Box-Angaben sind historische Projektberichte, kein Nachweis für laufenden Betrieb in dieser Sitzung.
+Direktangebote laufen alle 5 Minuten, Marktplatz-/Vergleichsquellen alle 30 Minuten. Identische Angebote erzeugen keinen neuen Push; wesentliche Preisänderungen, Wiederverfügbarkeit und erneutes Unterschreiten der Signalschwelle erzeugen neue Ereignisse. Vor Versand werden Alter, Verfügbarkeit, Preis, Quellenstatus und Suchumfang erneut geprüft. Fehlgeschlagene Zustellungen werden wiederholt; erfolgreiche Kanäle haben dauerhafte Quittungen.
 
-- **Delivery 3 (06.10.2026):**
-  - Marktplätze und Aggregatoren geprüft (`docs/sources.md` §0).
-  - Generischer JSON-LD-Connector, live für **dundle.com**; GAMIVO-Parser offline getestet, live blocked.
-  - Neue-Seller-Erkennung.
-  - Produktionsbetrieb unter supervisord (`deploy/vrctl`, `docs/deployment.md`).
-  - Tägliches Backup mit Restore-Test.
-  - `value-rail health --json`.
+**Start:** [Docker-Compose-Anleitung](docs/compose_operation.md). Telegram wird aktiviert, sobald Bot-Token und Chat-ID in der lokalen `.env` gesetzt sind. Ohne diese Daten gibt es Log-Ausgaben, aber keine Handy-Pushes. Der Stack muss für laufendes Tracking auf einem dauerhaft verfügbaren Host laufen.
 
+[Suchumfang und Grenzen](docs/liquid_value_scope.md): 75 Katalogkandidaten, davon 15 Familien mit expliziten Abrufzielen plus Kategorie-Sweeps. Das ist eine erweiterbare Suchliste; nicht jeder Katalogeintrag hat eine funktionierende Quelle. Prozentwerbung ohne konkreten Preis/Nennwert ist kein Signal. `value-rail coverage --json` und `/status` zeigen die tatsächliche Abdeckung.
 
-- **Delivery 1:** Offline-Kern (DB, Bewertungslogik, mobile FastAPI-UI, Log-Alerts, synthetische Fixtures).
-- **Delivery 2:** erster echter Direkt-Connector **Recharge.com (DE)** für **Bitsa** und **paysafecard** über
-  schema.org-JSON-LD der öffentlichen Produktseiten (robots.txt erlaubt), SSRF-sicherer HTTP-Client, belegte
-  Einlöse-/Exit-Regeln als versionierte RuleVersion, aufgezeichnete echte Antworten als Offline-Fixtures,
-  separat ausführbarer Live-Smoke-Test (`docs/live_smoke_2026-10-05.md`).
-- **Delivery-3-Basis:** Scheduler mit DB-Lease, persistentem Job-Status, begrenztem Nachholen, Heartbeat-Datei,
-  `/healthz` + `/livez`, Telegram-Sink (implementiert, standardmäßig **aus**).
-
-> **Wichtig:** Fixture-Daten sind **SYNTHETISCH**. Der Live-Connector ist standardmäßig **deaktiviert** und läuft nur
-> explizit (`value-rail smoke recharge` oder nach Aktivierung). Es wird **nie gekauft**, kein Checkout/Warenkorb/Konto
-> aufgerufen, keine Sperre umgangen. Status je Komponente: [`docs/review_brief.md`](docs/review_brief.md),
-> Quellen: [`docs/sources.md`](docs/sources.md).
+Die klassische Route-/Quote-Bewertung bleibt als optionaler Modus für historische Bewertungen und Replay erhalten. Sie blockiert den Produktions-Screener nicht. Die Offline-Fixtures sind synthetisch; der Offline-Standard verwendet weiterhin `config/default.toml`.
 
 ## Voraussetzungen
 - Python ≥ 3.12 (entwickelt/getestet mit 3.13.5)
@@ -117,3 +101,5 @@ research/2026-10-05/         Rohquellen (robots.txt, Text-Auszüge der AGB/Gebü
 docs/                        sources, decisions, deployment, operations, review_brief
 ```
 Alembic-CLI direkt: `.venv/bin/alembic -c pyproject.toml upgrade head` (Konfiguration in `[tool.alembic]`).
+
+Währungsübergreifende Angebote werden mit öffentlichen täglichen ECB-Referenzkursen verglichen. Originalwährungen bleiben sichtbar; Kurse einschließlich Datum und Antwort-Hash werden mit der Bewertung gespeichert. Ohne passenden gültigen Kurs entsteht kein Signal. Referenzkurse sind keine verbindlichen Umtauschkurse.

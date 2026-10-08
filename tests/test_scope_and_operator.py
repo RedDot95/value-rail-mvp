@@ -102,12 +102,14 @@ def test_proven_empty_page_updates_source_health(ctx, now):
         assert source.health == "ok" and source.last_success_at == now
 
 
-def test_production_only_alerts_full_profitable_routes_and_targets_more_families(tmp_path):
+def test_production_alerts_candidates_and_targets_liquid_families(tmp_path):
     from .conftest import make_settings
     settings = make_settings(tmp_path, config_path=REPO / "config/production.toml")
     assert settings.file_config.scope.enabled
-    assert settings.file_config.alerts.alert_statuses == ["verified_route"]
-    assert settings.file_config.rules.verified_min_profit_eur == Decimal("0.01")
+    assert settings.file_config.alerts.alert_statuses == ["price_find"]
+    assert settings.file_config.rules.evaluation_mode == "screener"
+    assert settings.file_config.rules.exit_rules == []
+    assert settings.file_config.rules.price_find_min_discount == Decimal("0.01")
     bsv = next(c for c in settings.file_config.connectors if c.key == "buysellvouchers")
     assert {"abon", "pcs", "transcash", "cashlib", "flexepin", "amazon", "otto", "mediamarkt"} <= \
         {p["family"] for p in bsv.options["pages"]}

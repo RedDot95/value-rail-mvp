@@ -23,8 +23,8 @@ from ..settings import Settings
 from ..storage.orm import OperatorProfileRow, RouteEvaluationRow, ScanRunRow, SourceRow
 from ..storage.repo import (active_rule_version, ensure_rule_version, get_or_create_product, insert_evidence,
                             insert_offer_snapshot, insert_quote, mark_source_health, rule_params_of, upsert_source)
-from ..valuation.engine import ENGINE_VERSION, evaluate_route
-from ..valuation.models import EvaluationResult, OfferInput, RouteInputs, RuleParams
+from ..valuation.engine import evaluate_route
+from ..valuation.models import EvaluationResult, FxRate, OfferInput, RouteInputs, RuleParams
 from .exit_rules import exit_quote_from_rule
 from .sellers import track_seller_offers
 
@@ -51,19 +51,20 @@ class _Fetched(BaseModel):
     offers: list[Any]
     checkout: QuoteBundle | None
     exit: QuoteBundle | None
+    fx_rates: list[FxRate] = Field(default_factory=list)
 
 
-def _fetch(connector: Connector, item: DiscoveryItem, now: datetime) -> _Fetched:
+def _fetch(connector: Connector, item: DiscoveryItem, now: datetime, *, mode: str = "route") -> _Fetched:
     raws = connector.offer_fetch(item, now)
     offers = [connector.normalize(item, r, now) for r in raws]
     caps = connector.capabilities()
     checkout = exit_ = None
     try:
-        checkout = connector.checkout_quote(item, now) if caps.checkout_quote else None
+        checkout = connector.checkout_quote(item, now) if mode == "route" and caps.checkout_quote else None
     except CapabilityNotSupported:
         checkout = None
     try:
-        exit_ = connector.exit_quote(item, now) if caps.exit_quote else None
+        exit_ = connector.exit_quote(item, now) if mode == "route" and caps.exit_quote else None
     except CapabilityNotSupported:
         exit_ = None
     return _Fetched(item=item, offers=offers, checkout=checkout, exit=exit_)
@@ -77,7 +78,7 @@ def persist_evaluation(s: Session, *, inputs: RouteInputs, result: EvaluationRes
         operator_profile_id=operator_profile_id, product_id=product_id, evaluated_at=inputs.evaluated_at,
         status=str(result.status), discount=result.discount, profit_eur=result.profit_eur, edge=result.edge,
         evaluated_quantity=str(result.evaluated_quantity), inputs=inputs_json, outputs=result.canonical(),
-        inputs_hash=content_hash(inputs_json), engine_version=ENGINE_VERSION, is_synthetic=inputs.is_synthetic)
+        inputs_hash=content_hash(inputs_json), engine_version=result.engine_version, is_synthetic=inputs.is_synthetic)
     s.add(row)
     s.flush()
     return row
@@ -94,7 +95,9 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int | None, rv_id: int, p
                   operator: OperatorProfileRow | None, settings: Settings, now: datetime) -> tuple[RouteEvaluationRow, EvaluationResult, bool]:
     item = f.item
     exit_bundle, exit_rule = f.exit, None
-    if exit_bundle is None:
+    if params.evaluation_mode == "screener":
+        exit_bundle = None
+    elif exit_bundle is None:
         exit_bundle, exit_rule = exit_quote_from_rule(params, item, now)
     specs = list(item.sources) + ([exit_bundle.source] if exit_rule is not None else [])
     srcs: dict[str, SourceRow] = {}
@@ -116,7 +119,8 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int | None, rv_id: int, p
         ref = f"offer_snapshot:{row.id}"
         ev_refs = [f"evidence:{insert_evidence(s, d, subject_ref=ref, source=src).id}" for d in o.evidence]
         offer_inputs.append(OfferInput(
-            offer_ref=ref, source_key=src.key, source_role=o.source.role, identity=o.identity, unit_price=o.unit_price,
+            offer_ref=ref, listing_url=o.raw.get("seller_link") or o.raw.get("page_url"),
+            listing_title=o.raw.get("title") or o.raw.get("product_name"), source_key=src.key, source_role=o.source.role, identity=o.identity, unit_price=o.unit_price,
             currency=o.currency, price_includes_fees=o.price_includes_fees, fees=o.fees,
             advertised_quantity=o.advertised_quantity, checkout_confirmed_quantity=o.checkout_confirmed_quantity,
             purchased_quantity=o.purchased_quantity, captured_at=o.captured_at, evidence_refs=ev_refs))
@@ -136,7 +140,7 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int | None, rv_id: int, p
         ev_refs = [f"evidence:{insert_evidence(s, d, subject_ref=ref, source=src).id}" for d in b.evidence]
         return q.model_copy(update={"quote_ref": ref, "evidence_refs": ev_refs})
 
-    checkout = _store_quote(f.checkout, "checkout")
+    checkout = _store_quote(f.checkout, "checkout") if params.evaluation_mode == "route" else None
     exit_q = _store_quote(exit_bundle, "exit")
 
     caps = dict(operator.capabilities) if operator else {}
@@ -147,8 +151,8 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int | None, rv_id: int, p
                          else caps.get(n, "unknown")),
                          "evidence_ref": proofs.get(n, "unknown")} for n in prereq_names]
     inputs = RouteInputs(route_key=item.route_key, product=item.product, offers=offer_inputs, checkout_quote=checkout,
-                         exit_quote=exit_q, prerequisites=connector_prereqs, evaluated_at=now,
-                         is_synthetic=item.is_synthetic)
+                         exit_quote=exit_q, prerequisites=connector_prereqs if params.evaluation_mode == "route" else [], evaluated_at=now,
+                         is_synthetic=item.is_synthetic, fx_rates=f.fx_rates)
     result = evaluate_route(inputs, params)
     ev_row = persist_evaluation(s, inputs=inputs, result=result, rule_version_id=rv_id, scan_run_id=scan_id,
                                 operator_profile_id=operator.id if operator else None, product_id=product.id)
@@ -239,7 +243,15 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
             rep.items_out_of_scope += 1
             continue
         try:
-            fetched = _fetch(connector, item, now)
+            fetched = _fetch(connector, item, now, mode=params.evaluation_mode)
+            if params.evaluation_mode == "screener" and any(o.unit_price != "unknown" and o.identity.face_value != "unknown"
+                    and "unknown" not in (o.currency.lower(), o.identity.face_currency.lower())
+                    and o.currency.upper() != o.identity.face_currency.upper() for o in fetched.offers):
+                try:
+                    from .fx import reference_rates
+                    fetched.fx_rates = reference_rates(now)
+                except Exception as exc:
+                    log.warning("FX reference unavailable: %s", type(exc).__name__)
             check()
         except SourceUnavailable as exc:
             rep.sources_failed[exc.source_key] = str(exc)

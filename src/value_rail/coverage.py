@@ -35,11 +35,14 @@ def coverage_report(s, settings, now):
     by_instrument = {item["key"]: {"evaluations": 0, "statuses": Counter(), "blockers": Counter()} for item in instruments()}
     sources = {x.key: x for x in s.scalars(select(SourceRow))}
     verified = []
+    signals = []
     for ev in latest_evaluations(s):
         if ev.is_synthetic:
             continue
         product = s.get(ProductRow, ev.product_id) if ev.product_id else None
-        inp = with_current_prerequisites(s, ev, RouteInputs.model_validate(ev.inputs), settings)
+        inp = RouteInputs.model_validate(ev.inputs)
+        if params and params.evaluation_mode == "route":
+            inp = with_current_prerequisites(s, ev, inp, settings)
         item = resolve_instrument(inp.product.redemption_program, inp.product.variant,
                                   product.product_family if product else "")
         if item is None:
@@ -51,12 +54,14 @@ def coverage_report(s, settings, now):
         stats["statuses"].update([result.status.value if result else ev.status])
         if result:
             stats["blockers"].update(result.block_reasons + result.missing_evidence + result.stale_reasons)
-            source_keys = [o.source_key for o in inp.offers]
+            source_keys = [result.screening["source_key"]] if result.screening else [o.source_key for o in inp.offers]
             if inp.checkout_quote:
                 source_keys.append(inp.checkout_quote.source_key)
             if inp.exit_quote:
                 source_keys.append(inp.exit_quote.venue_key)
             down = [k for k in source_keys if k in sources and sources[k].health == "down"]
+            if result.screening and result.status == RouteStatus.PRICE_FIND and not down:
+                signals.append({"evaluation_id": ev.id, "route_key": ev.route_key, "discount": str(result.discount), **result.screening})
             if result.status == RouteStatus.VERIFIED_ROUTE and result.profit_eur > 0 and not down:
                 verified.append({"evaluation_id": ev.id, "instrument": item["key"], "route_key": ev.route_key,
                                  "profit_eur": str(result.profit_eur), "edge": str(result.edge)})
@@ -67,7 +72,8 @@ def coverage_report(s, settings, now):
                             "observations": stats["evaluations"], "statuses": dict(stats["statuses"]),
                             "blockers": dict(stats["blockers"]),
                             "exit_rule_configured": any(r.redemption_program == item["key"] for r in params.exit_rules) if params else False})
-    return {"checked_at": now.isoformat(), "goal": "fully_evidenced_profitable_liquid_value_routes",
+    return {"checked_at": now.isoformat(), "goal": "liquid_value_discount_screener" if cfg.rules.evaluation_mode == "screener" else "fully_evidenced_profitable_liquid_value_routes",
+            "screener_mode": cfg.rules.evaluation_mode == "screener", "candidate_signals_now": signals,
             "verified_only_alerts": cfg.alerts.alert_statuses == ["verified_route"],
             "scope_enabled": cfg.scope.enabled, "candidate_count": len(rows),
             "explicitly_targeted_count": sum(bool(r["targeted_sources"]) for r in rows),
@@ -78,4 +84,4 @@ def coverage_report(s, settings, now):
             "verified_min_profit_eur": str(params.verified_min_profit_eur) if params else None,
             "verified_min_edge": str(params.verified_min_edge) if params else None,
             "verified_routes_now": verified, "instruments": rows,
-            "note": "Catalogue inclusion is not proof of liquidity. Resale requires an executable buyer quote and depth; face value is not exit proceeds."}
+            "note": "Signals compare observed listing prices with denomination; payout and fees are checked manually." if cfg.rules.evaluation_mode == "screener" else "Catalogue inclusion is not proof of liquidity. Resale requires an executable buyer quote and depth; face value is not exit proceeds."}

@@ -122,13 +122,13 @@ def test_fixtures_dated_and_free_of_personal_data():
             assert set(p["user"].get("userSellers", {})) <= {"store_name"}
 
 
-def test_config_wires_daily_discovery_only_jobs():
+def test_config_wires_regular_screener_jobs():
     conf = prod_conf()
     jobs = {j["connector"]: j for j in conf["jobs"] if j.get("connector")}
     for key in AGG_KEYS:
         e = conn_entry(key)
         assert e["kind"] in AGGREGATOR_KINDS and e["enabled"]
-        assert jobs[key]["interval_seconds"] == 86400 and jobs[key]["enabled"]
+        assert jobs[key]["interval_seconds"] == 1800 and jobs[key]["enabled"]
         c, _, _ = make(key)
         assert c.source.role == SourceRole.DISCOVERY_ONLY and c.source.kind == SourceKind.AGGREGATOR
         caps = c.capabilities()

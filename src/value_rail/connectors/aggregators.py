@@ -330,7 +330,7 @@ class AggregatorConnector(Connector):
             price_text_raw=price_txt, price_includes_fees=False, fees=[fee], advertised_quantity=adv,
             checkout_confirmed_quantity=QuantityObservation(), purchased_quantity=QuantityObservation(),
             captured_at=raw.fetched_at, evidence=evidence,
-            raw={"lead_id": ld["lead_id"], "seller": ld["seller"], "seller_link": ld["seller_link"],
+            raw={"title": ld["title"], "lead_id": ld["lead_id"], "seller": ld["seller"], "seller_link": ld["seller_link"],
                  "discount_percent": ld["discount_percent"], "availability": ld["availability"],
                  "parser_version": self.PARSER_VERSION, "page_url": pl["page_url"], "source_role": self.ROLE.value,
                  "discovery_only": True, "seller_offer": seller_offer},

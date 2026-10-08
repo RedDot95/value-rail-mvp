@@ -2,7 +2,7 @@
 
 Öffentliche Preise dienen der Suche. Für eine belegte profitable Route braucht das System zusätzlich verbindliche, noch gültige Kauf-/Auszahlungsangebote mit allen Gebühren, bestätigter Menge und exakt passender Produktidentität.
 
-Weitere konkret recherchierte Wege für Aircash/Abon, Rewarble und Händler-Ankauf samt Primärquellen: [Exit-Recherche](exit_research_2026-10-06.md). Anbieterrecherche und Anbindung werden im Projekt erledigt; bestehende Konten sind keine Recherchevoraussetzung.
+Dieser Quote-Import gehört zum optionalen klassischen Route-Modus. Für den Produktions-Screener sind Quotes, Gebührenrecherche und Betreiberprofile nicht erforderlich.
 
 ## Geprüfte Auszahlungsquellen
 

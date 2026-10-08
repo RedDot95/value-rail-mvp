@@ -160,6 +160,9 @@ def _select_price_basis(inp: RouteInputs, rule: RuleParams) -> tuple[OfferInput 
 
 def evaluate_route(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     with localcontext(MONEY_CONTEXT):
+        if rule.evaluation_mode == "screener":
+            from .screener import evaluate_screener
+            return evaluate_screener(inp, rule)
         return _evaluate(inp, rule)
 
 

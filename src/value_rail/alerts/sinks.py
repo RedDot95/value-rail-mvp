@@ -90,6 +90,13 @@ class TelegramAlertSink:
                  f"Route: {payload.get('route_key')}", f"Status: {payload.get('status_de')} ({payload.get('reason')})",
                  f"Bewertung #{payload.get('route_evaluation_id')} - {payload.get('evaluated_at_utc')} UTC",
                  f"Event: {payload.get('event_id')}"]
+        if payload.get("screening"):
+            x = payload["screening"]
+            lines = [str(payload["summary_de"]), f"Händler: {x['seller']} · Region: {x['region']}",
+                     f"Angezeigter Bestand: {payload.get('advertised_quantity', 'unknown')}",
+                     f"Beobachtet: {x['captured_at']}"]
+            if x.get("listing_url"):
+                lines.append(x["listing_url"])
         missing = payload.get("missing_evidence") or []
         if missing:
             lines.append("Fehlende Nachweise: " + ", ".join(missing))

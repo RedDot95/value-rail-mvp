@@ -149,7 +149,7 @@ def test_health_tracks_scheduled_aggregators_before_first_success(tmp_path, now,
         src = next(x for x in body["sources"] if x["key"] == key)
         assert src["scheduled"] and src["stale"]
         assert key in body["stale_sources"]
-        assert src["max_age_s"] == settings.file_config.scheduler.stale_factor * 86400
+        assert src["max_age_s"] == settings.file_config.scheduler.stale_factor * 1800
     finally:
         ctx.dispose()
 

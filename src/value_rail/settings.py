@@ -26,6 +26,8 @@ def _first_existing(*candidates: Path) -> Path:
 
 
 class RuleConfig(BaseModel):
+    evaluation_mode: Literal["route", "screener"] = "route"
+    screener_fx_max_age_seconds: int = 345600
     label: str = "default"
     price_find_min_discount: Decimal = Decimal("0.25")
     verified_min_edge: Decimal = Decimal("0.10")

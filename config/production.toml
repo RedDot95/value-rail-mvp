@@ -1,5 +1,5 @@
-# Live research configuration: fully evidenced profitable liquid-value routes (06.10.2026).
-# Real connectors and jobs enabled. Only verified profitable routes produce alerts.
+# Liquid-value screener: beobachtete Angebote, Rabatt-Signale und Push.
+# Keine Gebühren-, Auszahlungs- oder Kontoprüfung im Screener.
 
 [display]
 timezone = "Europe/Berlin"
@@ -9,116 +9,15 @@ timezone = "Europe/Berlin"
 # referencing the RuleVersion they were computed with (exact replay).
 # A new RuleVersion row is created on init-db when no stored version carries this label.
 [rules]
-label = "liquid-verified-2026-10-06-v2"
-price_find_min_discount = "0.25"     # Preisfund: >= 25 % proven nominal discount
-verified_min_edge = "0"              # User goal: every fully proven, strictly profitable route
-verified_min_profit_eur = "0.01"     # minimum positive EUR-cent profit after all required fees
-max_quote_age_seconds = 900          # checkout/exit quote freshness
+evaluation_mode = "screener"
+label = "liquid-screener-2026-10-08-v1"
+price_find_min_discount = "0.01"     # Signal ab 1 % beobachtetem Rabatt; frei einstellbar
 max_offer_age_seconds = 3600         # offer snapshot freshness
 
-# ---- Sourced redemption/exit rules (Delivery 2). Every number cites a primary source fetched
-# 2026-10-05 (see docs/sources.md). Unsourced values are "unknown" and therefore BLOCK verified routes.
-# Derived exit quotes expire at review_by -> routes turn "Abgelaufen" if the terms are not re-checked.
-
-[[rules.exit_rules]]
-key = "paysafecard-de-issuer-refund"
-family = "paysafecard"
-redemption_program = "paysafecard"
-regions = ["DE"]
-exit_kind = "issuer_refund_to_bank_account"
-payout_currency = "EUR"
-description = "Ruecktausch beim Emittenten (Paysafe Prepaid Services Ltd.) auf persoenliches DE-Bankkonto; keine Barauszahlung; Identitaetspruefung (Ausweiskopie)."
-depth_per_request_units = 1   # AGB 5.1: Antrag je Seriennummer der betreffenden PaysafeCard
-prerequisites = ["paysafecard_refund_identity_verification_de_bank_account", "paysafecard_seller_authorized_by_psc"]
-sources = [
-  "https://www.paysafecard.com/en-de/terms-and-conditions/detail/?country=de&tx_pscterms_pi3%5Baction%5D=renderDetail&tx_pscterms_pi3%5Bcontroller%5D=Terms&tx_pscterms_pi3%5Bfilename%5D=L0xlZ2FsL2RlX3BheXNhZmVjYXJkXzI1LTA1LTIwMjYuaHRt&cHash=2114e4e3519f427f8fc1914b2f6df751 (AGB DE, Datei 25-05-2026, Kopf 'Version: 06/2025'; fetched 2026-10-05) - 2.1.1, 2.1.2, 3.4, 5.1-5.3, 6.1",
-  "https://www.paysafecard.com/en-de/fees-limits/ (fetched 2026-10-05)",
-]
-sourced_at = "2026-10-05"
-review_by = "2026-11-05T00:00:00Z"
-limits = { annual_account_payout_eur = "30000 (fees-limits page, PaysafeWallet; not proven to apply to PIN refunds)", fee_free_withdrawal = "14 days after distance purchase (AGB 6.1) - NOT used, conservative" }
-fees = [
-  { name = "paysafecard_refund_fee", kind = "percent", amount = "0.05", cap_per_unit = "5.00", required = true, evidence_ref = "paysafecard AGB DE 2.1.1 (5 % max 5,00 EUR)" },
-  { name = "paysafecard_monthly_fee_after_30_days", kind = "fixed_per_unit", amount = "unknown", required = false, evidence_ref = "AGB 2.1.2 says 3,00 EUR/Monat, fees-limits page says 4 EUR - conflict; only after 30 days; route assumes refund within 30 days", note = "nicht angesetzt (Ruecktausch < 30 Tage angenommen)" },
-]
-
-[[rules.exit_rules]]
-key = "bitsa-free-plan-sepa-out"
-family = "bitsa"
-redemption_program = "bitsa"
-regions = ["DE"]
-exit_kind = "card_balance_sepa_transfer"
-payout_currency = "EUR"
-description = "Gutschein auf BITSA-Karte (Pecunia Cards EDE, EEA-Wohnsitz, KYC Pflicht) einloesen, Guthaben per SEPA auf eigenes Konto ueberweisen (Free-Plan)."
-depth_limit_eur = "500"   # Free-Plan: SEPA-Ueberweisungen max 500 EUR/Tag (auch Aufladung 500 EUR/Tag)
-prerequisites = ["bitsa_account_kyc_eea"]
-sources = [
-  "https://bitsacard.com/en/plans (fetched 2026-10-05) - limits, transfer fee, footnotes 3 and 6",
-  "https://bitsacard.com/en/card-general-conditions (fetched 2026-10-05) - KYC, blocking",
-  "https://bitsacard.com/en/instructions-redeem-coupon (fetched 2026-10-05) - coupon validity 3 months, not refundable/cashable",
-]
-sourced_at = "2026-10-05"
-review_by = "2026-11-05T00:00:00Z"
-limits = { sepa_out_free_plan = "500/day, 1000/month, 2500/year", topup_free_plan = "500/day, 1000/month, 2500/year", max_balance_free_plan = "2500" }
-fees = [
-  { name = "bitsa_voucher_reload_fee", kind = "percent", amount = "unknown", required = true, evidence_ref = "bitsacard.com/en/plans footnote 3: 0 % - 6 % depending on the transaction (not determinable in advance)" },
-  { name = "bitsa_sepa_transfer_fee", kind = "fixed_per_order", amount = "1.50", required = true, evidence_ref = "bitsacard.com/en/plans: 1 EUR commission; footnote 6: 1.50 EUR to another entity -> conservative upper bound 1.50" },
-]
-
-# Issuer refund terms checked 2026-10-06. Each is conditional on route-specific proof;
-# no free cooling-off period, assumed unused balance or assumed country eligibility.
-[[rules.exit_rules]]
-key = "cashlib-de-conditional-bank-refund"
-family = "cashlib"
-redemption_program = "cashlib"
-regions = ["DE"]
-exit_kind = "issuer_refund_to_bank_account"
-payout_currency = "EUR"
-description = "Conditional CASHlib bank refund: country authorization, unused EUR voucher from an authorized partner, original receipt, identity/address and applicable total fees must be proven."
-depth_per_request_units = 1
-prerequisites = ["cashlib_refund_country_de_authorized", "cashlib_authorized_partner_original_receipt", "cashlib_unused_full_balance_before_use_by", "cashlib_identity_address_bank_refund_approved", "cashlib_applicable_terms_total_fees_confirmed"]
-sources = ["https://www.cashlib.com/en/terms-and-conditions (fetched 2026-10-06): 8.1-8.9, 20.2-20.4"]
-sourced_at = "2026-10-06"
-review_by = "2026-11-06T00:00:00Z"
-limits = { scope = "Single unused EUR voucher, before Use By Date, authorized DE refund only; no zero-fee cancellation assumption" }
-fees = [{ name = "cashlib_redemption_fee", kind = "fixed_per_unit", amount = "15.00", required = true, evidence_ref = "CASHlib terms 8.4; 15 EUR outside cancellation period" }]
-
-[[rules.exit_rules]]
-key = "flexepin-eea-conditional-bank-refund"
-family = "flexepin"
-redemption_program = "flexepin"
-regions = ["DE", "EEA", "EU"]
-exit_kind = "issuer_refund_to_bank_account"
-payout_currency = "EUR"
-description = "Conditional EEA Flexepin bank refund under terms dated 3 February 2026; approved distributor, original voucher, full unused balance before expiry and identity/address/bank refund approval required."
-depth_per_request_units = 1
-prerequisites = ["flexepin_eea_terms_applicable", "flexepin_approved_distributor_original_receipt", "flexepin_unused_full_balance_before_use_by", "flexepin_identity_address_bank_refund_approved", "flexepin_applicable_total_fees_confirmed"]
-sources = ["https://www.flexepin.com/flexepin-terms-and-conditions-eea/ (fetched 2026-10-06; dated 3 February 2026): 7.3-7.12"]
-sourced_at = "2026-10-06"
-review_by = "2026-11-06T00:00:00Z"
-limits = { scope = "Single unused EUR voucher before Use By Date; no zero-fee cooling-off assumption; monthly post-expiry charges excluded only with proof" }
-fees = [{ name = "flexepin_redemption_fee", kind = "fixed_per_unit", amount = "18.00", required = true, evidence_ref = "Flexepin EEA terms 7.8-7.9; 18 EUR outside cooling-off period" }]
-
-[[rules.exit_rules]]
-key = "neosurf-conditional-myneosurf-bank-refund"
-family = "neosurf"
-redemption_program = "neosurf"
-regions = ["DE", "EEA", "EU"]
-exit_kind = "myneosurf_bank_withdrawal"
-payout_currency = "EUR"
-description = "Deposit a valid full-balance EUR voucher to myNeosurf and withdraw to a same-name bank account; KYC required for all refunds. Country, account access and current capacity require proof."
-depth_per_request_units = 1
-prerequisites = ["neosurf_valid_unused_full_balance_eur", "myneosurf_country_account_kyc_verified", "myneosurf_same_name_bank_account", "myneosurf_refund_capacity_and_total_fees_confirmed"]
-sources = ["https://www.neosurf.com/faq/ (fetched 2026-10-06): How can I get a refund of my Neosurf Voucher?"]
-sourced_at = "2026-10-06"
-review_by = "2026-11-06T00:00:00Z"
-limits = { scope = "Single valid EUR voucher, same-name bank payout, full KYC and actual withdrawal capacity; wallet balance alone is not cash" }
-fees = [{ name = "myneosurf_refund_fee", kind = "percent", amount = "0.05", required = true, evidence_ref = "Neosurf FAQ refund section: 5 percent fee on refunded amount" }]
-
 [alerts]
-sink = "log"                         # "log" or "log,telegram" (telegram needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)
-alert_statuses = ["verified_route"]  # Price-only discoveries are research, never notifications
-material_price_change_pct = "0.02"   # >= 2 % change of all-in unit price -> new event
+sink = "log,telegram"                # "log" or "log,telegram" (telegram needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)
+alert_statuses = ["price_find"]      # Konkrete Angebote unter Nennwert; Auszahlung manuell
+material_price_change_pct = "0.02"   # >= 2 % Änderung des beobachteten Preises -> neues Ereignis
 restock_min_increase = 1             # quantity 0/unknown -> >0, or +N units -> new event
 max_attempts = 5
 retry_backoff_seconds = 60
@@ -128,7 +27,7 @@ log_file = "data/alerts.log"         # structured JSON lines (in addition to std
 [scan_intervals]
 watchlist_seconds = 300          # Watchlist: 5 min
 new_sellers_seconds = 1800       # neue Seller: 30 min
-aggregator_seconds = 86400       # Aggregatoren: taeglich (discovery only)
+aggregator_seconds = 1800       # weitere Quellen: alle 30 Minuten
 stale_after_seconds = 900        # data older than this is displayed as "veraltet"
 
 # =====================================================================================================
@@ -205,9 +104,8 @@ pages = [
 ]
 
 # ---------------------------------------------------------------------------------------------------------
-# Aggregator / comparison sites (06.10.2026). Connector classes are HARD-WIRED kind=aggregator,
-# role=discovery_only: leads only, never a price basis, never a Preisfund/alert on their own. A direct seller
-# price must be re-verified by a price_basis connector. Access basis per site: docs/sources.md section 0b.
+# Aggregator / comparison sources: concrete priced denominations can trigger screener signals.
+# Percentage-only summaries cannot. Access basis: docs/sources.md section 0b.
 [[connectors]]
 key = "coingate"
 kind = "coingate_mcp"
@@ -343,7 +241,7 @@ max_catchup_runs = 1
 heartbeat_file = "data/live/heartbeat.json"
 stale_factor = 3
 
-# Watchlist 5 min / new-seller sweep 30 min (from the brief). Aggregators daily (discovery_only, never alerts).
+# Watchlist alle 5 Minuten; weitere Quellen alle 30 Minuten.
 [[jobs]]
 name = "recharge_watch"
 connector = "recharge"
@@ -387,29 +285,29 @@ enabled = false   # connector blocked (see above)
 [[jobs]]
 name = "coingate_aggregator_daily"
 connector = "coingate"
-interval_seconds = 86400
-min_interval_seconds = 43200
+interval_seconds = 1800
+min_interval_seconds = 1800
 enabled = true
 
 [[jobs]]
 name = "buysellvouchers_aggregator_daily"
 connector = "buysellvouchers"
-interval_seconds = 86400
-min_interval_seconds = 43200
+interval_seconds = 1800
+min_interval_seconds = 1800
 enabled = true
 
 [[jobs]]
 name = "cardbear_aggregator_daily"
 connector = "cardbear"
-interval_seconds = 86400
-min_interval_seconds = 43200
+interval_seconds = 1800
+min_interval_seconds = 1800
 enabled = true
 
 [[jobs]]
 name = "giftcardwiki_aggregator_daily"
 connector = "giftcardwiki"
-interval_seconds = 86400
-min_interval_seconds = 43200
+interval_seconds = 1800
+min_interval_seconds = 1800
 enabled = true
 
 [[jobs]]

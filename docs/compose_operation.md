@@ -9,6 +9,8 @@ Im Repository eine lokale, git-ignorierte `.env` anlegen. Benutzer und ein stark
 ```dotenv
 VALUE_RAIL_BASIC_USER=value-rail
 VALUE_RAIL_BASIC_PASSWORD=<zufälliges-starkes-Passwort>
+VALUE_RAIL_TELEGRAM_BOT_TOKEN=<Bot-Token>
+VALUE_RAIL_TELEGRAM_CHAT_ID=<Chat-ID>
 ```
 
 ```bash
@@ -19,9 +21,9 @@ docker compose exec worker value-rail coverage --json
 docker compose exec worker value-rail health --json
 ```
 
-Die Weboberfläche bindet an `127.0.0.1:8000`; vor Zugriff von außen einen privaten Zugang oder TLS-Reverse-Proxy einrichten. Der Server verlangt für `0.0.0.0` Basic Auth und startet ohne vollständige Zugangsdaten nicht. Telegram bleibt aus: Produktions-Sink ist `log`. Für Telegram müssen `log,telegram` und beide zugehörigen Umgebungsvariablen konfiguriert sein.
+Die Weboberfläche bindet an `127.0.0.1:8000`; vor Zugriff von außen einen privaten Zugang oder TLS-Reverse-Proxy einrichten. Der Server verlangt für `0.0.0.0` Basic Auth und startet ohne vollständige Zugangsdaten nicht. Produktions-Sink ist `log,telegram`. Für Handy-Pushes einen Bot über Telegram @BotFather erstellen, den Bot im Zielchat starten und dessen Token sowie die eigene Chat-ID oben setzen. Token nicht ins Repository oder in öffentliche Logs schreiben. Ohne beide Variablen läuft der Screener mit Log-Ausgaben; Telegram ist dann deaktiviert. `/healthz` weist `telegram_configured` aus. Die Standard-Signalschwelle ist 1 % nominaler Rabatt, einstellbar in `config/production.toml`.
 
-Die Jobs aus `config/production.toml` starten echte öffentliche Recherchen und tägliche lokale Backups. `unhealthy` meldet gestörte/veraltete Jobs, bewirkt in Compose aber **keinen automatischen Neustart**; Neustarts gelten für beendete Prozesse. Ein externer Watcher muss `/healthz` überwachen und Störungen melden. Während eines langen ersten Scans kann der Heartbeat noch fehlen. Das ist kein Beweis dafür, dass alle Quellen erfolgreich laufen.
+Die Jobs aus `config/production.toml` beobachten öffentliche Direktangebote alle 5 Minuten, weitere Quellen alle 30 Minuten und erstellen tägliche lokale Backups. Gebühren und Auszahlungswege werden nicht geprüft. `unhealthy` meldet gestörte/veraltete Jobs, bewirkt in Compose aber **keinen automatischen Neustart**; Neustarts gelten für beendete Prozesse. Ein externer Watcher muss `/healthz` überwachen und Störungen melden. Während eines langen ersten Scans kann der Heartbeat noch fehlen. Das ist kein Beweis dafür, dass alle Quellen erfolgreich laufen.
 
 ## Updates und Daten
 

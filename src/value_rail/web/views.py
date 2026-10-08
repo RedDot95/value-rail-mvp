@@ -35,9 +35,9 @@ def card(ev: RouteEvaluationRow, *, sources_down: set[str], now: datetime, stale
         stale_reasons.append("Quelle gestört: " + ", ".join(down))
     return {
         "id": ev.id, "route_key": ev.route_key, "status": ev.status,
-        "status_de": STATUS_LABEL_DE[RouteStatus(ev.status)], "outputs": o, "evaluated_at": ev.evaluated_at,
+        "status_de": "Arbitrage-Kandidat" if o.get("screening") and ev.status == "price_find" else STATUS_LABEL_DE[RouteStatus(ev.status)], "outputs": o, "evaluated_at": ev.evaluated_at,
         "synthetic": ev.is_synthetic, "stale": bool(stale_reasons), "stale_reasons": stale_reasons,
-        "title": ev.route_key.removeprefix("synthetic:"),
+        "title": o.get("screening", {}).get("title", ev.route_key.removeprefix("synthetic:")),
     }
 
 
@@ -49,7 +49,7 @@ def dashboard(s: Session, settings: Settings, now: datetime) -> dict[str, Any]:
     groups: dict[str, list] = {k: [] for k in ("price_find", "verified_route", "expired", "blocked", "no_signal")}
     for c in cards:
         groups.setdefault(c["status"], []).append(c)
-    return {"groups": groups, "system": system_status(s, settings, now), "any_synthetic": any(c["synthetic"] for c in cards)}
+    return {"groups": groups, "screener_mode": settings.file_config.rules.evaluation_mode == "screener", "system": system_status(s, settings, now), "any_synthetic": any(c["synthetic"] for c in cards)}
 
 
 def system_status(s: Session, settings: Settings, now: datetime) -> dict[str, Any]:

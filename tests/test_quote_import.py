@@ -155,19 +155,7 @@ def test_revoked_operator_proof_suppresses_old_verified_quote_and_coverage(ctx, 
     assert sent.sent == 0 and sent.suppressed >= 1
 
 
-@pytest.mark.parametrize("program,net", [("cashlib", "85"), ("flexepin", "82"), ("neosurf", "95")])
-def test_sourced_refund_rules_keep_conditions_and_expire(tmp_path, program, net):
-    from value_rail.connectors.base import DiscoveryItem
-    from value_rail.domain.identity import ProductIdentity
-    from value_rail.valuation.engine import net_exit_eur
-    from value_rail.valuation.models import RuleParams
-    from value_rail.worker.exit_rules import exit_quote_from_rule
-    from .conftest import NOW
-    params = RuleParams.model_validate(make_settings(tmp_path, config_path=REPO / "config/production.toml").file_config.rules.model_dump())
-    item = DiscoveryItem(route_key="TEST-ONLY", product_family=program, sources=[], product=ProductIdentity(
-        face_value="100", face_currency="EUR", region="DE", variant="TEST-ONLY", seller="TEST-ONLY", redemption_program=program))
-    bundle, rule = exit_quote_from_rule(params, item, NOW)
-    assert net_exit_eur(bundle.quote.unit_price, 1, bundle.quote.fees) == Decimal(net)
-    assert bundle.quote.depth_quantity == "unknown" and rule.depth_per_request_units == 1
-    assert len(rule.prerequisites) >= 4
-    assert rule.review_by != "unknown" and all(f.evidence_ref != "unknown" for f in rule.fees)
+def test_production_has_no_automatic_refund_fee_models(tmp_path):
+    params = make_settings(tmp_path, config_path=REPO / "config/production.toml").file_config.rules
+    assert params.evaluation_mode == "screener"
+    assert params.exit_rules == []

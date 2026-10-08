@@ -186,6 +186,10 @@ def coverage(json_output: bool = typer.Option(False, "--json", help="Machine-rea
     if json_output:
         typer.echo(json.dumps(report, indent=2, ensure_ascii=False))
         return
+    if report["screener_mode"]:
+        typer.echo(f"{report['candidate_count']} Instrumente; {report['explicitly_targeted_count']} gezielt angebunden; {len(report['candidate_signals_now'])} aktuelle Arbitrage-Kandidaten")
+        typer.echo(report["note"])
+        return
     typer.echo(f"{report['candidate_count']} candidates; {report['explicitly_targeted_count']} explicitly targeted; "
                f"{len(report['verified_routes_now'])} fresh verified profitable routes")
     typer.echo(f"Verified-only alerts: {report['verified_only_alerts']}; real operator: {report['real_operator_configured']}")

@@ -9,6 +9,13 @@
 <div class="card"><b>Kennzahlen</b>
 <table>
 <tr><td>Rabatt (nominal)</td><td class="n">{{ o.discount|pct }}</td></tr>
+{% if o.screening %}
+<tr><td>Angebotspreis</td><td class="n">{{ o.screening.listing_price }} {{ o.screening.currency }}</td></tr>
+<tr><td>Nennwert</td><td class="n">{{ o.screening.face_value }} {{ o.screening.face_currency }}</td></tr>
+<tr><td>Händler / Region</td><td>{{ o.screening.seller }} / {{ o.screening.region }}</td></tr>
+<tr><td>Angezeigter Bestand</td><td>{{ o.advertised_quantity|unk }}</td></tr>
+{% if o.screening.listing_url %}<tr><td>Angebot</td><td><a href="{{ o.screening.listing_url }}" rel="noopener noreferrer" target="_blank">Angebot öffnen</a></td></tr>{% endif %}
+{% else %}
 <tr><td>All-in je Stück</td><td class="n">{{ o.unit_all_in_eur|eur }}</td></tr>
 <tr><td>Nennwert-Referenz</td><td class="n">{{ o.face_value_reference_eur|eur }}</td></tr>
 <tr><td>Angezeigte Menge</td><td class="n">{{ o.advertised_quantity|unk }}</td></tr>
@@ -19,6 +26,7 @@
 <tr><td>Netto-Exit net_exit(q)</td><td class="n">{{ o.net_exit_eur|eur }}</td></tr>
 <tr><td><b>Profit(q)</b></td><td class="n"><b>{{ o.profit_eur|eur }}</b></td></tr>
 <tr><td><b>Edge(q)</b></td><td class="n"><b>{{ o.edge|pct }}</b></td></tr>
+{% endif %}
 </table></div>
 
 {% if o.cost_breakdown %}<div class="card"><b>Kostenaufstellung</b><table>
