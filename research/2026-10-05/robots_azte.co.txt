@@ -1,5 +1,0 @@
-User-Agent: *
-Disallow: /*?*
-
-Host: https://azte.co/
-Sitemap: https://azte.co/sitemap.xml

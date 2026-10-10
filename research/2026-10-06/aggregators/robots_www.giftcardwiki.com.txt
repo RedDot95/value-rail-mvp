@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: /buy/
-Disallow: /sell/
-Disallow: /club/

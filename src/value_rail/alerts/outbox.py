@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from ..domain.enums import STATUS_LABEL_DE, AlertState
 from ..domain.money import fmt_eur, fmt_pct
 from ..settings import AlertConfig
-from ..storage.orm import AlertRow, RouteEvaluationRow
+from ..storage.orm import AlertRow, RouteEvaluationRow, SellerOfferRow
 from ..storage.repo import last_alert_for
 from ..valuation.models import EvaluationResult
 from .policy import AlertDecision, decide
@@ -53,6 +53,10 @@ def enqueue_if_needed(s: Session, ev: RouteEvaluationRow, result: EvaluationResu
                                                RouteEvaluationRow.id < ev.id).order_by(RouteEvaluationRow.id.desc()).first()
     if prior and prior.status not in cfg.alert_statuses:
         previous_fp = None
+    if result.route_key.startswith("coingate:clearance:"):
+        listing = s.query(SellerOfferRow).filter(SellerOfferRow.source_key == "coingate", SellerOfferRow.offer_key == result.route_key).first()
+        if listing is not None and not listing.active:
+            previous_fp = None
     decision = decide(result, previous_fp, prev.event_id if prev else None, cfg)
     if not decision.enqueue:
         return decision, None

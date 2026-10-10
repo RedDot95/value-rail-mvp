@@ -34,6 +34,7 @@ class FeeComponent(_M):
 
 
 class OfferInput(_M):
+    valid_until: datetime | None = None
     offer_ref: str
     listing_url: str | None = None
     listing_title: str | None = None

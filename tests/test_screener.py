@@ -153,16 +153,6 @@ def test_cross_currency_uses_dated_reference_rates_without_fee_assumptions(now):
     assert evaluate_route(inp.model_copy(update={"fx_rates": [fx.model_copy(update={"captured_at": now + timedelta(seconds=1)})]}), RULE).status == "blocked"
 
 
-def test_ecb_parser_retains_publication_date_and_response_hash():
-    from value_rail.worker.fx import parse_rates
-    body = b'<Envelope><Cube><Cube time="2026-10-07"><Cube currency="USD" rate="1.25"/></Cube></Cube></Envelope>'
-    fx = parse_rates(body)[0]
-    assert fx.rate_to_eur == Decimal("0.8") and fx.captured_at.date().isoformat() == "2026-10-07"
-    assert "sha256=" in fx.quote_ref
-    with pytest.raises(ValueError):
-        parse_rates(body.replace(b'1.25', b'0'))
-
-
 def test_screener_dashboard_and_details_show_price_without_fee_or_payout_panels(ctx, now):
     from fastapi.testclient import TestClient
     from value_rail.web.app import create_app

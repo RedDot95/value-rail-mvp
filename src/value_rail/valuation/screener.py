@@ -41,6 +41,9 @@ def evaluate_screener(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
         elif age < 0 or age > rule.max_offer_age_seconds:
             reason = "listing_not_fresh"
             stale.append(f"{offer.offer_ref}: {reason}")
+        elif offer.valid_until is not None and offer.valid_until <= inp.evaluated_at:
+            reason = "listing_expired"
+            stale.append(f"{offer.offer_ref}: {reason}")
         elif not inp.is_synthetic and not offer.evidence_refs:
             reason = "listing_evidence_missing"
         elif is_unknown(offer.unit_price) or is_unknown(offer.identity.face_value):
@@ -68,6 +71,8 @@ def evaluate_screener(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
                      title=offer.listing_title or offer.identity.redemption_program, product=offer.identity.redemption_program, variant=offer.identity.variant,
                      listing_url=safe_listing_url(offer.listing_url), source_key=offer.source_key,
                      captured_at=offer.captured_at.isoformat())
+    if offer.valid_until is not None:
+        screening["valid_until"] = offer.valid_until.isoformat()
     return EvaluationResult(**base, status=status, discount=discount, price_basis_offer_ref=offer.offer_ref,
                             advertised_quantity=offer.advertised_quantity.value,
                             ignored_offers=ignored, screening=screening)

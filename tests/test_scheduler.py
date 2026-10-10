@@ -44,7 +44,7 @@ def test_lease_exclusive_renew_expire_release(ctx, now):
 
 
 def test_only_enabled_jobs_with_enabled_connectors(sched_ctx):
-    assert [j.name for j in enabled_jobs(sched_ctx)] == ["fixture_scan"]  # live recharge job off by default
+    assert [j.name for j in enabled_jobs(sched_ctx)] == ["fixture_scan"]  # offline fixture job only
 
 
 def test_overlap_second_scheduler_stands_by(sched_ctx, now):

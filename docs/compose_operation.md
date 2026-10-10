@@ -23,7 +23,7 @@ docker compose exec worker value-rail health --json
 
 Die Weboberfläche bindet an `127.0.0.1:8000`; vor Zugriff von außen einen privaten Zugang oder TLS-Reverse-Proxy einrichten. Der Server verlangt für `0.0.0.0` Basic Auth und startet ohne vollständige Zugangsdaten nicht. Produktions-Sink ist `log,telegram`. Für Handy-Pushes einen Bot über Telegram @BotFather erstellen, den Bot im Zielchat starten und dessen Token sowie die eigene Chat-ID oben setzen. Token nicht ins Repository oder in öffentliche Logs schreiben. Ohne beide Variablen läuft der Screener mit Log-Ausgaben; Telegram ist dann deaktiviert. `/healthz` weist `telegram_configured` aus. Die Standard-Signalschwelle ist 1 % nominaler Rabatt, einstellbar in `config/production.toml`.
 
-Die Jobs aus `config/production.toml` beobachten öffentliche Direktangebote alle 5 Minuten, weitere Quellen alle 30 Minuten und erstellen tägliche lokale Backups. Gebühren und Auszahlungswege werden nicht geprüft. `unhealthy` meldet gestörte/veraltete Jobs, bewirkt in Compose aber **keinen automatischen Neustart**; Neustarts gelten für beendete Prozesse. Ein externer Watcher muss `/healthz` überwachen und Störungen melden. Während eines langen ersten Scans kann der Heartbeat noch fehlen. Das ist kein Beweis dafür, dass alle Quellen erfolgreich laufen.
+Der einzige Scan-Job aus `config/production.toml` beobachtet CoinGate Clearance alle 5 Minuten und erstellen tägliche lokale Backups. Gebühren und Auszahlungswege werden nicht geprüft. `unhealthy` meldet gestörte/veraltete Jobs, bewirkt in Compose aber **keinen automatischen Neustart**; Neustarts gelten für beendete Prozesse. Ein externer Watcher muss `/healthz` überwachen und Störungen melden. Während eines langen ersten Scans kann der Heartbeat noch fehlen. Das ist kein Beweis dafür, dass alle Quellen erfolgreich laufen.
 
 ## Updates und Daten
 
@@ -45,7 +45,7 @@ Der aktive Worker erneuert seine DB-Sperre im Hintergrund und prüft Besitz vor/
 
 Ein gesonderter Dispatch-Lock verhindert parallele Zustellung derselben Pending-Zeilen. Netzwerkversand hält keine DB-Schreibtransaktion offen. Erfolgreiche Kanäle werden dauerhaft gespeichert und bei Retry ausgelassen. Ein Absturz nach externer Zustellung, aber vor der Quittung, kann weiterhin eine Nachricht doppelt zustellen; die Garantie bleibt **at least once**. Empfänger können die stabile `event_id` zur Deduplizierung verwenden.
 
-Unterdrückte veraltete Meldungen blockieren spätere neu belegte Routen nicht. Historische Bewertungen/Regeln bleiben unverändert. Replay nutzt die aktuelle Engine 1.4.0 und kann bei korrigierten Fällen vom historischen Ergebnis abweichen.
+Unterdrückte veraltete Meldungen blockieren spätere neu belegte Routen nicht. Historische Bewertungen/Regeln bleiben unverändert. Historische Route-Bewertungen nutzen die Engine 1.4.0 und kann bei korrigierten Fällen vom historischen Ergebnis abweichen.
 
 ## Prüfung in dieser Sitzung
 

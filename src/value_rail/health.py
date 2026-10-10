@@ -40,10 +40,8 @@ def _iso(dt: datetime | None) -> str | None:
 
 def connector_source_keys(c) -> list[str]:
     """Source keys a connector writes (without instantiating it)."""
-    if c.kind in ("jsonld_shop", "coingate_mcp", "bsv_list", "cardbear_html", "gcw_hotdeals"):
-        return [str(c.options.get("source_key", c.key))]
-    if c.kind == "recharge":
-        return ["recharge-com-de"]
+    if c.kind == "coingate_clearance":
+        return ["coingate"]
     return []
 
 

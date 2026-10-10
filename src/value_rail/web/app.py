@@ -104,9 +104,9 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
     @app.get("/api/evaluations", dependencies=[Depends(auth)])
     def api_evaluations():
         with ctx.session_factory() as s:
-            from ..storage.repo import latest_evaluations
+            from .views import monitored_evaluations
             return JSONResponse([{"id": e.id, "route_key": e.route_key, "status": e.status, "outputs": e.outputs,
                                   "rule_version_id": e.rule_version_id, "synthetic": e.is_synthetic,
-                                  "evaluated_at_utc": e.evaluated_at.isoformat()} for e in latest_evaluations(s)])
+                                  "evaluated_at_utc": e.evaluated_at.isoformat()} for e in monitored_evaluations(s, ctx.settings)])
 
     return app

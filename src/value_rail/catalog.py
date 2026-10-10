@@ -49,6 +49,9 @@ def instrument_for_item(item):
 
 
 def in_scope(item, settings) -> bool:
+    allowed = settings.file_config.scope.allowed_source_keys
+    if allowed and not item.is_synthetic and not any(s.key in allowed for s in item.sources):
+        return False
     if item.is_synthetic or not settings.file_config.scope.enabled:
         return True
     if item.meta.get("page_error"):

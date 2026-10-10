@@ -16,16 +16,25 @@ from value_rail.worker.exit_rules import exit_quote_from_rule
 from .conftest import make_settings
 
 NOW = datetime(2026, 10, 5, 22, 0, tzinfo=UTC)
-SRC = SourceSpec(key="recharge-com-de", name="x", kind=SourceKind.DIRECT_SELLER, role=SourceRole.PRICE_BASIS)
+SRC = SourceSpec(key="test-only-source", name="x", kind=SourceKind.DIRECT_SELLER, role=SourceRole.PRICE_BASIS)
 
 
 def params(tmp_path) -> RuleParams:
-    return RuleParams.model_validate(make_settings(tmp_path).file_config.rules.model_dump())
+    # Historical route engine only: simulated terms, not website integration or production fees.
+    return RuleParams(exit_rules=[
+        dict(key="paysafecard-de-issuer-refund",family="paysafecard",redemption_program="paysafecard",regions=["DE"],
+             description="TEST ONLY",exit_kind="TEST ONLY",depth_per_request_units=1,
+             prerequisites=["test_account"],sources=["TEST ONLY 2026-10-05"],review_by="2026-11-05T00:00:00Z",
+             fees=[dict(name="refund",kind="percent",amount="0.05",cap_per_unit="5",evidence_ref="TEST ONLY")]),
+        dict(key="bitsa-free-plan-sepa-out",family="bitsa",redemption_program="bitsa",regions=["DE"],
+             description="TEST ONLY",exit_kind="TEST ONLY",depth_limit_eur="500",
+             prerequisites=["test_account"],sources=["TEST ONLY 2026-10-05"],review_by="2026-11-05T00:00:00Z",
+             fees=[dict(name="bitsa_voucher_reload_fee",kind="percent",amount="unknown",evidence_ref="TEST ONLY")])])
 
 
 def ident(face: str, program: str) -> ProductIdentity:
     return ProductIdentity(face_value=Decimal(face), face_currency="EUR", region="DE", variant=f"digital-code:{face}-eur",
-                           seller="recharge.com", redemption_program=program)
+                           seller="test-only-seller", redemption_program=program)
 
 
 def item(face: str, program: str, synthetic=False) -> DiscoveryItem:
@@ -67,10 +76,10 @@ def test_no_rule_for_synthetic_or_unknown_program(tmp_path):
 def _route(tmp_path, face: str, program: str, checkout_unit: str) -> RouteInputs:
     p = params(tmp_path)
     b, rule = exit_quote_from_rule(p, item(face, program), NOW)
-    cq = CheckoutQuoteInput(quote_ref="quote:hyp", source_key="recharge-com-de", identity=ident(face, program),
+    cq = CheckoutQuoteInput(quote_ref="quote:hyp", source_key="test-only-source", identity=ident(face, program),
                             unit_price=Decimal(checkout_unit), currency="EUR", quantity_confirmed=1, captured_at=NOW,
                             evidence_refs=["HYPOTHETICAL checkout evidence (test only)"])
-    off = OfferInput(offer_ref="offer_snapshot:hyp", source_key="recharge-com-de", source_role="price_basis",
+    off = OfferInput(offer_ref="offer_snapshot:hyp", source_key="test-only-source", source_role="price_basis",
                      identity=ident(face, program), unit_price=Decimal(checkout_unit), currency="EUR",
                      price_includes_fees=True, captured_at=NOW, evidence_refs=["HYPOTHETICAL offer evidence (test only)"])
     return RouteInputs(route_key="hyp", product=ident(face, program), offers=[off], checkout_quote=cq,

@@ -3,7 +3,7 @@ from sqlalchemy import select
 
 from ..catalog import resolve_instrument
 from ..domain.enums import RouteStatus
-from ..storage.orm import ProductRow, RouteEvaluationRow, SourceRow
+from ..storage.orm import ProductRow, RouteEvaluationRow, SourceRow, SellerOfferRow
 from ..storage.repo import active_rule_version, rule_params_of
 from ..valuation.engine import evaluate_route
 from ..valuation.current import with_current_prerequisites
@@ -19,6 +19,10 @@ def delivery_check(settings):
             return True, "eligible"
         if alert.is_synthetic:
             return False, "synthetic_not_a_real_route"
+        if alert.route_key.startswith("coingate:clearance:") or any(c.enabled and c.kind == "coingate_clearance" for c in cfg.connectors):
+            listing = s.scalar(select(SellerOfferRow).where(SellerOfferRow.source_key == "coingate", SellerOfferRow.offer_key == alert.route_key))
+            if not alert.route_key.startswith("coingate:clearance:") or listing is None or not listing.active:
+                return False, "clearance_listing_no_longer_available"
         original = s.get(RouteEvaluationRow, alert.route_evaluation_id)
         latest = s.scalar(select(RouteEvaluationRow).where(RouteEvaluationRow.route_key == alert.route_key)
                           .order_by(RouteEvaluationRow.evaluated_at.desc(), RouteEvaluationRow.id.desc()).limit(1))
@@ -38,6 +42,8 @@ def delivery_check(settings):
                 return False, "outside_liquid_value_scope"
             result = evaluate_route(inp.model_copy(update={"evaluated_at": now}), params)
             if params.evaluation_mode == "screener":
+                if cfg.scope.allowed_source_keys and result.screening.get("source_key") not in cfg.scope.allowed_source_keys:
+                    return False, "source_no_longer_monitored"
                 if result.status != RouteStatus.PRICE_FIND:
                     return False, "listing_no_longer_fresh_discounted_and_available"
                 if ev.id == latest.id and result.screening != original.outputs.get("screening"):

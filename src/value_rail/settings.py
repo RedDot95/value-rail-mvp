@@ -140,6 +140,7 @@ class OperatorConfig(BaseModel):
 
 
 class ScopeConfig(BaseModel):
+    allowed_source_keys: list[str] = Field(default_factory=list)
     enabled: bool = False  # production enables the liquid-candidate catalogue; fixtures remain unrestricted
 
 

@@ -410,8 +410,8 @@ class SafeHttpClient:
                            fetched_monotonic=self.monotonic(), redirects=redirects, attempts=attempts)
 
 
-# Protocol headers a connector may send (MCP Streamable HTTP). Never Cookie/Authorization/User-Agent.
-_ALLOWED_EXTRA_HEADERS = {"mcp-session-id", "mcp-protocol-version"}
+# Protocol headers and the public browser search-only key a connector may send. Never Cookie/Authorization/User-Agent.
+_ALLOWED_EXTRA_HEADERS = {"mcp-session-id", "mcp-protocol-version", "x-algolia-application-id", "x-algolia-api-key"}
 
 
 def _with_headers(res: FetchResult, names: tuple[str, ...], hdrs: dict[str, str]) -> FetchResult:

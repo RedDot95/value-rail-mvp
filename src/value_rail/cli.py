@@ -98,7 +98,7 @@ app.command("scan", help="Alias of load-fixtures: scans all ENABLED connectors (
 
 
 @app.command()
-def smoke(connector: str = typer.Argument(..., help="connector key, e.g. 'recharge'"),
+def smoke(connector: str = typer.Argument(..., help="connector key, e.g. 'coingate'"),
           out_dir: str = typer.Option("docs", "--out-dir", help="where live_smoke_<date>_<key>.md is written ('' = none)")) -> None:
     """LIVE smoke test of one real connector (network!). Writes docs/live_smoke_<Berlin date>_<key>.md."""
     from pathlib import Path

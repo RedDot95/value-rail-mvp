@@ -95,6 +95,8 @@ class TelegramAlertSink:
             lines = [str(payload["summary_de"]), f"Händler: {x['seller']} · Region: {x['region']}",
                      f"Angezeigter Bestand: {payload.get('advertised_quantity', 'unknown')}",
                      f"Beobachtet: {x['captured_at']}"]
+            if x.get("valid_until"):
+                lines.append(f"Gültig bis: {x["valid_until"]}")
             if x.get("listing_url"):
                 lines.append(x["listing_url"])
         missing = payload.get("missing_evidence") or []

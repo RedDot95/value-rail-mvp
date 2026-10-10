@@ -1,7 +1,4 @@
-# Value Rail MVP - default configuration (Delivery 2, 05.10.2026).
-# Thresholds derive from the Bauauftrag (04.10.2026). The only live connector (recharge) is DISABLED
-# here; it is run explicitly via `value-rail smoke recharge` or by enabling it + its job below.
-
+# Offline-Testkonfiguration: ausschließlich synthetische Fixtures. Live: config/production.toml.
 [display]
 timezone = "Europe/Berlin"
 
@@ -16,55 +13,6 @@ verified_min_edge = "0.10"           # Verifizierte Route: >= 10 % net edge ...
 verified_min_profit_eur = "1.00"     # ... AND >= 1 EUR profit
 max_quote_age_seconds = 900          # checkout/exit quote freshness
 max_offer_age_seconds = 3600         # offer snapshot freshness
-
-# ---- Sourced redemption/exit rules (Delivery 2). Every number cites a primary source fetched
-# 2026-10-05 (see docs/sources.md). Unsourced values are "unknown" and therefore BLOCK verified routes.
-# Derived exit quotes expire at review_by -> routes turn "Abgelaufen" if the terms are not re-checked.
-
-[[rules.exit_rules]]
-key = "paysafecard-de-issuer-refund"
-family = "paysafecard"
-redemption_program = "paysafecard"
-regions = ["DE"]
-exit_kind = "issuer_refund_to_bank_account"
-payout_currency = "EUR"
-description = "Ruecktausch beim Emittenten (Paysafe Prepaid Services Ltd.) auf persoenliches DE-Bankkonto; keine Barauszahlung; Identitaetspruefung (Ausweiskopie)."
-depth_per_request_units = 1   # AGB 5.1: Antrag je Seriennummer der betreffenden PaysafeCard
-prerequisites = ["paysafecard_refund_identity_verification_de_bank_account", "paysafecard_seller_authorized_by_psc"]
-sources = [
-  "https://www.paysafecard.com/en-de/terms-and-conditions/detail/?country=de&tx_pscterms_pi3%5Baction%5D=renderDetail&tx_pscterms_pi3%5Bcontroller%5D=Terms&tx_pscterms_pi3%5Bfilename%5D=L0xlZ2FsL2RlX3BheXNhZmVjYXJkXzI1LTA1LTIwMjYuaHRt&cHash=2114e4e3519f427f8fc1914b2f6df751 (AGB DE, Datei 25-05-2026, Kopf 'Version: 06/2025'; fetched 2026-10-05) - 2.1.1, 2.1.2, 3.4, 5.1-5.3, 6.1",
-  "https://www.paysafecard.com/en-de/fees-limits/ (fetched 2026-10-05)",
-]
-sourced_at = "2026-10-05"
-review_by = "2026-11-05T00:00:00Z"
-limits = { annual_account_payout_eur = "30000 (fees-limits page, PaysafeWallet; not proven to apply to PIN refunds)", fee_free_withdrawal = "14 days after distance purchase (AGB 6.1) - NOT used, conservative" }
-fees = [
-  { name = "paysafecard_refund_fee", kind = "percent", amount = "0.05", cap_per_unit = "5.00", required = true, evidence_ref = "paysafecard AGB DE 2.1.1 (5 % max 5,00 EUR)" },
-  { name = "paysafecard_monthly_fee_after_30_days", kind = "fixed_per_unit", amount = "unknown", required = false, evidence_ref = "AGB 2.1.2 says 3,00 EUR/Monat, fees-limits page says 4 EUR - conflict; only after 30 days; route assumes refund within 30 days", note = "nicht angesetzt (Ruecktausch < 30 Tage angenommen)" },
-]
-
-[[rules.exit_rules]]
-key = "bitsa-free-plan-sepa-out"
-family = "bitsa"
-redemption_program = "bitsa"
-regions = ["DE"]
-exit_kind = "card_balance_sepa_transfer"
-payout_currency = "EUR"
-description = "Gutschein auf BITSA-Karte (Pecunia Cards EDE, EEA-Wohnsitz, KYC Pflicht) einloesen, Guthaben per SEPA auf eigenes Konto ueberweisen (Free-Plan)."
-depth_limit_eur = "500"   # Free-Plan: SEPA-Ueberweisungen max 500 EUR/Tag (auch Aufladung 500 EUR/Tag)
-prerequisites = ["bitsa_account_kyc_eea"]
-sources = [
-  "https://bitsacard.com/en/plans (fetched 2026-10-05) - limits, transfer fee, footnotes 3 and 6",
-  "https://bitsacard.com/en/card-general-conditions (fetched 2026-10-05) - KYC, blocking",
-  "https://bitsacard.com/en/instructions-redeem-coupon (fetched 2026-10-05) - coupon validity 3 months, not refundable/cashable",
-]
-sourced_at = "2026-10-05"
-review_by = "2026-11-05T00:00:00Z"
-limits = { sepa_out_free_plan = "500/day, 1000/month, 2500/year", topup_free_plan = "500/day, 1000/month, 2500/year", max_balance_free_plan = "2500" }
-fees = [
-  { name = "bitsa_voucher_reload_fee", kind = "percent", amount = "unknown", required = true, evidence_ref = "bitsacard.com/en/plans footnote 3: 0 % - 6 % depending on the transaction (not determinable in advance)" },
-  { name = "bitsa_sepa_transfer_fee", kind = "fixed_per_order", amount = "1.50", required = true, evidence_ref = "bitsacard.com/en/plans: 1 EUR commission; footnote 6: 1.50 EUR to another entity -> conservative upper bound 1.50" },
-]
 
 [alerts]
 sink = "log"                         # "log" or "log,telegram" (telegram needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)
@@ -88,20 +36,6 @@ kind = "fixture"
 enabled = true
 notes = "SYNTHETIC offline fixtures from tests/fixtures/scenarios"
 
-[[connectors]]
-key = "recharge"
-kind = "recharge"
-enabled = false   # LIVE network. Enable explicitly (and the recharge_scan job) after reviewing docs/sources.md
-notes = "Recharge.com DE Produktseiten (Bitsa, paysafecard) via schema.org JSON-LD; robots.txt erlaubt, Crawl-delay 1 (wir: >=5 s + Jitter). Kein Checkout-Quote."
-options = { storefront = "en/de", region = "DE", min_interval_s = 5.0, jitter_s = 2.0 }
-
-[[connectors]]
-key = "bitrefill"
-kind = "placeholder"
-enabled = false
-product_family = "crypto_voucher"
-notes = "Kandidat (Delivery 3): offizielle Personal API (api.bitrefill.com/v2) braucht API-Key aus dem Nutzerkonto. Scraping laut ToS verboten."
-
 # ---- Scheduler (Delivery 3 basics) ----
 [scheduler]
 tick_seconds = 15
@@ -115,12 +49,6 @@ name = "fixture_scan"
 connector = "fixture"
 interval_seconds = 300          # Watchlist 5 min (SYNTHETIC offline data)
 enabled = true
-
-[[jobs]]
-name = "recharge_scan"
-connector = "recharge"
-interval_seconds = 1800         # 2 product pages every 30 min - polite
-enabled = false
 
 # ---- Optional model-judgment enrichment/safety layer (TypeSafe System One / Jev), docs/decisions.md D-42 ----
 # OFF by default. Inferred hints only: never enters the Decimal valuation math, never triggers an alert,

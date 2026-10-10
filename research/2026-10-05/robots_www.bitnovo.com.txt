@@ -1,6 +1,0 @@
-User-agent: *
-Disallow:
-
-Sitemap: https://www.bitnovo.com/sitemap-index.xml
-
-Sitemap: https://www.bitnovo.com/blog/sitemap-index.xml

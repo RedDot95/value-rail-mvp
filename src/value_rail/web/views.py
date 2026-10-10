@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..domain.enums import STATUS_LABEL_DE, RouteStatus
 from ..settings import Settings
-from ..storage.orm import AlertRow, RouteEvaluationRow, RuleVersionRow, SourceRow
+from ..storage.orm import AlertRow, RouteEvaluationRow, RuleVersionRow, SourceRow, SellerOfferRow
 from ..storage.repo import evidence_for_refs, judgments_for_offer_refs, latest_evaluations, latest_scan_runs
 
 
@@ -41,11 +41,21 @@ def card(ev: RouteEvaluationRow, *, sources_down: set[str], now: datetime, stale
     }
 
 
+def monitored_evaluations(s: Session, settings: Settings):
+    allowed = settings.file_config.scope.allowed_source_keys
+    clearance_only = any(c.enabled and c.kind == "coingate_clearance" for c in settings.file_config.connectors)
+    active = set(s.scalars(select(SellerOfferRow.offer_key).where(SellerOfferRow.source_key == "coingate", SellerOfferRow.active.is_(True)))) if clearance_only else set()
+    return [ev for ev in latest_evaluations(s)
+            if (not allowed or bool(_source_keys(ev) & set(allowed)))
+            and (not clearance_only or ev.route_key in active)]
+
+
 def dashboard(s: Session, settings: Settings, now: datetime) -> dict[str, Any]:
     stale_after = settings.file_config.scan_intervals.stale_after_seconds
     sources = list(s.scalars(select(SourceRow).order_by(SourceRow.key)))
     down = {x.key for x in sources if x.health == "down"}
-    cards = [card(e, sources_down=down, now=now, stale_after=stale_after) for e in latest_evaluations(s)]
+    evaluations = monitored_evaluations(s, settings)
+    cards = [card(e, sources_down=down, now=now, stale_after=stale_after) for e in evaluations]
     groups: dict[str, list] = {k: [] for k in ("price_find", "verified_route", "expired", "blocked", "no_signal")}
     for c in cards:
         groups.setdefault(c["status"], []).append(c)
@@ -54,6 +64,9 @@ def dashboard(s: Session, settings: Settings, now: datetime) -> dict[str, Any]:
 
 def system_status(s: Session, settings: Settings, now: datetime) -> dict[str, Any]:
     sources = list(s.scalars(select(SourceRow).order_by(SourceRow.key)))
+    allowed = settings.file_config.scope.allowed_source_keys
+    if allowed:
+        sources = [x for x in sources if x.key in allowed]
     scans = latest_scan_runs(s, 10)
     outbox = dict(s.execute(select(AlertRow.state, func.count()).group_by(AlertRow.state)).all())
     last = scans[0] if scans else None

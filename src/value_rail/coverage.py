@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from .catalog import instruments, resolve_instrument
 from .domain.enums import RouteStatus
-from .storage.orm import OperatorProfileRow, ProductRow, SourceRow
+from .storage.orm import OperatorProfileRow, ProductRow, SourceRow, SellerOfferRow
 from .storage.repo import active_rule_version, latest_evaluations, rule_params_of
 from .valuation.engine import evaluate_route
 from .valuation.current import with_current_prerequisites
@@ -19,25 +19,17 @@ def coverage_report(s, settings, now):
     rv = active_rule_version(s, now)
     params = rule_params_of(rv) if rv is not None else None
     targets = {item["key"]: set() for item in instruments()}
-    sweeps = []
-    for connector in cfg.connectors:
-        if not connector.enabled:
-            continue
-        source_key = connector.options.get("source_key", "recharge-com-de" if connector.kind == "recharge" else connector.key)
-        for field in ("products", "pages", "brands"):
-            for target in connector.options.get(field, []):
-                item = resolve_instrument(str(target.get("family", "")), str(target.get("redemption_program", "")),
-                                          str(target.get("brand", "")))
-                if item is not None:
-                    targets[item["key"]].add(source_key)
-        if connector.options.get("searches") or connector.kind == "gcw_hotdeals":
-            sweeps.append(source_key)
+    sweeps = [c.key for c in cfg.connectors if c.enabled and c.kind == "coingate_clearance"]
     by_instrument = {item["key"]: {"evaluations": 0, "statuses": Counter(), "blockers": Counter()} for item in instruments()}
     sources = {x.key: x for x in s.scalars(select(SourceRow))}
     verified = []
     signals = []
+    active_clearance = set(s.scalars(select(SellerOfferRow.offer_key).where(SellerOfferRow.source_key == "coingate", SellerOfferRow.active.is_(True)))) if sweeps else set()
     for ev in latest_evaluations(s):
-        if ev.is_synthetic:
+        if sweeps and ev.route_key not in active_clearance:
+            continue
+        if ev.is_synthetic or (cfg.scope.allowed_source_keys and not any(
+                o.get("source_key") in cfg.scope.allowed_source_keys for o in ev.inputs.get("offers", []))):
             continue
         product = s.get(ProductRow, ev.product_id) if ev.product_id else None
         inp = RouteInputs.model_validate(ev.inputs)

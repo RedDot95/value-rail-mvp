@@ -110,11 +110,8 @@ def test_production_alerts_candidates_and_targets_liquid_families(tmp_path):
     assert settings.file_config.rules.evaluation_mode == "screener"
     assert settings.file_config.rules.exit_rules == []
     assert settings.file_config.rules.price_find_min_discount == Decimal("0.01")
-    bsv = next(c for c in settings.file_config.connectors if c.key == "buysellvouchers")
-    assert {"abon", "pcs", "transcash", "cashlib", "flexepin", "amazon", "otto", "mediamarkt"} <= \
-        {p["family"] for p in bsv.options["pages"]}
-    cardbear = next(c for c in settings.file_config.connectors if c.key == "cardbear")
-    assert [p["family"] for p in cardbear.options["pages"]] == ["amazon"]
+    assert [(c.key,c.kind) for c in settings.file_config.connectors] == [("coingate","coingate_clearance")]
+    assert settings.file_config.scope.allowed_source_keys == ["coingate"]
 
 
 def test_coverage_does_not_promote_synthetic_routes_to_real_signals(ctx, now):

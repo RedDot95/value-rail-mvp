@@ -119,6 +119,7 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int | None, rv_id: int, p
         ref = f"offer_snapshot:{row.id}"
         ev_refs = [f"evidence:{insert_evidence(s, d, subject_ref=ref, source=src).id}" for d in o.evidence]
         offer_inputs.append(OfferInput(
+            valid_until=None if o.raw.get("expires_at", "unknown") == "unknown" else o.raw["expires_at"],
             offer_ref=ref, listing_url=o.raw.get("seller_link") or o.raw.get("page_url"),
             listing_title=o.raw.get("title") or o.raw.get("product_name"), source_key=src.key, source_role=o.source.role, identity=o.identity, unit_price=o.unit_price,
             currency=o.currency, price_includes_fees=o.price_includes_fees, fees=o.fees,
@@ -244,14 +245,6 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
             continue
         try:
             fetched = _fetch(connector, item, now, mode=params.evaluation_mode)
-            if params.evaluation_mode == "screener" and any(o.unit_price != "unknown" and o.identity.face_value != "unknown"
-                    and "unknown" not in (o.currency.lower(), o.identity.face_currency.lower())
-                    and o.currency.upper() != o.identity.face_currency.upper() for o in fetched.offers):
-                try:
-                    from .fx import reference_rates
-                    fetched.fx_rates = reference_rates(now)
-                except Exception as exc:
-                    log.warning("FX reference unavailable: %s", type(exc).__name__)
             check()
         except SourceUnavailable as exc:
             rep.sources_failed[exc.source_key] = str(exc)

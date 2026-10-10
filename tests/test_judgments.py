@@ -162,8 +162,7 @@ def test_valuation_byte_for_byte_unchanged_with_enrichment(tmp_path, provider_ki
 def test_judgments_package_cannot_reach_money_math_or_alerts():
     """Static guard: the judgments layer imports neither the valuation engine nor alerts/worker/connectors I/O,
     and the valuation/alerts packages never import judgments."""
-    forbidden_from_judgments = ("alerts", "valuation", "worker", "connectors.recharge", "connectors.jsonld_shop",
-                                "connectors.aggregators")
+    forbidden_from_judgments = ("alerts", "valuation", "worker", "connectors.coingate_clearance")
     for f in (SRC / "judgments").glob("*.py"):
         tree = ast.parse(f.read_text())
         for node in ast.walk(tree):

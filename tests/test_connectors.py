@@ -5,20 +5,9 @@ import json
 import pytest
 
 from value_rail.connectors.fixture import FixtureConnector
-from value_rail.connectors.placeholders import bitsa_placeholder, paysafe_placeholder
 from value_rail.connectors.registry import build_connectors, describe_connectors
 
 from .conftest import FIXTURES, make_settings
-
-
-@pytest.mark.parametrize("factory", [bitsa_placeholder, paysafe_placeholder])
-def test_placeholders_claim_nothing(factory, now):
-    c = factory()
-    caps = c.capabilities()
-    assert not any([caps.discovery, caps.offer_fetch, caps.normalize, caps.checkout_quote, caps.exit_quote,
-                    caps.live_network])
-    with pytest.raises(NotImplementedError):
-        c.discovery(now)
 
 
 def test_fixture_connector_offline_and_synthetic(now):
@@ -38,7 +27,4 @@ def test_registry_builds_only_fixture(tmp_path):
     cs = build_connectors(st)
     assert [c.key for c in cs] == ["fixture"]
     rows = {r["key"]: r for r in describe_connectors(st)}
-    # the live connector is configured but disabled by default; placeholders are never runnable
-    assert rows["recharge"]["enabled"] is False and rows["recharge"]["capabilities"]["live_network"] is True
-    assert rows["recharge"]["capabilities"]["checkout_quote"] is False
-    assert rows["bitrefill"]["enabled"] is False
+    assert set(rows) == {"fixture"}

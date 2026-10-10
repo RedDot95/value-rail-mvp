@@ -1,313 +1,46 @@
-# Liquid-value screener: beobachtete Angebote, Rabatt-Signale und Push.
-# Keine Gebühren-, Auszahlungs- oder Kontoprüfung im Screener.
-
+# Einzige Angebotsquelle: https://coingate.com/gift-cards/clearance
 [display]
 timezone = "Europe/Berlin"
 
-# Rule parameters are VERSIONED: on `init-db`/`rules seed` a RuleVersion row is created
-# whenever these parameters differ from the latest stored version. Old evaluations keep
-# referencing the RuleVersion they were computed with (exact replay).
-# A new RuleVersion row is created on init-db when no stored version carries this label.
 [rules]
 evaluation_mode = "screener"
-label = "liquid-screener-2026-10-08-v1"
-price_find_min_discount = "0.01"     # Signal ab 1 % beobachtetem Rabatt; frei einstellbar
-max_offer_age_seconds = 3600         # offer snapshot freshness
+label = "coingate-clearance-2026-10-10-v1"
+price_find_min_discount = "0.01"
+max_offer_age_seconds = 900
 
 [alerts]
-sink = "log,telegram"                # "log" or "log,telegram" (telegram needs TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)
-alert_statuses = ["price_find"]      # Konkrete Angebote unter Nennwert; Auszahlung manuell
-material_price_change_pct = "0.02"   # >= 2 % Änderung des beobachteten Preises -> neues Ereignis
-restock_min_increase = 1             # quantity 0/unknown -> >0, or +N units -> new event
+sink = "log,telegram"
+alert_statuses = ["price_find"]
+material_price_change_pct = "0.02"
+restock_min_increase = 1
 max_attempts = 5
 retry_backoff_seconds = 60
-log_file = "data/alerts.log"         # structured JSON lines (in addition to stderr)
+log_file = "data/alerts.log"
 
-# Scan intervals from the Bauauftrag (informational; the scheduler uses [[jobs]] below).
 [scan_intervals]
-watchlist_seconds = 300          # Watchlist: 5 min
-new_sellers_seconds = 1800       # neue Seller: 30 min
-aggregator_seconds = 1800       # weitere Quellen: alle 30 Minuten
-stale_after_seconds = 900        # data older than this is displayed as "veraltet"
+watchlist_seconds = 300
+new_sellers_seconds = 300
+aggregator_seconds = 300
+stale_after_seconds = 900
 
-# =====================================================================================================
-# PRODUCTION (24/7 on the box) - live connectors. Used via VALUE_RAIL_CONFIG_PATH=config/production.toml
-# (set in .env). Source access basis + blocked sources: docs/sources.md (checked 2026-10-06).
-# Politeness: every connector >= 5 s per host + 0-2 s jitter, robots.txt + Crawl-delay honoured,
-# one shared client per connector (watch + sweep jobs share it).
-# =====================================================================================================
-
-[[connectors]]
-key = "fixture"
-kind = "fixture"
-enabled = false
-notes = "SYNTHETIC offline fixtures - disabled in production"
-
-[[connectors]]
-key = "recharge"
-kind = "recharge"
-enabled = true
-notes = "Recharge.com DE (direct seller) - Bitsa, paysafecard, Crypto Voucher; JSON-LD ProductGroup."
-[connectors.options]
-storefront = "en/de"
-region = "DE"
-min_interval_s = 5.0
-jitter_s = 2.0
-products = [
-  { slug = "bitsa", family = "bitsa", redemption_program = "bitsa", prerequisites = ["bitsa_account_kyc_eea"], tier = "watch" },
-  { slug = "paysafecard", family = "paysafecard", redemption_program = "paysafecard", prerequisites = ["paysafecard_refund_identity_verification_de_bank_account"], tier = "watch" },
-  # Crypto Voucher (cryptovoucher.io): asset chosen at redemption (BTC and others) -> NOT an unambiguous asset.
-  { slug = "crypto-voucher", family = "crypto_voucher", redemption_program = "cryptovoucher", prerequisites = ["cryptovoucher_account_kyc"], tier = "watch" },
-]
-
-[[connectors]]
-key = "dundle"
-kind = "jsonld_shop"
-enabled = false   # DISABLED 2026-10-07 10:10 CEST by watchdog: blocked continuously >6h (HTTP 403 bot protection / HTTP 429 rate limit since 03:48:02 CEST); not bypassed
-notes = "dundle.com DE (direct seller, Korsit B.V.) - Product.offers JSON-LD per denomination; service fee only in cart."
-[connectors.options]
-source_key = "dundle-com-de"
-source_name = "dundle.com (DE storefront, JSON-LD)"
-host = "dundle.com"
-source_kind = "direct_seller"
-fixed_seller = "dundle.com"
-fee_name = "service_fee"
-fee_note = "dundle FAQ: Servicegebuehr beim Kauf, Hoehe nur im Warenkorb (nicht geoeffnet) -> unknown"
-min_interval_s = 5.0
-jitter_s = 2.0
-pages = [
-  { path = "/de/paysafecard/", family = "paysafecard", redemption_program = "paysafecard", region = "DE", tier = "watch", prerequisites = ["paysafecard_refund_identity_verification_de_bank_account"] },
-  { path = "/de/bitsa/", family = "bitsa", redemption_program = "bitsa", region = "DE", tier = "watch", prerequisites = ["bitsa_account_kyc_eea"] },
-  # Azteco (BTC on-chain): page exists but currently lists no Product offers -> absent_ok (0 offers, no error)
-  { path = "/de/azteco/", family = "crypto_voucher", redemption_program = "azteco-btc", region = "DE", tier = "discover", absent_ok = true, note = "Azteco BTC - unambiguous asset (Bitcoin on-chain)" },
-]
-
-[[connectors]]
-key = "gamivo"
-kind = "jsonld_shop"
-enabled = false   # BLOCKED live: Cloudflare managed challenge (403, cf-mitigated: challenge) for the worker client; not bypassed
-notes = "GAMIVO marketplace - parser ready (Product.offers JSON-LD with seller.name), offline-tested; live blocked by Cloudflare challenge for our HTTP/1.1 client (see docs/sources.md). No paysafecard/Bitsa/Azteco listing found."
-[connectors.options]
-source_key = "gamivo-com"
-source_name = "GAMIVO (marketplace, JSON-LD seller offers)"
-host = "www.gamivo.com"
-source_kind = "marketplace"
-fee_name = "checkout_fees"
-fee_note = "GAMIVO: service/payment fees only shown in checkout (not opened) -> unknown"
-min_interval_s = 6.0
-jitter_s = 2.0
-pages = [
-  { path = "/product/flexepin-eur-50", family = "flexepin", redemption_program = "flexepin", region = "EU", tier = "watch" },
-  { path = "/product/flexepin-eur-100", family = "flexepin", redemption_program = "flexepin", region = "EU", tier = "watch" },
-  { path = "/product/neosurf-gift-card-15-eu-eur-prepaid-eu-standard-15eur-gift-cards", family = "neosurf", redemption_program = "neosurf", region = "EU", tier = "discover" },
-  { path = "/product/jetoncash-card-eur-eu-gift-cards-prepaid-eu-standard-50eur", family = "jetoncash", redemption_program = "jetoncash", region = "EU", tier = "discover" },
-]
-
-# ---------------------------------------------------------------------------------------------------------
-# Aggregator / comparison sources: concrete priced denominations can trigger screener signals.
-# Percentage-only summaries cannot. Access basis: docs/sources.md section 0b.
 [[connectors]]
 key = "coingate"
-kind = "coingate_mcp"
+kind = "coingate_clearance"
 enabled = true
-notes = "aggregator/discovery_only: official no-auth CoinGate Gift Cards MCP server, read-only tools only (search_gift_cards, get_gift_card). CoinGate itself is the seller."
-[connectors.options]
-source_key = "coingate"
-source_name = "CoinGate Gift Cards (MCP, discovery)"
-host = "giftcards-api.coingate.com"
-endpoint_path = "/api/mcp"
-max_search_pages = 4
-max_discovered_brand_details = 12
-min_interval_s = 6.0
-jitter_s = 2.0
-brands = [
-  { brand = "bitsa", country = "DE", family = "bitsa", redemption_program = "bitsa", region = "DE" },
-  { brand = "paysafecard", country = "DE", family = "paysafecard", redemption_program = "paysafecard", region = "DE" },
-  { brand = "flexepin", country = "DE", family = "flexepin", redemption_program = "flexepin", region = "DE" },
-  { brand = "cashlib", country = "DE", family = "cashlib", redemption_program = "cashlib", region = "DE" },
-]
-searches = [
-  { category = "clearance-stock", country = "DE", empty_ok = true, family = "clearance", region = "DE", note = "Clearance-Liste (Web: /gift-cards/clearance?country=DE)" },
-  { category = "clearance-stock", country = "WW", empty_ok = true, family = "clearance", region = "WW", note = "Clearance-Liste (Web: /gift-cards/clearance?country=WW)" },
-  { category = "payment-cards", country = "DE", family = "payment-cards", region = "DE" },
-]
-
-[[connectors]]
-key = "buysellvouchers"
-kind = "bsv_list"
-enabled = true
-notes = "aggregator/discovery_only (marketplace listings used as hints): public category list pages, RSC initialProductsList; robots allows paths without query. Buyer API needs account + approval (user)."
-[connectors.options]
-source_key = "buysellvouchers"
-source_name = "BuySellVouchers (Listen, discovery)"
-max_pages_per_category = 4
-max_additional_pages = 12
-host = "www.buysellvouchers.com"
-min_interval_s = 6.0
-jitter_s = 2.0
-pages = [
-  { path = "/en/products/list/bitsa-gift-card/", family = "bitsa", redemption_program = "bitsa", region = "EU" },
-  { path = "/en/products/list/paysafe-virtual-cards/", family = "paysafecard", redemption_program = "paysafecard", region = "unknown", note = "region per product (DE/FR/ES)" },
-  { path = "/en/products/list/bitnovo-voucher/", family = "bitnovo", redemption_program = "bitnovo", region = "unknown", empty_ok = true, note = "06.10.2026: category explicitly empty (total 0)" },
-  { path = "/en/products/list/neosurf-voucher/", family = "neosurf", redemption_program = "neosurf", region = "unknown" },
-  { path = "/en/products/list/Prepaid_Vouchers-Azteco/", family = "azteco", redemption_program = "azteco", region = "WW" },
-  # Category URLs found in current public search; leads remain discovery_only.
-  { path = "/en/products/list/flexepin-voucher/", family = "flexepin", redemption_program = "flexepin", region = "unknown", empty_ok = true },
-  { path = "/en/products/list/transcash-gift-cards/", family = "transcash", redemption_program = "transcash", region = "unknown", empty_ok = true },
-  { path = "/en/products/list/cashlib-gift-cards/", family = "cashlib", redemption_program = "cashlib", region = "unknown", empty_ok = true },
-  { path = "/en/products/list/a-bon-gift-cards/", family = "abon", redemption_program = "abon", region = "unknown", empty_ok = true },
-  { path = "/en/products/list/pcs-gift-cards/", family = "pcs", redemption_program = "pcs", region = "unknown", empty_ok = true },
-  { path = "/en/products/list/paypal-gift-cards/", family = "paypal-unverified", redemption_program = "paypal-unverified", region = "unknown", empty_ok = true },
-  { path = "/en/products/list/online-shopping-otto-gift-cards/", family = "otto", redemption_program = "otto", region = "unknown", empty_ok = true },
-  { path = "/en/products/list/electronics-mediamarkt-gift-cards/", family = "mediamarkt", redemption_program = "mediamarkt", region = "unknown", empty_ok = true },
-  { path = "/en/products/list/Gift_cards-Amazon_Gift_cards/", family = "amazon", redemption_program = "amazon", region = "unknown", empty_ok = true },
-]
-
-[[connectors]]
-key = "cardbear"
-kind = "cardbear_html"
-enabled = true
-notes = "aggregator/discovery_only: US comparison site (discount % per marketplace, no prices, USD market). ToS allows reasonable automated access. /r.php outbound links never followed."
-[connectors.options]
-source_key = "cardbear"
-source_name = "CardBear (US, discovery)"
-host = "www.cardbear.com"
-min_interval_s = 6.0
-jitter_s = 2.0
-pages = [
-  { path = "/gift-card-discount/111/amazon", family = "amazon", redemption_program = "amazon-us", region = "US" },
-]
-
-[[connectors]]
-key = "giftcardwiki"
-kind = "gcw_hotdeals"
-enabled = true
-notes = "aggregator/discovery_only: US comparison site, /hot-deals/ brand summary (discount %, card count); no prices/sellers in server HTML."
-[connectors.options]
-source_key = "giftcardwiki"
-source_name = "GiftCardWiki (US, discovery)"
-host = "www.giftcardwiki.com"
-min_interval_s = 6.0
-jitter_s = 2.0
-pages = [ { id = "hot-deals", family = "us-retail", redemption_program = "unknown", region = "US" } ]
-
-[[connectors]]
-key = "gcx"
-kind = "blocked"
-enabled = false
-notes = "blocked (aggregator, discovery-only): gcx.app ToS (Raise Marketplace, 15.06.2026) forbid robots/scrapers/data mining and aggregation without written permission; site is a JS-only SPA (no data over plain HTTP)."
-
-# Blocked sources (documented, never built): see docs/sources.md
-[[connectors]]
-key = "eneba"
-kind = "blocked"
-enabled = false
-notes = "blocked: ToS only via client-side GraphQL (not verifiable), no seller names in SSR JSON-LD, USD for US egress (no region bypass), official API needs partner credentials."
-[[connectors]]
-key = "kinguin"
-kind = "blocked"
-enabled = false
-notes = "blocked: Kinguin T&C 3.4 forbids systematic retrieval to build a database without written permission."
-[[connectors]]
-key = "g2a"
-kind = "blocked"
-enabled = false
-notes = "blocked: www.g2a.com not reachable over plain HTTP from the box (HTTP/2 INTERNAL_ERROR / timeout incl. robots.txt)."
-[[connectors]]
-key = "coinsbee"
-kind = "blocked"
-enabled = false
-notes = "blocked: only AggregateOffer low/high (= face value range) in JSON-LD, actual price only in cart (not opened)."
-[[connectors]]
-key = "allkeyshop"
-kind = "blocked"
-enabled = false
-notes = "blocked (aggregator, discovery-only): TLS connection closed by server (also for robots.txt)."
-[[connectors]]
-key = "ggdeals"
-kind = "blocked"
-enabled = false
-notes = "blocked (aggregator, discovery-only): Cloudflare managed challenge (HTTP 403, cf-mitigated: challenge) incl. /prepaids/?regions=de,eu (re-checked 06.10.2026); never bypassed."
-[[connectors]]
-key = "bitrefill"
-kind = "blocked"
-enabled = false
-notes = "blocked: scraping forbidden by ToS; Personal API needs the user's API key."
+notes = "Ausschließlich CoinGate Clearance; keine normalen Produktangebote."
 
 [scheduler]
 tick_seconds = 15
 lock_ttl_seconds = 900
 max_catchup_runs = 1
-heartbeat_file = "data/live/heartbeat.json"
+heartbeat_file = "data/heartbeat.json"
 stale_factor = 3
 
-# Watchlist alle 5 Minuten; weitere Quellen alle 30 Minuten.
 [[jobs]]
-name = "recharge_watch"
-connector = "recharge"
-interval_seconds = 300
-min_interval_seconds = 300
-options = { tiers = ["watch"] }
-enabled = true
-
-[[jobs]]
-name = "dundle_watch"
-connector = "dundle"
-interval_seconds = 300
-min_interval_seconds = 300
-options = { tiers = ["watch"] }
-enabled = false   # connector blocked (see above)
-
-[[jobs]]
-name = "dundle_sellers"
-connector = "dundle"
-interval_seconds = 1800
-min_interval_seconds = 1800
-options = { tiers = ["watch", "discover"] }
-enabled = false   # connector blocked (see above)
-
-[[jobs]]
-name = "gamivo_watch"
-connector = "gamivo"
-interval_seconds = 300
-min_interval_seconds = 300
-options = { tiers = ["watch"] }
-enabled = false   # connector blocked (see above)
-
-[[jobs]]
-name = "gamivo_sellers"
-connector = "gamivo"
-interval_seconds = 1800
-min_interval_seconds = 1800
-options = { tiers = ["watch", "discover"] }
-enabled = false   # connector blocked (see above)
-
-[[jobs]]
-name = "coingate_aggregator_daily"
+name = "coingate_clearance"
 connector = "coingate"
-interval_seconds = 1800
-min_interval_seconds = 1800
-enabled = true
-
-[[jobs]]
-name = "buysellvouchers_aggregator_daily"
-connector = "buysellvouchers"
-interval_seconds = 1800
-min_interval_seconds = 1800
-enabled = true
-
-[[jobs]]
-name = "cardbear_aggregator_daily"
-connector = "cardbear"
-interval_seconds = 1800
-min_interval_seconds = 1800
-enabled = true
-
-[[jobs]]
-name = "giftcardwiki_aggregator_daily"
-connector = "giftcardwiki"
-interval_seconds = 1800
-min_interval_seconds = 1800
+interval_seconds = 300
+min_interval_seconds = 300
 enabled = true
 
 [[jobs]]
@@ -317,11 +50,6 @@ interval_seconds = 86400
 min_interval_seconds = 3600
 enabled = true
 
-# Model-judgment enrichment (docs/decisions.md D-42): OFF. To enable: set TYPESAFE_API_KEY in the worker env,
-# then enabled = true and provider = "typesafe" (all other keys default as in config/default.toml).
-[enrichment]
-enabled = false
-provider = "null"
-
 [scope]
 enabled = true
+allowed_source_keys = ["coingate"]
