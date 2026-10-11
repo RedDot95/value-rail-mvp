@@ -1,6 +1,8 @@
 # ChatGPT-Push
 
-GitHub Actions liest stündlich ausschließlich CoinGate Clearance (Minute 17). Die ChatGPT-Aufgabe prüft die Ergebnisliste stündlich (Minute 45). Ergebnisse: `clearance.json` im Branch `clearance-signals` dieses Repositories. Zugang erfolgt über die bereits verbundene GitHub-App; kein Telegram-Token und kein eigener Server notwendig.
+GitHub Actions liest ausschließlich CoinGate Clearance, geplant zu Minute 17 und 47. Die ChatGPT-Aufgabe prüft die Ergebnisliste stündlich. Ergebnisse: `clearance.json` im Branch `clearance-signals` dieses Repositories. Zugang erfolgt über die bereits verbundene GitHub-App; kein Telegram-Token und kein eigener Server notwendig.
+
+GitHub-Zeitpläne können Läufe verzögern oder auslassen. Ist der Feed fehlerhaft oder älter als eine Stunde, fordert die ChatGPT-Aufgabe deshalb einen neuen Scan an: Sie aktualisiert ausschließlich `chatgpt-delivery.json` mit `refresh_requested_at` und verwendet die Commit-Nachricht `Request CoinGate Clearance refresh`. Dieser Push startet den Scanner direkt. Die Aufgabe wartet begrenzt auf frische Daten und prüft erst danach die Angebote. Zustellbestätigungen starten keine Scans. Der Workflow muss auch auf dem Datenbranch vorhanden sein; die ausgeführte Scanner-Version wird stets aus `master` geladen.
 
 Die Liste enthält nur öffentliche Angebotsdaten: Produkt, Preis, Nennwert, Rabatt, Region, verfügbarer Bestand, Ablaufdatum und Link. Keine Voucher-Codes oder persönlichen Konten. Signal-IDs bleiben bei unveränderten Angeboten stabil; materielle Preisänderungen, Bestandszuwachs und Wiederverfügbarkeit erzeugen neue IDs. Auch bei einem Ausfall bleibt die letzte Signalhistorie erhalten.
 
