@@ -13,7 +13,77 @@ from .recorded import PUBLIC_IP, make_client
 
 ROBOTS_OK = (200, {"content-type": "text/plain"}, b"User-agent: *\nDisallow: /checkout\n")
 PAGE = (200, {"content-type": "text/html"}, b"<html>ok</html>")
-H = "https://www.recharge.com"
+H = "https://shop.example"
+
+
+def test_proxy_connect_pins_ip_and_keeps_origin_tls_hostname(monkeypatch):
+    from value_rail.net.http_safe import _ProxyPinnedHTTPSConnection
+
+    seen = {}
+    sock = object()
+
+    class Tunnel:
+        def __init__(self, host, port, timeout):
+            seen["proxy"] = (host, port)
+            self.sock = sock
+
+        def set_tunnel(self, host, port, headers):
+            seen["destination"] = (host, port, headers)
+
+        def connect(self):
+            pass
+
+        def close(self):
+            assert self.sock is None  # socket ownership transferred to origin TLS connection
+
+    class TLS:
+        def wrap_socket(self, value, server_hostname):
+            assert value is sock
+            seen["sni"] = server_hostname
+            return sock
+
+    import ssl
+    conn = _ProxyPinnedHTTPSConnection("shop.example", PUBLIC_IP, 443, 10,
+                                       ssl.create_default_context(), proxy_url="http://proxy:8080")
+    conn._context = TLS()
+    monkeypatch.setattr("value_rail.net.http_safe.http.client.HTTPConnection", Tunnel)
+    conn.connect()
+    assert seen["proxy"] == ("proxy", 8080)
+    assert seen["destination"] == (PUBLIC_IP, 443, {"Host": "shop.example:443"})
+    assert seen["sni"] == "shop.example"
+
+
+@pytest.mark.parametrize("encoding", ["gzip", "deflate"])
+def test_compressed_response_limit_applies_after_decompression(monkeypatch, encoding):
+    import gzip
+    import zlib
+    from value_rail.net.http_safe import stdlib_transport
+
+    compressed = (gzip.compress if encoding == "gzip" else zlib.compress)(b"x" * 100000)
+
+    class Response:
+        status = 200
+        def read(self, size):
+            return compressed
+        def getheaders(self):
+            return [("content-encoding", encoding)]
+
+    class Conn:
+        def __init__(self, *args, **kwargs):
+            pass
+        def request(self, *args, **kwargs):
+            pass
+        def getresponse(self):
+            return Response()
+        def close(self):
+            pass
+
+    monkeypatch.delenv("HTTPS_PROXY", raising=False)
+    monkeypatch.delenv("https_proxy", raising=False)
+    monkeypatch.setattr("value_rail.net.http_safe._PinnedHTTPSConnection", Conn)
+    with pytest.raises(ValueError, match="decompressed response larger"):
+        stdlib_transport(method="GET", url=f"{H}/a", ip=PUBLIC_IP, headers={}, body=None,
+                         timeout=10, max_bytes=1024)
 
 
 @pytest.mark.parametrize("ip,ok", [("10.0.0.1", False), ("127.0.0.1", False), ("169.254.169.254", False),
@@ -25,9 +95,9 @@ def test_ip_classification(ip, ok):
     assert ip_is_public(ip) is ok
 
 
-@pytest.mark.parametrize("url", ["ftp://www.recharge.com/x", "file:///etc/passwd", "http://www.recharge.com/x",
-                                 "https://evil.example/x", "https://13.32.0.10/x", "https://user:pw@www.recharge.com/x",
-                                 "gopher://www.recharge.com/", "https://www.recharge.com.evil.example/"])
+@pytest.mark.parametrize("url", ["ftp://shop.example/x", "file:///etc/passwd", "http://shop.example/x",
+                                 "https://evil.example/x", "https://13.32.0.10/x", "https://user:pw@shop.example/x",
+                                 "gopher://shop.example/", "https://shop.example.evil.example/"])
 def test_url_rejected_before_any_request(url):
     client, transport, _ = make_client({})
     with pytest.raises(BlockedUrl):
@@ -141,10 +211,10 @@ def test_robots_disallow_prevents_request():
     assert [c["url"] for c in transport.calls] == [f"{H}/robots.txt"]
 
 
-def test_recorded_recharge_robots_allows_product_pages_only():
+def test_synthetic_robots_allows_product_pages_only():
     client, transport, _ = make_client(None)
-    client._robots_for("https", "www.recharge.com")
-    rp = client._robots["www.recharge.com"]
+    client._robots_for("https", "shop.example")
+    rp = client._robots["shop.example"]
     ua = client.user_agent
     assert rp.can_fetch(ua, f"{H}/en/de/bitsa") and rp.can_fetch(ua, f"{H}/en/de/paysafecard")
     assert not rp.can_fetch(ua, f"{H}/checkout") and not rp.can_fetch(ua, f"{H}/api/v1/whatever")
@@ -181,12 +251,12 @@ def test_jitter_added():
 
 def test_robots_txt_is_refetched_after_ttl():
     from .recorded import make_client as _mk
-    routes = {"https://www.recharge.com/robots.txt": (200, {"content-type": "text/plain"}, b"User-agent: *\nAllow: /\n"),
-              "https://www.recharge.com/x": (200, {"content-type": "text/html"}, b"ok")}
+    routes = {"https://shop.example/robots.txt": (200, {"content-type": "text/plain"}, b"User-agent: *\nAllow: /\n"),
+              "https://shop.example/x": (200, {"content-type": "text/html"}, b"ok")}
     client, transport, clock = _mk(routes, robots_ttl_s=100.0)
-    client.get("https://www.recharge.com/x")
-    client.get("https://www.recharge.com/x")
+    client.get("https://shop.example/x")
+    client.get("https://shop.example/x")
     assert sum(1 for c in transport.calls if c["url"].endswith("robots.txt")) == 1
     clock.t += 101
-    client.get("https://www.recharge.com/x")
+    client.get("https://shop.example/x")
     assert sum(1 for c in transport.calls if c["url"].endswith("robots.txt")) == 2

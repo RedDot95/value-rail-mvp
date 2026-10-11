@@ -1,4 +1,0 @@
-User-agent: *
-Disallow: /r.php
-Disallow: /emailalert.php
-Sitemap: https://www.cardbear.com/sitemap.php

@@ -70,10 +70,19 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
 
     @app.get("/status", response_class=HTMLResponse, dependencies=[Depends(auth)])
     def status_page(request: Request):
+        from ..coverage import coverage_report
         with ctx.session_factory() as s:
-            vm = {"system": views.system_status(s, ctx.settings, utcnow())}
+            now = utcnow()
+            vm = {"system": views.system_status(s, ctx.settings, now),
+                  "coverage": coverage_report(s, ctx.settings, now)}
         return templates.TemplateResponse(request, "status.html", vm | {"settings": ctx.settings, "any_synthetic": True,
                                                                 "live_scanning": _live()})
+
+    @app.get("/api/coverage", dependencies=[Depends(auth)])
+    def api_coverage():
+        from ..coverage import coverage_report
+        with ctx.session_factory() as s:
+            return JSONResponse(coverage_report(s, ctx.settings, utcnow()))
 
     @app.get("/evaluations/{ev_id}", response_class=HTMLResponse, dependencies=[Depends(auth)])
     def detail(request: Request, ev_id: int):
@@ -95,9 +104,9 @@ def create_app(ctx: AppContext | None = None) -> FastAPI:
     @app.get("/api/evaluations", dependencies=[Depends(auth)])
     def api_evaluations():
         with ctx.session_factory() as s:
-            from ..storage.repo import latest_evaluations
+            from .views import monitored_evaluations
             return JSONResponse([{"id": e.id, "route_key": e.route_key, "status": e.status, "outputs": e.outputs,
                                   "rule_version_id": e.rule_version_id, "synthetic": e.is_synthetic,
-                                  "evaluated_at_utc": e.evaluated_at.isoformat()} for e in latest_evaluations(s)])
+                                  "evaluated_at_utc": e.evaluated_at.isoformat()} for e in monitored_evaluations(s, ctx.settings)])
 
     return app

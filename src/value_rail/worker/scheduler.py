@@ -14,107 +14,29 @@ from __future__ import annotations
 import json
 import logging
 import os
-import socket
 import time
-import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Callable
 
-from sqlalchemy import delete, select, update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from ..alerts.dispatcher import dispatch_pending
+from ..alerts.eligibility import delivery_check
 from ..alerts.sinks import build_sink_from_settings
 from ..connectors.base import Connector
 from ..connectors.registry import build_connectors, build_one, connector_config
 from ..domain.timeutil import utcnow
 from ..services import AppContext
 from ..settings import JobConfig
-from ..storage.orm import JobStateRow, SchedulerLockRow
+from ..storage.orm import JobStateRow
+from ..storage.lease import DbLease, LeaseKeeper, LeaseLostError, default_owner, holder_is_dead_local
 from .scan import ScanReport, run_scan
 
 log = logging.getLogger("value_rail.scheduler")
 LOCK_NAME = "scheduler"
 
-
-def default_owner() -> str:
-    return f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex[:8]}"
-
-
-def _pid_alive(pid: int) -> bool:
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True  # exists, owned by someone else
-    return True
-
-
-def holder_is_dead_local(owner: str, *, hostname: str | None = None,
-                         alive: Callable[[int], bool] = _pid_alive) -> bool:
-    """True only if the lease owner ran on THIS host and its pid no longer exists (crash/kill -9).
-
-    Unknown formats, other hosts or a live pid -> False (wait for the TTL, the safe default).
-    """
-    parts = owner.split(":")
-    if len(parts) != 3 or parts[0] != (hostname or socket.gethostname()):
-        return False
-    try:
-        pid = int(parts[1])
-    except ValueError:
-        return False
-    return pid != os.getpid() and not alive(pid)
-
-
-class DbLease:
-    def __init__(self, session_factory: sessionmaker[Session], name: str, owner: str, ttl_seconds: int,
-                 dead_check: Callable[[str], bool] = holder_is_dead_local) -> None:
-        self.sf, self.name, self.owner, self.ttl = session_factory, name, owner, ttl_seconds
-        self.dead_check = dead_check
-
-    def acquire(self, now: datetime) -> bool:
-        exp = now + timedelta(seconds=self.ttl)
-        h = self.holder()
-        if h is not None and h.owner != self.owner and h.expires_at >= now and self.dead_check(h.owner):
-            with self.sf.begin() as s:  # crashed local holder: take over immediately (conditional on same owner)
-                res = s.execute(update(SchedulerLockRow)
-                                .where(SchedulerLockRow.name == self.name, SchedulerLockRow.owner == h.owner)
-                                .values(owner=self.owner, acquired_at=now, expires_at=exp))
-            if res.rowcount == 1:
-                log.warning("took over scheduler lease from dead local holder %s", h.owner)
-                return True
-        with self.sf.begin() as s:
-            res = s.execute(update(SchedulerLockRow)
-                            .where(SchedulerLockRow.name == self.name,
-                                   (SchedulerLockRow.expires_at < now) | (SchedulerLockRow.owner == self.owner))
-                            .values(owner=self.owner, acquired_at=now, expires_at=exp))
-            if res.rowcount == 1:
-                return True
-        try:
-            with self.sf.begin() as s:
-                s.add(SchedulerLockRow(name=self.name, owner=self.owner, acquired_at=now, expires_at=exp))
-            return True
-        except IntegrityError:
-            return False
-
-    def renew(self, now: datetime) -> bool:
-        with self.sf.begin() as s:
-            res = s.execute(update(SchedulerLockRow)
-                            .where(SchedulerLockRow.name == self.name, SchedulerLockRow.owner == self.owner)
-                            .values(expires_at=now + timedelta(seconds=self.ttl)))
-            return res.rowcount == 1
-
-    def release(self) -> None:
-        with self.sf.begin() as s:
-            s.execute(delete(SchedulerLockRow).where(SchedulerLockRow.name == self.name,
-                                                     SchedulerLockRow.owner == self.owner))
-
-    def holder(self) -> SchedulerLockRow | None:
-        with self.sf() as s:
-            return s.get(SchedulerLockRow, self.name)
 
 
 def enabled_jobs(ctx: AppContext) -> list[JobConfig]:
@@ -138,8 +60,10 @@ def effective_interval(j: JobConfig) -> int:
     return max(int(j.interval_seconds), int(j.min_interval_seconds))
 
 
-def sync_job_states(ctx: AppContext, now: datetime) -> None:
+def sync_job_states(ctx: AppContext, now: datetime, guard=None) -> None:
     with ctx.session_factory.begin() as s:
+        if guard is not None:
+            guard(s)
         for j in enabled_jobs(ctx):
             row = s.get(JobStateRow, j.name)
             interval = effective_interval(j)
@@ -170,6 +94,7 @@ class Scheduler:
         self.connector_factory = connector_factory or self._build_connector
         self.dispatch = dispatch
         self._connectors: dict[str, Connector] = {}
+        self._sink = None
         self.heartbeat_path = Path(ctx.settings.effective_heartbeat_file)
 
     def _build_connector(self, key: str) -> Connector:
@@ -185,10 +110,18 @@ class Scheduler:
             h = self.lease.holder()
             result["standby_for"] = h.owner if h else "unknown"
             log.info("another scheduler holds the lease (%s); standby", result["standby_for"])
-            self.write_heartbeat(now, result)
             return result
         result["lock_held"] = True
-        sync_job_states(self.ctx, now)
+        try:
+            with LeaseKeeper(self.lease, self.clock) as keeper:
+                return self._tick_as_holder(now, result, keeper)
+        except LeaseLostError:
+            result.update(lock_held=False, lease_lost=True)
+            log.error("scheduler lost its lease; tick interrupted")
+            return result
+
+    def _tick_as_holder(self, now, result, keeper: LeaseKeeper):
+        sync_job_states(self.ctx, now, guard=keeper.check)
         with self.ctx.session_factory() as s:
             due = [r for r in s.scalars(select(JobStateRow).order_by(JobStateRow.name)).all()
                    if r.name in {j.name for j in enabled_jobs(self.ctx)} and r.next_due_at is not None
@@ -198,32 +131,42 @@ class Scheduler:
             missed = _missed_slots(st.next_due_at, now, st.interval_seconds)
             runs = min(missed + 1, max(1, self.cfg.max_catchup_runs))
             for _ in range(runs):
-                self._run_job(st.name, st.connector, trigger=f"scheduler:{st.name}", job=jobs.get(st.name))
+                keeper.check()
+                self._run_job(st.name, st.connector, trigger=f"scheduler:{st.name}", job=jobs.get(st.name), guard=keeper.check)
                 result["ran"].append(st.name)
-                self.lease.renew(self.clock())
+                keeper.check()
             skipped = missed + 1 - runs
             done = self.clock()
             with self.ctx.session_factory.begin() as s:
+                keeper.check(s)
                 row = s.get(JobStateRow, st.name)
                 row.next_due_at = done + timedelta(seconds=row.interval_seconds)
                 row.skipped_catchup_total += skipped
             if skipped:
                 result["skipped_catchup"][st.name] = skipped
                 log.warning("job %s: %s missed slot(s) skipped (bounded catch-up)", st.name, skipped)
-        if self.dispatch and result["ran"]:
+        if self.dispatch:
             try:
-                sink = build_sink_from_settings(self.ctx.settings)
+                if self._sink is None:
+                    self._sink = build_sink_from_settings(self.ctx.settings)
+                sink = self._sink
                 dispatch_pending(self.ctx.session_factory, sink, self.clock(),
-                                 backoff_seconds=self.ctx.settings.file_config.alerts.retry_backoff_seconds)
+                                 backoff_seconds=self.ctx.settings.file_config.alerts.retry_backoff_seconds,
+                                 clock=self.clock, guard=keeper.check, eligibility=delivery_check(self.ctx.settings))
+            except LeaseLostError:
+                raise
             except Exception:  # noqa: BLE001 - alert problems must not stop scanning; outbox keeps them
                 log.exception("alert dispatch failed (alerts stay in outbox)")
+        keeper.check()
         self.write_heartbeat(self.clock(), result)
         return result
 
     def _run_job(self, name: str, connector_key: str, *, trigger: str,
-                 job: JobConfig | None = None) -> ScanReport | None:
+                 job: JobConfig | None = None, guard=None) -> ScanReport | None:
         started = self.clock()
         with self.ctx.session_factory.begin() as s:
+            if guard is not None:
+                guard(s)
             row = s.get(JobStateRow, name)
             row.last_started_at = started
             row.runs_total += 1
@@ -241,15 +184,19 @@ class Scheduler:
                 configure = getattr(conn, "configure_for_job", None)
                 if configure is not None:
                     configure(dict(job.options) if job is not None else {})
-                rep = run_scan(self.ctx.session_factory, conn, self.ctx.settings, started, trigger=trigger)
+                rep = run_scan(self.ctx.session_factory, conn, self.ctx.settings, started, trigger=trigger, guard=guard)
                 status = rep.status.value
             if rep is not None and rep.sources_failed:
                 err = json.dumps(rep.sources_failed, sort_keys=True)[:2000]
+        except LeaseLostError:
+            raise
         except Exception as exc:  # noqa: BLE001 - recorded in job state, loop stays alive
             log.exception("job %s crashed", name)
             status, err = "failed", f"{type(exc).__name__}: {exc}"[:2000]
         finished = self.clock()
         with self.ctx.session_factory.begin() as s:
+            if guard is not None:
+                guard(s)
             row = s.get(JobStateRow, name)
             row.last_finished_at = finished
             row.last_status = status
@@ -307,7 +254,8 @@ def run_cycle(ctx: AppContext, *, now: datetime | None = None, down_sources: set
     if dispatch:
         sink = build_sink_from_settings(ctx.settings)
         dispatch_pending(ctx.session_factory, sink, now,
-                         backoff_seconds=ctx.settings.file_config.alerts.retry_backoff_seconds)
+                         backoff_seconds=ctx.settings.file_config.alerts.retry_backoff_seconds,
+                         eligibility=delivery_check(ctx.settings))
     return reports
 
 

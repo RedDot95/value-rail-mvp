@@ -1,4 +1,4 @@
-"""Offline replay of recorded real responses (tests/fixtures/recorded/...). No network access."""
+"""Synthetic HTTP transport for offline protocol tests. No network access."""
 
 from __future__ import annotations
 
@@ -8,16 +8,12 @@ from pathlib import Path
 
 from value_rail.net.http_safe import PolitenessPolicy, SafeHttpClient, TransportResponse
 
-REC = Path(__file__).resolve().parent / "fixtures" / "recorded" / "recharge_com_2026-10-05"
-PUBLIC_IP = "13.32.0.10"  # a public address; never contacted (fake transport)
+PUBLIC_IP = "13.32.0.10"  # fake transport; never contacted
 
 
-def recorded_routes() -> dict[str, tuple[int, dict[str, str], bytes]]:
-    meta = json.loads((REC / "meta.json").read_text())
-    routes = {}
-    for fname, m in meta["files"].items():
-        routes[m["url"]] = (m["http_status"], {"content-type": m["content_type"]}, (REC / fname).read_bytes())
-    return routes
+def recorded_routes():
+    return {"https://shop.example/robots.txt": (200, {"content-type": "text/plain"},
+        b"User-agent: *\nDisallow: /checkout\nDisallow: /api/\nCrawl-delay: 1\n")}
 
 
 class FakeTransport:
@@ -57,11 +53,11 @@ class FakeClock:
         self.t += s
 
 
-def make_client(routes=None, *, resolver=None, allowed=("www.recharge.com",), min_interval=5.0, jitter=0.0,
+def make_client(routes=None, *, resolver=None, allowed=("shop.example",), min_interval=5.0, jitter=0.0,
                 retries=2, clock: FakeClock | None = None, respect_robots=True, **kw):
     clock = clock or FakeClock()
     transport = FakeTransport(recorded_routes() if routes is None else routes)
-    client = SafeHttpClient(source_key="recharge-com-de", allowed_hosts=set(allowed), transport=transport,
+    client = SafeHttpClient(source_key="fake-http", allowed_hosts=set(allowed), transport=transport,
                             resolver=resolver or (lambda h, p: [PUBLIC_IP]),
                             policy=PolitenessPolicy(min_interval_s=min_interval, jitter_s=jitter, max_retries=retries,
                                                     backoff_base_s=2.0),

@@ -44,7 +44,7 @@ def test_lease_exclusive_renew_expire_release(ctx, now):
 
 
 def test_only_enabled_jobs_with_enabled_connectors(sched_ctx):
-    assert [j.name for j in enabled_jobs(sched_ctx)] == ["fixture_scan"]  # live recharge job off by default
+    assert [j.name for j in enabled_jobs(sched_ctx)] == ["fixture_scan"]  # offline fixture job only
 
 
 def test_overlap_second_scheduler_stands_by(sched_ctx, now):
@@ -52,9 +52,37 @@ def test_overlap_second_scheduler_stands_by(sched_ctx, now):
     s1 = Scheduler(sched_ctx, owner="w1", clock=clock, dispatch=False)
     s2 = Scheduler(sched_ctx, owner="w2", clock=clock, dispatch=False)
     r1 = s1.tick()
+    heartbeat = s1.heartbeat_path.read_bytes()
     r2 = s2.tick()
     assert r1["lock_held"] and r1["ran"] == ["fixture_scan"]
     assert not r2["lock_held"] and r2["ran"] == [] and r2["standby_for"] == "w1"
+    assert s1.heartbeat_path.read_bytes() == heartbeat
+
+
+def test_alert_retry_runs_without_a_due_scan(sched_ctx, now, monkeypatch):
+    from value_rail.alerts.sinks import MemorySink
+
+    sink = MemorySink(fail_times=1)
+    monkeypatch.setattr("value_rail.worker.scheduler.build_sink_from_settings", lambda _: sink)
+    clock = Clock(now)
+    sch = Scheduler(sched_ctx, owner="w1", clock=clock)
+    assert sch.tick()["ran"] == ["fixture_scan"]
+    assert len(sink.sent) == 4
+    clock.t += timedelta(seconds=sched_ctx.settings.file_config.alerts.retry_backoff_seconds + 1)
+    assert sch.tick()["ran"] == []
+    assert len(sink.sent) == 5
+
+
+def test_alert_dispatch_without_any_enabled_jobs(sched_ctx, now, monkeypatch):
+    from value_rail.alerts.sinks import MemorySink
+    from value_rail.worker.scheduler import run_cycle
+
+    run_cycle(sched_ctx, now=now, dispatch=False)
+    sched_ctx.settings.file_config.jobs.clear()
+    sink = MemorySink()
+    monkeypatch.setattr("value_rail.worker.scheduler.build_sink_from_settings", lambda _: sink)
+    assert Scheduler(sched_ctx, owner="w1", clock=Clock(now)).tick()["ran"] == []
+    assert len(sink.sent) == 5
 
 
 def test_job_state_persists_across_restart(sched_ctx, now):
@@ -159,3 +187,60 @@ def test_lease_takeover_from_dead_local_holder(sched_ctx, now):
     assert not holder_is_dead_local("other:999999:x", hostname="host", alive=lambda p: False)
     assert not holder_is_dead_local("host:123:x", hostname="host", alive=lambda p: True)
     assert not holder_is_dead_local("garbage", hostname="host")
+    assert not holder_is_dead_local("host:0:x", hostname="host", alive=lambda p: False)
+    assert not holder_is_dead_local("host:-1:x", hostname="host", alive=lambda p: False)
+
+
+def test_expired_lease_cannot_be_renewed(ctx, now):
+    lease = DbLease(ctx.session_factory, "expired", "old", 1)
+    assert lease.acquire(now)
+    assert not lease.renew(now + timedelta(seconds=2))
+
+
+def test_long_scan_renews_lease_while_discovering(sched_ctx, now):
+    import threading
+    import time
+    from value_rail.connectors.fixture import FixtureConnector
+    from .conftest import FIXTURES
+
+    started = time.monotonic()
+    clock = lambda: now + timedelta(seconds=time.monotonic() - started)
+    sched_ctx.settings.file_config.scheduler.lock_ttl_seconds = 1
+    rival = DbLease(sched_ctx.session_factory, "scheduler", "rival", 1)
+
+    class Slow(FixtureConnector):
+        def discovery(self, at):
+            threading.Event().wait(1.2)  # longer than the original lease
+            assert not rival.acquire(clock())
+            return super().discovery(at)
+
+    sch = Scheduler(sched_ctx, owner="leader", clock=clock,
+                    connector_factory=lambda _: Slow(FIXTURES), dispatch=False)
+    assert sch.tick()["ran"] == ["fixture_scan"]
+    assert sch.lease.holder().owner == "leader"
+
+
+def test_lease_loss_after_fetch_prevents_evaluation_commit(sched_ctx, now):
+    from sqlalchemy import func, select
+    from value_rail.connectors.fixture import FixtureConnector
+    from value_rail.storage.orm import AlertRow, RouteEvaluationRow
+    from .conftest import FIXTURES
+
+    clock = Clock(now)
+    rival = DbLease(sched_ctx.session_factory, "scheduler", "rival", 900)
+
+    class LosesLease(FixtureConnector):
+        def offer_fetch(self, item, at):
+            result = super().offer_fetch(item, at)
+            clock.t += timedelta(seconds=901)
+            assert rival.acquire(clock())
+            return result
+
+    sch = Scheduler(sched_ctx, owner="leader", clock=clock,
+                    connector_factory=lambda _: LosesLease(FIXTURES, only={"R02_bitsa_price_find"}))
+    result = sch.tick()
+    assert result["lease_lost"] and not result["lock_held"] and result["ran"] == []
+    with sched_ctx.session_factory() as s:
+        assert s.scalar(select(func.count()).select_from(RouteEvaluationRow)) == 0
+        assert s.scalar(select(func.count()).select_from(AlertRow)) == 0
+    assert sch.lease.holder().owner == "rival"

@@ -12,6 +12,7 @@ import typer
 from sqlalchemy import func, select
 
 from .alerts.dispatcher import dispatch_pending
+from .alerts.eligibility import delivery_check
 from .alerts.sinks import build_sink_from_settings
 from .connectors.registry import describe_connectors
 from .domain.enums import STATUS_LABEL_DE, RouteStatus
@@ -24,10 +25,46 @@ from .storage.repo import active_rule_version, add_rule_version, latest_evaluati
 from .valuation.replay import replay_evaluation
 from .worker.scheduler import run_cycle, run_forever
 
-app = typer.Typer(help="Value Rail MVP - offline fixtures + one opt-in live connector (recharge); never purchases",
+app = typer.Typer(help="Value Rail - liquid-value route research, evidence and coverage; never purchases",
                   no_args_is_help=True)
 rules_app = typer.Typer(help="Versioned valuation rules")
 app.add_typer(rules_app, name="rules")
+
+
+@app.command("import-quotes")
+def import_quotes_command(path: Path = typer.Argument(..., exists=True, dir_okay=False)) -> None:
+    """Import real operator-reviewed quotes and hash-bound artifacts; never sends or buys."""
+    from .quote_import import import_quotes
+    from pydantic import ValidationError
+    ctx = _ctx()
+    try:
+        report = import_quotes(ctx, path, utcnow())
+    except ValidationError as exc:
+        errors = exc.errors(include_input=False, include_url=False)
+        typer.echo(json.dumps({"rejected": errors}, default=str), err=True)
+        raise typer.Exit(2) from None
+    except (ValueError, OSError) as exc:
+        typer.echo(f"Quote import rejected: {exc}", err=True)
+        raise typer.Exit(2) from None
+    typer.echo(json.dumps(report, ensure_ascii=False))
+
+
+@app.command("quote-template")
+def quote_template(evaluation_id: int = typer.Argument(...)) -> None:
+    """Print an incomplete quote manifest with the stored product identity; never invent values."""
+    ctx = _ctx()
+    with ctx.session_factory() as s:
+        ev = s.get(RouteEvaluationRow, evaluation_id)
+        if ev is None or ev.is_synthetic:
+            typer.echo("A real evaluation is required", err=True)
+            raise typer.Exit(2)
+        quote = {"identity": ev.inputs["product"], "source_url": "", "source_name": "", "unit_price": "unknown",
+                 "currency": "EUR", "quantity": "unknown", "captured_at": None, "valid_until": None,
+                 "firm": False, "fees_complete": False, "fees": [], "artifact": "", "artifact_sha256": ""}
+        cfg = ctx.settings.file_config.operator
+        document = {"schema_version": 1, "evaluation_id": ev.id,
+                    "reviewed_by": cfg.name if cfg else "", "checkout": quote, "exit": quote.copy()}
+    typer.echo(json.dumps(document, indent=2, ensure_ascii=False))
 
 
 def _ctx(init: bool = True) -> AppContext:
@@ -61,7 +98,7 @@ app.command("scan", help="Alias of load-fixtures: scans all ENABLED connectors (
 
 
 @app.command()
-def smoke(connector: str = typer.Argument(..., help="connector key, e.g. 'recharge'"),
+def smoke(connector: str = typer.Argument(..., help="connector key, e.g. 'coingate'"),
           out_dir: str = typer.Option("docs", "--out-dir", help="where live_smoke_<date>_<key>.md is written ('' = none)")) -> None:
     """LIVE smoke test of one real connector (network!). Writes docs/live_smoke_<Berlin date>_<key>.md."""
     from pathlib import Path
@@ -79,7 +116,7 @@ def dispatch() -> None:
     ctx = _ctx()
     cfg = ctx.settings.file_config.alerts
     rep = dispatch_pending(ctx.session_factory, build_sink_from_settings(ctx.settings), utcnow(),
-                           backoff_seconds=cfg.retry_backoff_seconds)
+                           backoff_seconds=cfg.retry_backoff_seconds, eligibility=delivery_check(ctx.settings))
     typer.echo(rep.model_dump_json())
 
 
@@ -116,7 +153,8 @@ def diagnose() -> None:
             "config_path": str(st.config_path),
             "fixtures_dir": str(st.fixtures_dir),
             "auth_enabled": st.auth_enabled,
-            "live_scanning": False,
+            "live_scanning": any(c.enabled and c.kind not in ("fixture", "placeholder", "blocked")
+                                 for c in st.file_config.connectors),
             "rule_version": (lambda r: {"id": r.id, "label": r.label, "params": r.params} if r else None)(active_rule_version(s, utcnow())),
             "counts": {t.__tablename__: s.scalar(select(func.count()).select_from(t)) for t in
                        (SourceRow, ScanRunRow, RouteEvaluationRow, AlertRow, RuleVersionRow)},
@@ -135,6 +173,30 @@ def diagnose() -> None:
             "scan_intervals": st.file_config.scan_intervals.model_dump(),
         }
     typer.echo(json.dumps(info, indent=2, default=str, ensure_ascii=False))
+
+
+@app.command()
+def coverage(json_output: bool = typer.Option(False, "--json", help="Machine-readable catalogue, scope and actual evidence gaps")):
+    """Show liquid-value candidates, real monitoring coverage and why routes lack proof."""
+    from .coverage import coverage_report
+
+    ctx = _ctx()
+    with ctx.session_factory() as s:
+        report = coverage_report(s, ctx.settings, utcnow())
+    if json_output:
+        typer.echo(json.dumps(report, indent=2, ensure_ascii=False))
+        return
+    if report["screener_mode"]:
+        typer.echo(f"{report['candidate_count']} Instrumente; {report['explicitly_targeted_count']} gezielt angebunden; {len(report['candidate_signals_now'])} aktuelle Arbitrage-Kandidaten")
+        typer.echo(report["note"])
+        return
+    typer.echo(f"{report['candidate_count']} candidates; {report['explicitly_targeted_count']} explicitly targeted; "
+               f"{len(report['verified_routes_now'])} fresh verified profitable routes")
+    typer.echo(f"Verified-only alerts: {report['verified_only_alerts']}; real operator: {report['real_operator_configured']}")
+    for item in report["instruments"]:
+        sources = ", ".join(item["targeted_sources"]) or "no explicit target"
+        typer.echo(f"{item['label']}: {sources}; observations={item['observations']}; exit proof=unproven")
+    typer.echo(report["note"])
 
 
 @app.command()

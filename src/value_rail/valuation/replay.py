@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from ..evidence import content_hash
 from ..storage.orm import RouteEvaluationRow, RuleVersionRow
-from .engine import ENGINE_VERSION, evaluate_route
+from .engine import evaluate_route
 from .models import RouteInputs, RuleParams
 
 
@@ -39,4 +39,4 @@ def replay_evaluation(s: Session, evaluation_id: int) -> ReplayResult:
             if k != "engine_version" and stored.get(k) != recomputed.get(k)}
     return ReplayResult(evaluation_id=ev.id, rule_version_id=rv.id, rule_label=rv.label, match=not diff,
                         inputs_hash_ok=content_hash(ev.inputs) == ev.inputs_hash,
-                        engine_version_stored=ev.engine_version, engine_version_now=ENGINE_VERSION, diff=diff)
+                        engine_version_stored=ev.engine_version, engine_version_now=recomputed["engine_version"], diff=diff)

@@ -24,7 +24,9 @@ from __future__ import annotations
 
 import gzip
 import http.client
+import io
 import ipaddress
+import os
 import random
 import socket
 import ssl
@@ -98,13 +100,50 @@ class _PinnedHTTPConnection(http.client.HTTPConnection):
         self.sock = socket.create_connection((self._pinned_ip, self.port), self.timeout)
 
 
+class _ProxyPinnedHTTPSConnection(_PinnedHTTPSConnection):
+    """CONNECT to the already-vetted IP, then TLS with the original hostname.
+
+    The configured proxy is trusted transport infrastructure. It never chooses
+    the destination IP or receives origin Authorization outside the TLS tunnel.
+    """
+
+    def __init__(self, *args, proxy_url: str, **kwargs):
+        super().__init__(*args, **kwargs)
+        try:
+            proxy = urlsplit(proxy_url)
+            self._proxy_address = (proxy.hostname, proxy.port or 80)
+        except ValueError:
+            raise ValueError("invalid HTTPS proxy configuration") from None
+        if proxy.scheme != "http" or not proxy.hostname or proxy.username or proxy.password or \
+                proxy.query or proxy.fragment or proxy.path not in ("", "/"):
+            raise ValueError("HTTPS proxy must be an HTTP CONNECT proxy without embedded credentials")
+
+    def connect(self) -> None:
+        tunnel = http.client.HTTPConnection(*self._proxy_address, timeout=self.timeout)
+        try:
+            tunnel.set_tunnel(self._pinned_ip, self.port, headers={"Host": f"{self.host}:{self.port}"})
+            tunnel.connect()
+            sock = tunnel.sock
+            tunnel.sock = None
+            try:
+                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+            except Exception:
+                sock.close()
+                raise
+        finally:
+            tunnel.close()
+
+
 def stdlib_transport(*, method: str, url: str, ip: str, headers: dict[str, str], body: bytes | None,
                      timeout: float, max_bytes: int) -> TransportResponse:
     parts = urlsplit(url)
     port = parts.port or (443 if parts.scheme == "https" else 80)
     if parts.scheme == "https":
-        conn: http.client.HTTPConnection = _PinnedHTTPSConnection(parts.hostname, ip, port, timeout,
-                                                                  ssl.create_default_context())
+        proxy_url = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+        kwargs = {"proxy_url": proxy_url} if proxy_url else {}
+        cls = _ProxyPinnedHTTPSConnection if proxy_url else _PinnedHTTPSConnection
+        conn: http.client.HTTPConnection = cls(parts.hostname, ip, port, timeout,
+                                               ssl.create_default_context(), **kwargs)
     else:
         conn = _PinnedHTTPConnection(parts.hostname, ip, port, timeout)
     path = parts.path or "/"
@@ -119,9 +158,15 @@ def stdlib_transport(*, method: str, url: str, ip: str, headers: dict[str, str],
         hdrs = {k.lower(): v for k, v in resp.getheaders()}
         enc = hdrs.get("content-encoding", "").lower()
         if enc == "gzip":
-            raw = gzip.decompress(raw)
+            with gzip.GzipFile(fileobj=io.BytesIO(raw)) as decompressed:
+                raw = decompressed.read(max_bytes + 1)
         elif enc == "deflate":
-            raw = zlib.decompress(raw)
+            decoder = zlib.decompressobj()
+            raw = decoder.decompress(raw, max_bytes + 1)
+            if len(raw) <= max_bytes and not decoder.eof:
+                raise ValueError("invalid or truncated deflate response")
+        if len(raw) > max_bytes:
+            raise ValueError(f"decompressed response larger than {max_bytes} bytes")
         return TransportResponse(status=resp.status, headers=hdrs, body=raw)
     finally:
         conn.close()
@@ -365,8 +410,8 @@ class SafeHttpClient:
                            fetched_monotonic=self.monotonic(), redirects=redirects, attempts=attempts)
 
 
-# Protocol headers a connector may send (MCP Streamable HTTP). Never Cookie/Authorization/User-Agent.
-_ALLOWED_EXTRA_HEADERS = {"mcp-session-id", "mcp-protocol-version"}
+# Protocol headers and the public browser search-only key a connector may send. Never Cookie/Authorization/User-Agent.
+_ALLOWED_EXTRA_HEADERS = {"mcp-session-id", "mcp-protocol-version", "x-algolia-application-id", "x-algolia-api-key"}
 
 
 def _with_headers(res: FetchResult, names: tuple[str, ...], hdrs: dict[str, str]) -> FetchResult:

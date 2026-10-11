@@ -51,6 +51,13 @@ class AppContext:
                                         capabilities=p.get("capabilities", {}),
                                         max_budget_eur=p.get("max_budget_eur", "unknown"),
                                         is_synthetic=True)
+            operator = self.settings.file_config.operator
+            if operator is not None:
+                capabilities = {name: proof.status.value for name, proof in operator.capabilities.items()}
+                capabilities["_evidence"] = {name: proof.evidence_ref for name, proof in operator.capabilities.items()}
+                upsert_operator_profile(s, name=operator.name, region=operator.region,
+                                        capabilities=capabilities, max_budget_eur=operator.max_budget_eur,
+                                        is_synthetic=False)
 
     def dispose(self) -> None:
         self.engine.dispose()

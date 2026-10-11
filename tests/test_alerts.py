@@ -122,3 +122,44 @@ def test_retries_are_limited_then_dead(ctx, now):
         t += timedelta(hours=1)
     (a,) = _alerts(ctx)
     assert a.state == "dead" and a.attempts == a.max_attempts == 5
+
+
+def test_partial_delivery_receipts_survive_dispatcher_restart(ctx, now):
+    from value_rail.alerts.sinks import CompositeSink
+
+    run_scan(ctx.session_factory, FixtureConnector(FIXTURES, only={"R02_bitsa_price_find"}), ctx.settings, now)
+    first = MemorySink()
+    first.name = "first"
+    second = MemorySink(fail_times=1)
+    second.name = "second"
+    report = dispatch_pending(ctx.session_factory, CompositeSink([first, second]), now)
+    assert report.failed == 1 and len(first.sent) == 1
+    assert _alerts(ctx)[0].delivered_sinks == ["first"]
+    # New objects: no per-process state retained, only the DB receipt remains.
+    first_after = MemorySink()
+    first_after.name = "first"
+    second_after = MemorySink()
+    second_after.name = "second"
+    report = dispatch_pending(ctx.session_factory, CompositeSink([first_after, second_after]),
+                              now + timedelta(seconds=61))
+    assert report.sent == 1 and first_after.sent == [] and len(second_after.sent) == 1
+    assert _alerts(ctx)[0].delivered_sinks == ["first", "second"]
+
+
+def test_parallel_dispatcher_stays_out_and_network_send_holds_no_db_transaction(ctx, now):
+    from sqlalchemy import text
+
+    run_scan(ctx.session_factory, FixtureConnector(FIXTURES, only={"R02_bitsa_price_find"}), ctx.settings, now)
+    competitor = MemorySink()
+
+    class Reentrant(MemorySink):
+        def send(self, payload):
+            # A competing connection can write while the external send is active.
+            with ctx.session_factory.begin() as s:
+                s.execute(text("UPDATE sources SET health=health"))
+            assert dispatch_pending(ctx.session_factory, competitor, now).attempted == 0
+            super().send(payload)
+
+    sink = Reentrant()
+    assert dispatch_pending(ctx.session_factory, sink, now).sent == 1
+    assert len(sink.sent) == 1 and competitor.sent == []

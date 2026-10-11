@@ -36,8 +36,9 @@ def _qty(result: EvaluationResult) -> str:
 
 def fingerprint(result: EvaluationResult) -> dict[str, Any]:
     return {
+        **({"listing_currency": result.screening["currency"]} if result.screening else {}),
         "status": str(result.status),
-        "unit_all_in_eur": str(result.unit_all_in_eur),
+        "unit_all_in_eur": result.screening.get("listing_price", str(result.unit_all_in_eur)),
         "available_quantity": _qty(result),
         "advertised_quantity": str(result.advertised_quantity),
         "price_basis": str(result.price_basis_offer_ref).split(":")[0],
@@ -67,7 +68,7 @@ def decide(result: EvaluationResult, previous_fp: dict[str, Any] | None, previou
     eid = make_event_id(result.route_key, fp, previous_event_id)
     if previous_fp is None:
         return AlertDecision(enqueue=True, reason="new", event_id=eid, fingerprint=fp)
-    if previous_fp.get("status") != fp["status"]:
+    if previous_fp.get("status") != fp["status"] or previous_fp.get("listing_currency") != fp.get("listing_currency"):
         return AlertDecision(enqueue=True, reason="status_change", event_id=eid, fingerprint=fp)
     old_p, new_p = _dec(previous_fp.get("unit_all_in_eur", "unknown")), _dec(fp["unit_all_in_eur"])
     if old_p is not None and new_p is not None and old_p > 0:

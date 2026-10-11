@@ -56,6 +56,17 @@ def test_basic_auth_enforced_when_configured(tmp_path):
     assert c.get("/healthz").status_code == 200
     tok = base64.b64encode(b"u:secret").decode()
     assert c.get("/", headers={"Authorization": f"Basic {tok}"}).status_code == 200
+    assert c.get("/api/coverage").status_code == 401
+    coverage = c.get("/api/coverage", headers={"Authorization": f"Basic {tok}"}).json()
+    assert coverage["candidate_count"] >= 70 and coverage["verified_routes_now"] == []
     bad = base64.b64encode(b"u:wrong").decode()
     assert c.get("/", headers={"Authorization": f"Basic {bad}"}).status_code == 401
     ctx.dispose()
+
+
+def test_production_scope_status_explains_monitoring_gaps(ctx):
+    ctx.settings.file_config.scope.enabled = True
+    html = _client(ctx).get("/status").text
+    assert "Liquide Werte: Suchabdeckung" in html
+    assert "aktuell belegte profitable Routen" in html
+    assert "kein gezielter Abruf" in html

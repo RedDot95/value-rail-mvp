@@ -23,8 +23,8 @@ from ..settings import Settings
 from ..storage.orm import OperatorProfileRow, RouteEvaluationRow, ScanRunRow, SourceRow
 from ..storage.repo import (active_rule_version, ensure_rule_version, get_or_create_product, insert_evidence,
                             insert_offer_snapshot, insert_quote, mark_source_health, rule_params_of, upsert_source)
-from ..valuation.engine import ENGINE_VERSION, evaluate_route
-from ..valuation.models import EvaluationResult, OfferInput, RouteInputs, RuleParams
+from ..valuation.engine import evaluate_route
+from ..valuation.models import EvaluationResult, FxRate, OfferInput, RouteInputs, RuleParams
 from .exit_rules import exit_quote_from_rule
 from .sellers import track_seller_offers
 
@@ -42,6 +42,8 @@ class ScanReport(BaseModel):
     evaluation_ids: dict[str, int] = Field(default_factory=dict)
     offers_seen: int = 0
     seller_events: dict[str, int] = Field(default_factory=dict)
+    items_out_of_scope: int = 0
+    incomplete_pages: list[str] = Field(default_factory=list)
 
 
 class _Fetched(BaseModel):
@@ -49,19 +51,20 @@ class _Fetched(BaseModel):
     offers: list[Any]
     checkout: QuoteBundle | None
     exit: QuoteBundle | None
+    fx_rates: list[FxRate] = Field(default_factory=list)
 
 
-def _fetch(connector: Connector, item: DiscoveryItem, now: datetime) -> _Fetched:
+def _fetch(connector: Connector, item: DiscoveryItem, now: datetime, *, mode: str = "route") -> _Fetched:
     raws = connector.offer_fetch(item, now)
     offers = [connector.normalize(item, r, now) for r in raws]
     caps = connector.capabilities()
     checkout = exit_ = None
     try:
-        checkout = connector.checkout_quote(item, now) if caps.checkout_quote else None
+        checkout = connector.checkout_quote(item, now) if mode == "route" and caps.checkout_quote else None
     except CapabilityNotSupported:
         checkout = None
     try:
-        exit_ = connector.exit_quote(item, now) if caps.exit_quote else None
+        exit_ = connector.exit_quote(item, now) if mode == "route" and caps.exit_quote else None
     except CapabilityNotSupported:
         exit_ = None
     return _Fetched(item=item, offers=offers, checkout=checkout, exit=exit_)
@@ -75,24 +78,26 @@ def persist_evaluation(s: Session, *, inputs: RouteInputs, result: EvaluationRes
         operator_profile_id=operator_profile_id, product_id=product_id, evaluated_at=inputs.evaluated_at,
         status=str(result.status), discount=result.discount, profit_eur=result.profit_eur, edge=result.edge,
         evaluated_quantity=str(result.evaluated_quantity), inputs=inputs_json, outputs=result.canonical(),
-        inputs_hash=content_hash(inputs_json), engine_version=ENGINE_VERSION, is_synthetic=inputs.is_synthetic)
+        inputs_hash=content_hash(inputs_json), engine_version=result.engine_version, is_synthetic=inputs.is_synthetic)
     s.add(row)
     s.flush()
     return row
 
 
-def _operator(s: Session, name: str | None) -> OperatorProfileRow | None:
-    q = select(OperatorProfileRow)
+def _operator(s: Session, name: str | None, *, synthetic: bool) -> OperatorProfileRow | None:
+    q = select(OperatorProfileRow).where(OperatorProfileRow.is_synthetic == synthetic)
     if name:
         q = q.where(OperatorProfileRow.name == name)
     return s.scalar(q.order_by(OperatorProfileRow.id).limit(1))
 
 
-def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: RuleParams,
+def _persist_item(s: Session, f: _Fetched, *, scan_id: int | None, rv_id: int, params: RuleParams,
                   operator: OperatorProfileRow | None, settings: Settings, now: datetime) -> tuple[RouteEvaluationRow, EvaluationResult, bool]:
     item = f.item
     exit_bundle, exit_rule = f.exit, None
-    if exit_bundle is None:
+    if params.evaluation_mode == "screener":
+        exit_bundle = None
+    elif exit_bundle is None:
         exit_bundle, exit_rule = exit_quote_from_rule(params, item, now)
     specs = list(item.sources) + ([exit_bundle.source] if exit_rule is not None else [])
     srcs: dict[str, SourceRow] = {}
@@ -114,7 +119,9 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: 
         ref = f"offer_snapshot:{row.id}"
         ev_refs = [f"evidence:{insert_evidence(s, d, subject_ref=ref, source=src).id}" for d in o.evidence]
         offer_inputs.append(OfferInput(
-            offer_ref=ref, source_key=src.key, source_role=o.source.role, identity=o.identity, unit_price=o.unit_price,
+            valid_until=None if o.raw.get("expires_at", "unknown") == "unknown" else o.raw["expires_at"],
+            offer_ref=ref, listing_url=o.raw.get("seller_link") or o.raw.get("page_url"),
+            listing_title=o.raw.get("title") or o.raw.get("product_name"), source_key=src.key, source_role=o.source.role, identity=o.identity, unit_price=o.unit_price,
             currency=o.currency, price_includes_fees=o.price_includes_fees, fees=o.fees,
             advertised_quantity=o.advertised_quantity, checkout_confirmed_quantity=o.checkout_confirmed_quantity,
             purchased_quantity=o.purchased_quantity, captured_at=o.captured_at, evidence_refs=ev_refs))
@@ -134,22 +141,23 @@ def _persist_item(s: Session, f: _Fetched, *, scan_id: int, rv_id: int, params: 
         ev_refs = [f"evidence:{insert_evidence(s, d, subject_ref=ref, source=src).id}" for d in b.evidence]
         return q.model_copy(update={"quote_ref": ref, "evidence_refs": ev_refs})
 
-    checkout = _store_quote(f.checkout, "checkout")
+    checkout = _store_quote(f.checkout, "checkout") if params.evaluation_mode == "route" else None
     exit_q = _store_quote(exit_bundle, "exit")
 
     caps = dict(operator.capabilities) if operator else {}
     prereq_names = list(dict.fromkeys(list(item.prerequisites) + (list(exit_rule.prerequisites) if exit_rule else [])))
-    connector_prereqs = [{"name": n, "status": caps.get(n, "unknown")} for n in prereq_names]
+    proofs = caps.get("_evidence", {})
+    connector_prereqs = [{"name": n, "status": ("unknown" if not item.is_synthetic
+                         and caps.get(n) == "proven" and proofs.get(n, "unknown") in ("", "unknown")
+                         else caps.get(n, "unknown")),
+                         "evidence_ref": proofs.get(n, "unknown")} for n in prereq_names]
     inputs = RouteInputs(route_key=item.route_key, product=item.product, offers=offer_inputs, checkout_quote=checkout,
-                         exit_quote=exit_q, prerequisites=connector_prereqs, evaluated_at=now,
-                         is_synthetic=item.is_synthetic)
+                         exit_quote=exit_q, prerequisites=connector_prereqs if params.evaluation_mode == "route" else [], evaluated_at=now,
+                         is_synthetic=item.is_synthetic, fx_rates=f.fx_rates)
     result = evaluate_route(inputs, params)
     ev_row = persist_evaluation(s, inputs=inputs, result=result, rule_version_id=rv_id, scan_run_id=scan_id,
                                 operator_profile_id=operator.id if operator else None, product_id=product.id)
     decision, alert = enqueue_if_needed(s, ev_row, result, settings.file_config.alerts, now)
-    for key, src in srcs.items():
-        if not key.startswith("rule-exit:"):
-            mark_source_health(s, src, ok=True, now=now)
     log.info("evaluated %s -> %s (alert: %s)", item.route_key, result.status, decision.reason)
     return ev_row, result, alert is not None
 
@@ -180,15 +188,27 @@ def _enrich_after_scan(session_factory: sessionmaker[Session], enricher: Any, jo
 
 
 def run_scan(session_factory: sessionmaker[Session], connector: Connector, settings: Settings, now: datetime, *,
-             trigger: str = "cli", operator_name: str | None = None, enricher: Any = None) -> ScanReport:
+             trigger: str = "cli", operator_name: str | None = None, enricher: Any = None, guard=None) -> ScanReport:
     """`enricher`: optional judgments.EnrichmentService (tests inject one). When None, one is built only if
     [enrichment].enabled is true; otherwise nothing enrichment-related is imported or constructed."""
+    def check(s=None):
+        if guard is not None:
+            guard(s)
+
+    check()
     if enricher is None and settings.file_config.enrichment.enabled:
         from ..judgments.service import build_enrichment_service
         enricher = build_enrichment_service(settings)
     enrich_jobs: list[tuple[Any, ...]] = []
     caps = connector.capabilities()
     with session_factory.begin() as s:
+        check(s)
+        # Register declared single-source connectors even if discovery yields no
+        # offers or fails before producing a route candidate.
+        spec = getattr(connector, "source", None)
+        if spec is not None:
+            upsert_source(s, key=spec.key, name=spec.name, kind=str(spec.kind), role=str(spec.role),
+                          is_synthetic=caps.synthetic)
         rv = active_rule_version(s, now)
         if rv is None:
             rv = ensure_rule_version(s, RuleParams.model_validate(settings.file_config.rules.model_dump()), now=now)
@@ -200,24 +220,36 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         s.add(scan)
         s.flush()
         scan_id = scan.id
-        op = _operator(s, operator_name)
+        configured_operator = settings.file_config.operator
+        selected_name = operator_name or (configured_operator.name if configured_operator and not caps.synthetic else None)
+        op = (_operator(s, selected_name, synthetic=caps.synthetic)
+              if caps.synthetic or selected_name else None)
         op_id = op.id if op else None
 
     rep = ScanReport(scan_run_id=scan_id, status=ScanStatus.RUNNING)
     ok_sources: set[str] = set()
     seller_offers: list[dict[str, Any]] = []
     try:
+        check()
         items = connector.discovery(now)
+        check()
     except SourceUnavailable as exc:
         items = []
         rep.sources_failed[exc.source_key] = str(exc)
     for item in items:
+        check()
         rep.items_seen += 1
+        from ..catalog import in_scope
+        if not in_scope(item, settings):
+            rep.items_out_of_scope += 1
+            continue
         try:
-            fetched = _fetch(connector, item, now)
+            fetched = _fetch(connector, item, now, mode=params.evaluation_mode)
+            check()
         except SourceUnavailable as exc:
             rep.sources_failed[exc.source_key] = str(exc)
             with session_factory.begin() as s:
+                check(s)
                 spec = next((x for x in item.sources if x.key == exc.source_key), None)
                 if spec is not None:
                     src = upsert_source(s, key=spec.key, name=spec.name, kind=str(spec.kind), role=str(spec.role),
@@ -226,6 +258,7 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
             log.warning("source unavailable during %s: %s (route NOT evaluated; disturbance)", item.route_key, exc)
             continue
         with session_factory.begin() as s:
+            check(s)
             operator = s.get(OperatorProfileRow, op_id) if op_id else None
             ev_row, result, alerted = _persist_item(s, fetched, scan_id=scan_id, rv_id=rv_id, params=params,
                                                     operator=operator, settings=settings, now=now)
@@ -244,10 +277,26 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
     else:
         rep.status = ScanStatus.OK
     ok_pages = set(getattr(connector, "ok_pages", set()) or set())
+    observed_pages = set(getattr(connector, "observed_pages", ok_pages) or set())
+    rep.incomplete_pages = sorted(getattr(connector, "incomplete_pages", set()) or set())
+    spec = getattr(connector, "source", None)
+    if observed_pages and spec is not None:
+        ok_sources.add(spec.key)  # a proven empty page is a successful observation
     if seller_offers or ok_pages:
         with session_factory.begin() as s:
-            rep.seller_events = track_seller_offers(s, seller_offers, ok_pages, now=now, scan_run_id=scan_id)
+            check(s)
+            # Filtered products are not disappearance evidence for previously tracked offers.
+            gone_pages = set() if rep.items_out_of_scope else ok_pages
+            rep.seller_events = track_seller_offers(s, seller_offers, gone_pages, now=now, scan_run_id=scan_id)
     with session_factory.begin() as s:
+        check(s)
+        # A later successful item must not erase a failure from the same source.
+        # This also records discovery failures for already registered sources.
+        for key in ok_sources | set(rep.sources_failed):
+            src = s.scalar(select(SourceRow).where(SourceRow.key == key))
+            if src is not None and not key.startswith("rule-exit:"):
+                mark_source_health(s, src, ok=key not in rep.sources_failed, now=now,
+                                   error=rep.sources_failed.get(key))
         scan = s.get(ScanRunRow, scan_id)
         scan.finished_at = now
         scan.status = rep.status.value
@@ -256,6 +305,10 @@ def run_scan(session_factory: sessionmaker[Session], connector: Connector, setti
         scan.items_seen = rep.items_seen
         scan.evaluations_created = rep.evaluations_created
         scan.alerts_enqueued = rep.alerts_enqueued
+        if rep.incomplete_pages:
+            scan.notes += f"; {len(rep.incomplete_pages)} partial listings (no disappearance inference)"
+        if rep.items_out_of_scope:
+            scan.notes += f"; {rep.items_out_of_scope} candidates outside liquid-value scope (not evaluated)"
     if enricher is not None and enrich_jobs:
         _enrich_after_scan(session_factory, enricher, enrich_jobs, scan_id)
     return rep

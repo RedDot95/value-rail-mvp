@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "value-rail-mvp"
 version = "0.1.0"
-description = "Alternative Value Rail Arbitrage MVP - Delivery 1 (offline core, synthetic fixtures only)"
+description = "Evidence-based research for profitable liquid voucher and balance routes"
 readme = "README.md"
 requires-python = ">=3.12"
 # Versions pinned 2026-10-05 against the current PyPI releases (resolved with uv).
@@ -38,7 +38,7 @@ value-rail = "value_rail.cli:app"
 where = ["src"]
 
 [tool.setuptools.package-data]
-value_rail = ["web/templates/*.html", "web/static/*"]
+value_rail = ["web/templates/*.html", "web/static/*", "data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -34,7 +34,10 @@ class FeeComponent(_M):
 
 
 class OfferInput(_M):
+    valid_until: datetime | None = None
     offer_ref: str
+    listing_url: str | None = None
+    listing_title: str | None = None
     source_key: str
     source_role: SourceRole
     identity: ProductIdentity
@@ -126,6 +129,8 @@ class ExitRule(_M):
 
 
 class RuleParams(_M):
+    evaluation_mode: Literal["route", "screener"] = "route"
+    screener_fx_max_age_seconds: int = 345600
     label: str = "default"
     price_find_min_discount: Dec = Decimal("0.25")
     verified_min_edge: Dec = Decimal("0.10")
@@ -178,6 +183,10 @@ class EvaluationResult(_M):
     block_reasons: list[str] = Field(default_factory=list)
     stale_reasons: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    screening: dict[str, Any] = Field(default_factory=dict)
 
     def canonical(self) -> dict[str, Any]:
-        return self.model_dump(mode="json")
+        output = self.model_dump(mode="json")
+        if not self.screening:
+            output.pop("screening")
+        return output

@@ -25,7 +25,7 @@ from ..domain.money import MONEY_CONTEXT, is_unknown
 from .models import (BreakdownLine, CheckoutQuoteInput, EvaluationResult, ExitQuoteInput, FeeComponent,
                      OfferInput, RouteInputs, RuleParams)
 
-ENGINE_VERSION = "1.1.0"  # 1.1.0: percent fees may carry cap_per_unit (Delivery 2)
+ENGINE_VERSION = "1.4.0"  # Published issuer terms never substitute for an executable exit quote.
 
 
 class UnknownFeeError(ValueError):
@@ -101,10 +101,14 @@ def _is_stale(captured_at: datetime, valid_until, now: datetime, max_age: int) -
 def _rate(currency: str, inputs: RouteInputs) -> Decimal | None:
     if currency == "EUR":
         return Decimal(1)
-    for fx in inputs.fx_rates:
-        if fx.currency == currency:
-            return Decimal(fx.rate_to_eur)
-    return None
+    matches = [fx for fx in inputs.fx_rates if fx.currency == currency]
+    return Decimal(max(matches, key=lambda fx: fx.captured_at).rate_to_eur) if matches else None
+
+
+def _fx_stale(currency: str, inputs: RouteInputs, rule: RuleParams) -> bool:
+    matches = [fx for fx in inputs.fx_rates if fx.currency == currency]
+    return currency != "EUR" and bool(matches) and \
+        _age_s(max(matches, key=lambda fx: fx.captured_at).captured_at, inputs.evaluated_at) > rule.max_quote_age_seconds
 
 
 def _currency_block(currency: str, inputs: RouteInputs, what: str) -> tuple[Decimal | None, str | None]:
@@ -113,10 +117,12 @@ def _currency_block(currency: str, inputs: RouteInputs, what: str) -> tuple[Deci
     r = _rate(currency, inputs)
     if r is None:
         return None, f"fx_rate_missing:{what}:{currency}"
+    if not r.is_finite() or r <= 0:
+        return None, f"fx_rate_invalid:{what}:{currency}"
     return r, None
 
 
-def _select_price_basis(inp: RouteInputs) -> tuple[OfferInput | None, list[dict[str, str]], list[str], list[str]]:
+def _select_price_basis(inp: RouteInputs, rule: RuleParams) -> tuple[OfferInput | None, list[dict[str, str]], list[str], list[str]]:
     ignored: list[dict[str, str]] = []
     notes: list[str] = []
     candidates: list[OfferInput] = []
@@ -138,13 +144,25 @@ def _select_price_basis(inp: RouteInputs) -> tuple[OfferInput | None, list[dict[
         if inp.offers:
             return None, ignored, ["no_offer_matching_identity"], notes
         return None, ignored, ["no_offer"], notes
-    known = [o for o in candidates if not is_unknown(o.unit_price)]
-    chosen = min(known, key=lambda o: Decimal(o.unit_price)) if known else candidates[0]
+    def price_rank(o: OfferInput) -> tuple[bool, bool, Decimal]:
+        rate, block = _currency_block(o.currency, inp, "offer")
+        fees = [] if o.price_includes_fees else o.fees
+        if block or is_unknown(o.unit_price) or unknown_required_fees(fees) or (not inp.is_synthetic and not o.evidence_refs):
+            return True, True, Decimal(0)
+        stale = _age_s(o.captured_at, inp.evaluated_at) > rule.max_offer_age_seconds or _fx_stale(o.currency, inp, rule)
+        return False, stale, acquisition_cost_eur(Decimal(o.unit_price) * rate, 1, fees)
+
+    # Compare proven all-in EUR amounts; nominal prices in different currencies
+    # or with different fees are not comparable. Prefer fresh usable evidence.
+    chosen = min(candidates, key=price_rank)
     return chosen, ignored, [], notes
 
 
 def evaluate_route(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     with localcontext(MONEY_CONTEXT):
+        if rule.evaluation_mode == "screener":
+            from .screener import evaluate_screener
+            return evaluate_screener(inp, rule)
         return _evaluate(inp, rule)
 
 
@@ -156,29 +174,49 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     v_missing: list[str] = []
     notes: list[str] = []
 
-    offer, ignored, sel_blocks, sel_notes = _select_price_basis(inp)
+    offer, ignored, sel_blocks, sel_notes = _select_price_basis(inp, rule)
     out["ignored_offers"] = ignored
     blocks += sel_blocks
     notes += sel_notes
+
+    nominal_fx_stale = False
+
+    def check_fx(currency: str, what: str, *, nominal: bool = False) -> None:
+        nonlocal nominal_fx_stale
+        if not inp.is_synthetic and currency != "EUR":
+            fx = max((f for f in inp.fx_rates if f.currency == currency), key=lambda f: f.captured_at, default=None)
+            if fx is not None and (not fx.quote_ref.strip() or is_unknown(fx.quote_ref.strip())):
+                blocks.append(f"fx_evidence_missing:{what}:{currency}")
+        if _fx_stale(currency, inp, rule):
+            stale.append(f"fx_rate_stale:{what}:{currency}")
+            nominal_fx_stale |= nominal
 
     # face value reference in EUR
     face_eur: Decimal | None = None
     if is_unknown(inp.product.face_value):
         blocks.append("face_value_unknown")
     else:
+        check_fx(inp.product.face_currency, "face_value", nominal=True)
         r, b = _currency_block(inp.product.face_currency, inp, "face_value")
         if b:
             blocks.append(b)
         else:
             face_eur = Decimal(inp.product.face_value) * r
-            out["face_value_reference_eur"] = face_eur
+            if face_eur <= 0:
+                blocks.append("face_value_not_positive")
+                face_eur = None
+            else:
+                out["face_value_reference_eur"] = face_eur
 
     unit_all_in: Decimal | None = None
     offer_rate: Decimal | None = None
     offer_fees: list[FeeComponent] = []
     if offer is not None:
+        if not inp.is_synthetic and not offer.evidence_refs:
+            blocks.append("offer_evidence_missing")
         out["price_basis_offer_ref"] = offer.offer_ref
         out["advertised_quantity"] = offer.advertised_quantity.value
+        check_fx(offer.currency, "offer", nominal=True)
         offer_rate, b = _currency_block(offer.currency, inp, "offer")
         if b:
             blocks.append(b)
@@ -206,6 +244,7 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     if cq is None:
         v_missing.append("checkout_quote")
     else:
+        check_fx(cq.currency, "checkout_quote")
         mm = inp.product.mismatches(cq.identity)
         if mm:
             blocks.append("checkout_quote_identity_mismatch:" + ",".join(mm))
@@ -227,6 +266,9 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     if eq is None:
         v_missing.append("exit_quote")
     else:
+        if not inp.is_synthetic and eq.venue_key.startswith("rule-exit:"):
+            v_missing.append("firm_exit_quote")
+        check_fx(eq.currency, "exit_quote")
         mm = inp.product.mismatches(eq.identity)
         if mm:
             blocks.append("exit_quote_identity_mismatch:" + ",".join(mm))
@@ -245,6 +287,16 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
     for p in inp.prerequisites:
         if p.status != PrereqStatus.PROVEN:
             v_missing.append(f"prerequisite:{p.name}")
+        elif not inp.is_synthetic and (not p.evidence_ref.strip() or is_unknown(p.evidence_ref.strip())):
+            v_missing.append(f"prerequisite_evidence:{p.name}")
+
+    if not inp.is_synthetic:
+        for name, quote in (("checkout", cq), ("exit", eq)):
+            if quote is not None and not quote.evidence_refs:
+                v_missing.append(f"{name}_quote_evidence")
+        for component in offer_fees + (list(cq.fees) if cq else []) + (list(eq.fees) if eq else []):
+            if component.required and (not component.evidence_ref.strip() or is_unknown(component.evidence_ref.strip())):
+                blocks.append(f"fee_evidence_missing:{component.name}")
 
     # ---- proven quantity (never the advertised number) ----
     if offer is not None:
@@ -300,7 +352,7 @@ def _evaluate(inp: RouteInputs, rule: RuleParams) -> EvaluationResult:
         else:
             status = RouteStatus.NO_SIGNAL
             notes.append("Route vollstaendig belegt, aber unter Schwelle (Edge/Profit)")
-    elif (route_complete and stale) or "offer_stale" in stale:
+    elif (route_complete and stale) or "offer_stale" in stale or nominal_fx_stale:
         status = RouteStatus.EXPIRED
     elif discount is not None and discount >= rule.price_find_min_discount:
         status = RouteStatus.PRICE_FIND

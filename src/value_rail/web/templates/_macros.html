@@ -3,7 +3,11 @@
   <div class="row"><span><b>{{ c.title }}</b> {% if c.synthetic %}<span class="tag">SYNTHETIC</span>{% endif %}</span>
     <span class="pill s-{{ c.status }}">{{ c.status_de }}</span></div>
   {% set o = c.outputs %}
-  {% if c.status == 'verified_route' or (c.status == 'expired' and o.profit_eur != 'unknown') %}
+  {% if o.screening %}
+  {% set x = o.screening %}
+  <div class="row"><span class="big">{{ o.discount|pct }}</span><span>{{ x.listing_price }} {{ x.currency }} / Nennwert {{ x.face_value }} {{ x.face_currency }}</span></div>
+  <div class="mut">{{ x.seller }} · Region {{ x.region }} · Angezeigter Bestand {{ o.advertised_quantity|unk }}</div>
+  {% elif c.status == 'verified_route'  or (c.status == 'expired' and o.profit_eur != 'unknown') %}
   <div class="row"><span class="big">{{ o.profit_eur|eur }}</span><span>Edge <b>{{ o.edge|pct }}</b></span></div>
   <div class="mut">Menge {{ o.evaluated_quantity }} · Kosten {{ o.acquisition_cost_eur|eur }} · Netto-Exit {{ o.net_exit_eur|eur }}</div>
   {% else %}

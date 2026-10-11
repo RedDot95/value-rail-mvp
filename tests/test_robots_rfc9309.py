@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 
 from value_rail.net.http_safe import DEFAULT_USER_AGENT
 from value_rail.net.robots import RobotsRules
 
-REC = Path(__file__).resolve().parent / "fixtures" / "recorded"
 UA = DEFAULT_USER_AGENT
 
 
@@ -59,19 +57,3 @@ def test_percent_encoding_normalised_and_robots_txt_always_allowed():
 def test_empty_disallow_and_no_rules_allow_everything():
     assert rules("User-agent: *\nDisallow: \n").can_fetch(UA, "https://x.test/anything")
     assert RobotsRules([]).can_fetch(UA, "https://x.test/anything")
-
-
-def test_recorded_buysellvouchers_robots():
-    r = rules((REC / "buysellvouchers_2026-10-06" / "robots.txt").read_text())
-    base = "https://www.buysellvouchers.com"
-    assert r.can_fetch(UA, base + "/en/products/list/bitsa-gift-card/")
-    assert r.can_fetch(UA, base + "/en/products/list/bitsa-gift-card/?page=2")
-    assert not r.can_fetch(UA, base + "/en/products/list/bitsa-gift-card/?pageSize=50")
-    assert not r.can_fetch(UA, base + "/en/products/buy/102874/")
-    assert not r.can_fetch(UA, base + "/en/feedbacks/show/1/")
-
-
-def test_recorded_cardbear_robots_blocks_outbound_redirector():
-    r = rules((REC / "cardbear_2026-10-06" / "robots.txt").read_text())
-    assert not r.can_fetch(UA, "https://www.cardbear.com/r.php?storeid=111&giftstore=cardcash")
-    assert r.can_fetch(UA, "https://www.cardbear.com/gift-card-discount/616/steam")

@@ -16,16 +16,25 @@ from value_rail.worker.exit_rules import exit_quote_from_rule
 from .conftest import make_settings
 
 NOW = datetime(2026, 10, 5, 22, 0, tzinfo=UTC)
-SRC = SourceSpec(key="recharge-com-de", name="x", kind=SourceKind.DIRECT_SELLER, role=SourceRole.PRICE_BASIS)
+SRC = SourceSpec(key="test-only-source", name="x", kind=SourceKind.DIRECT_SELLER, role=SourceRole.PRICE_BASIS)
 
 
 def params(tmp_path) -> RuleParams:
-    return RuleParams.model_validate(make_settings(tmp_path).file_config.rules.model_dump())
+    # Historical route engine only: simulated terms, not website integration or production fees.
+    return RuleParams(exit_rules=[
+        dict(key="paysafecard-de-issuer-refund",family="paysafecard",redemption_program="paysafecard",regions=["DE"],
+             description="TEST ONLY",exit_kind="TEST ONLY",depth_per_request_units=1,
+             prerequisites=["test_account"],sources=["TEST ONLY 2026-10-05"],review_by="2026-11-05T00:00:00Z",
+             fees=[dict(name="refund",kind="percent",amount="0.05",cap_per_unit="5",evidence_ref="TEST ONLY")]),
+        dict(key="bitsa-free-plan-sepa-out",family="bitsa",redemption_program="bitsa",regions=["DE"],
+             description="TEST ONLY",exit_kind="TEST ONLY",depth_limit_eur="500",
+             prerequisites=["test_account"],sources=["TEST ONLY 2026-10-05"],review_by="2026-11-05T00:00:00Z",
+             fees=[dict(name="bitsa_voucher_reload_fee",kind="percent",amount="unknown",evidence_ref="TEST ONLY")])])
 
 
 def ident(face: str, program: str) -> ProductIdentity:
     return ProductIdentity(face_value=Decimal(face), face_currency="EUR", region="DE", variant=f"digital-code:{face}-eur",
-                           seller="recharge.com", redemption_program=program)
+                           seller="test-only-seller", redemption_program=program)
 
 
 def item(face: str, program: str, synthetic=False) -> DiscoveryItem:
@@ -54,7 +63,8 @@ def test_rules_are_sourced(tmp_path):
 def test_paysafecard_rule_quote(tmp_path):
     b, rule = exit_quote_from_rule(params(tmp_path), item("150", "paysafecard"), NOW)
     q = b.quote
-    assert rule.key == "paysafecard-de-issuer-refund" and q.unit_price == Decimal("150") and q.depth_quantity == 1
+    assert rule.key == "paysafecard-de-issuer-refund" and q.unit_price == Decimal("150") and q.depth_quantity == "unknown"
+    assert b.evidence[0].payload["projected_max_depth"] == 1
     assert b.source.role == SourceRole.EXIT and b.evidence[0].payload["rule"]["key"] == rule.key
 
 
@@ -66,14 +76,16 @@ def test_no_rule_for_synthetic_or_unknown_program(tmp_path):
 def _route(tmp_path, face: str, program: str, checkout_unit: str) -> RouteInputs:
     p = params(tmp_path)
     b, rule = exit_quote_from_rule(p, item(face, program), NOW)
-    cq = CheckoutQuoteInput(quote_ref="quote:hyp", source_key="recharge-com-de", identity=ident(face, program),
-                            unit_price=Decimal(checkout_unit), currency="EUR", quantity_confirmed=1, captured_at=NOW)
-    off = OfferInput(offer_ref="offer_snapshot:hyp", source_key="recharge-com-de", source_role="price_basis",
+    cq = CheckoutQuoteInput(quote_ref="quote:hyp", source_key="test-only-source", identity=ident(face, program),
+                            unit_price=Decimal(checkout_unit), currency="EUR", quantity_confirmed=1, captured_at=NOW,
+                            evidence_refs=["HYPOTHETICAL checkout evidence (test only)"])
+    off = OfferInput(offer_ref="offer_snapshot:hyp", source_key="test-only-source", source_role="price_basis",
                      identity=ident(face, program), unit_price=Decimal(checkout_unit), currency="EUR",
-                     price_includes_fees=True, captured_at=NOW)
+                     price_includes_fees=True, captured_at=NOW, evidence_refs=["HYPOTHETICAL offer evidence (test only)"])
     return RouteInputs(route_key="hyp", product=ident(face, program), offers=[off], checkout_quote=cq,
-                       exit_quote=b.quote.model_copy(update={"quote_ref": "quote:rule"}),
-                       prerequisites=[Prerequisite(name=n, status="proven") for n in rule.prerequisites],
+                       exit_quote=b.quote.model_copy(update={"quote_ref": "quote:hyp", "venue_key": "HYPOTHETICAL firm buyer",
+                           "depth_quantity": 1, "evidence_refs": ["HYPOTHETICAL firm quote evidence"]}),
+                       prerequisites=[Prerequisite(name=n, status="proven", evidence_ref="HYPOTHETICAL account proof") for n in rule.prerequisites],
                        evaluated_at=NOW), p
 
 
@@ -89,3 +101,10 @@ def test_bitsa_rule_unknown_reload_fee_blocks_verification(tmp_path):
     res = evaluate_route(inp, p)
     assert res.status == "blocked" and "unknown_required_fee:bitsa_voucher_reload_fee" in res.block_reasons
     assert res.profit_eur == "unknown"
+
+
+def test_sourced_terms_cannot_claim_firm_exit_even_with_proven_operator(tmp_path):
+    inp, p = _route(tmp_path, "100", "paysafecard", "50")
+    inp = inp.model_copy(update={"exit_quote": inp.exit_quote.model_copy(update={"venue_key": "rule-exit:test"})})
+    result = evaluate_route(inp, p)
+    assert result.status != "verified_route" and "firm_exit_quote" in result.missing_evidence

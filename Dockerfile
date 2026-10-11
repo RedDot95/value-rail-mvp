@@ -1,4 +1,5 @@
-# Value Rail MVP - Delivery 1 (offline prototype). NOT a hardened production image.
+# syntax=docker/dockerfile:1
+# Research worker/UI image; config/default.toml remains offline by default.
 # Build:  docker build -t value-rail-mvp .
 # Run:    docker run --rm -p 127.0.0.1:8000:8000 -v value_rail_data:/data value-rail-mvp
 # Expose beyond localhost ONLY behind a TLS reverse proxy and with VALUE_RAIL_BASIC_USER/PASSWORD set.
@@ -15,10 +16,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN pip install --no-cache-dir .
-COPY config ./config
-COPY migrations ./migrations
-COPY tests/fixtures ./tests/fixtures
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi; \
+    pip install --no-cache-dir .
+COPY --chown=10001:10001 config ./config
+COPY --chown=10001:10001 migrations ./migrations
+COPY --chown=10001:10001 tests/fixtures ./tests/fixtures
 
 RUN useradd --system --uid 10001 app && mkdir -p /data && chown app /data
 USER app

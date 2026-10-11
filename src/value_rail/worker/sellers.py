@@ -1,7 +1,7 @@
 """New-seller detection for watched marketplace/product pages.
 
 Input: the `seller_offer` dicts the connector puts into NormalizedOffer.raw, plus the set of page URLs
-that were fetched+parsed successfully in this scan. A page that failed is never used to declare offers
+that were fetched+parsed successfully and enumerated completely in this scan. A page that failed is never used to declare offers
 "gone" (that would turn a disturbance into a fake market change).
 
 Event kinds:
@@ -9,7 +9,7 @@ Event kinds:
 - new_seller_offer seller offer never seen before on an already-tracked page
 - returned         a previously gone offer is listed again
 - price_change     listed price changed vs. last observation
-- gone             offer missing on a successfully parsed page
+- gone             offer missing on a successfully parsed, complete page
 """
 
 from __future__ import annotations
@@ -71,7 +71,7 @@ def track_seller_offers(s: Session, offers: Iterable[dict[str, Any]], ok_pages: 
         row.seen_count += 1
         row.active = True
 
-    # gone: only on pages that were fetched and parsed successfully in this scan
+    # gone: only on pages with proven complete enumeration in this scan
     for k, row in existing.items():
         if k in keyed or not row.active or row.page_url not in ok_pages:
             continue

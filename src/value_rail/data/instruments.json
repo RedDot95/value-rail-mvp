@@ -1,0 +1,957 @@
+{
+  "schema_version": 1,
+  "researched_at": "2026-10-06",
+  "purpose": "Search universe only; NEVER a whitelist proving liquidity, issuer refund eligibility or EUR proceeds.",
+  "instruments": [
+    {
+      "key": "abon",
+      "label": "Abon / A-bon",
+      "group": "payment",
+      "aliases": [
+        "a bon",
+        "abons"
+      ],
+      "sources": [
+        "https://abon.cash/",
+        "https://abon.cash/terms-conditions-en/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Aircash-issued voucher; country-specific reload/redemption fees remain to be evidenced."
+    },
+    {
+      "key": "aircash",
+      "label": "Aircash wallet/card funding",
+      "group": "payment",
+      "aliases": [
+        "aircash voucher"
+      ],
+      "sources": [
+        "https://aircash.eu/aircash-mastercard"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Separate from Abon; ATM capability alone does not prove a voucher-to-cash route."
+    },
+    {
+      "key": "paysafecard",
+      "label": "PaysafeCard",
+      "group": "payment",
+      "aliases": [
+        "paysafe",
+        "paysafe card"
+      ],
+      "sources": [
+        "https://www.paysafecard.com/en-gb/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Use exact country-specific issuer and authorised seller rules."
+    },
+    {
+      "key": "neosurf",
+      "label": "Neosurf",
+      "group": "payment",
+      "aliases": [
+        "myneosurf"
+      ],
+      "sources": [
+        "https://www.neosurf.com/neosurf-voucher/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "flexepin",
+      "label": "Flexepin",
+      "group": "payment",
+      "aliases": [],
+      "sources": [
+        "https://www.flexepin.com/faq/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "cashlib",
+      "label": "CASHlib",
+      "group": "payment",
+      "aliases": [
+        "cash lib"
+      ],
+      "sources": [
+        "https://cashlib.com/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "cashtocode",
+      "label": "CashtoCode eVoucher",
+      "group": "payment",
+      "aliases": [
+        "cash to code"
+      ],
+      "sources": [
+        "https://cashtocode.com/",
+        "https://cashtocode.com/help/cashtocode-evoucher-refund"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A deposit-only voucher is not automatically withdrawable; require an eligible explicit exit."
+    },
+    {
+      "key": "mifinity",
+      "label": "MiFinity eVoucher",
+      "group": "payment",
+      "aliases": [
+        "mi finity"
+      ],
+      "sources": [
+        "https://mifinity.com/evoucher/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "muchbetter",
+      "label": "MuchBetter Cash Voucher",
+      "group": "payment",
+      "aliases": [
+        "much better"
+      ],
+      "sources": [
+        "https://muchbetter.com/en/muchbetter-voucher"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "astropay",
+      "label": "AstroPay / Larstal prepaid voucher",
+      "group": "payment",
+      "aliases": [
+        "astro pay",
+        "larstal"
+      ],
+      "sources": [
+        "https://getapp.astropaycard.com/terms-and-conditions/voucher.html"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "ecovoucher",
+      "label": "ecoVoucher",
+      "group": "payment",
+      "aliases": [
+        "eco voucher"
+      ],
+      "sources": [
+        "https://baxity.com/ecovoucher-vs-jetoncash-astropay-neosurf"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Secondary product source; current issuer availability and withdrawal conditions need primary verification."
+    },
+    {
+      "key": "jetoncash",
+      "label": "JetonCash",
+      "group": "payment",
+      "aliases": [
+        "jeton cash"
+      ],
+      "sources": [
+        "https://blog.jeton.com/what-is-jetoncash",
+        "https://www.seagm.com/en-us/jetoncash-voucher-europe"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Seller notice says existing cards expire 2026-08-30; current product availability must be verified before use."
+    },
+    {
+      "key": "bitsa",
+      "label": "Bitsa reload voucher",
+      "group": "card_reload",
+      "aliases": [
+        "bitsa card"
+      ],
+      "sources": [
+        "https://bitsacard.com/en/general-terms-and-conditions"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "pcs",
+      "label": "PCS Mastercard reload",
+      "group": "card_reload",
+      "aliases": [
+        "mypcs",
+        "pcs card"
+      ],
+      "sources": [
+        "https://www.mypcs.com/tarifs/",
+        "https://www.mypcs.com/en/besoin-daide/my-transactions-and-transfers/top-up-my-pcs-card/top-up-my-pcs-card-by-top-up-voucher/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "transcash",
+      "label": "Transcash reload",
+      "group": "card_reload",
+      "aliases": [],
+      "sources": [
+        "https://www.transcash.fr/en/prepaid-card/",
+        "https://www.transcash.fr/pdf/tableau_des_frais_transcash.pdf"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "toneo",
+      "label": "Toneo First reload",
+      "group": "card_reload",
+      "aliases": [
+        "toneofirst",
+        "toneo first"
+      ],
+      "sources": [
+        "https://www.toneofirst.com/en/toneofirst-offers-services/mastercard-by-toneofirst/subscriptions/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Card product found; exact reload voucher and route still need proof."
+    },
+    {
+      "key": "cryptovoucher",
+      "label": "Crypto Voucher",
+      "group": "crypto",
+      "aliases": [
+        "crypto voucher"
+      ],
+      "sources": [
+        "https://cryptovoucher.io/redeem-now"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "azteco",
+      "label": "Azteco on-chain / Lightning",
+      "group": "crypto",
+      "aliases": [],
+      "sources": [
+        "https://azte.co/en/bitcoin-vouchers"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "On-chain and Lightning must remain distinct product variants."
+    },
+    {
+      "key": "bitnovo",
+      "label": "Bitnovo coupon",
+      "group": "crypto",
+      "aliases": [],
+      "sources": [
+        "https://www.bitnovo.com/en/instructions/coupons"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "binance",
+      "label": "Binance Gift Card",
+      "group": "crypto",
+      "aliases": [
+        "binance gift card"
+      ],
+      "sources": [
+        "https://www.binance.com/en-GB/gift-card"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Asset, account eligibility, network and fiat exit need separate proof."
+    },
+    {
+      "key": "bitcoinbon",
+      "label": "Bitcoinbon",
+      "group": "crypto",
+      "aliases": [
+        "bitcoin bon"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Historical Coinfinity voucher candidate; current issuance not established in this review."
+    },
+    {
+      "key": "rewarble",
+      "label": "Rewarble general voucher",
+      "group": "wallet_reload",
+      "aliases": [],
+      "sources": [
+        "https://rewarble.com/redeem",
+        "https://rewarble.com/fees"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "rewarble-paypal",
+      "label": "Rewarble → PayPal",
+      "group": "wallet_reload",
+      "aliases": [
+        "rewarble paypal"
+      ],
+      "sources": [
+        "https://rewarble.com/brands/paypal",
+        "https://rewarble.com/fees"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Rewarble-issued; do not merge with a voucher issued by the destination wallet provider."
+    },
+    {
+      "key": "rewarble-skrill",
+      "label": "Rewarble → Skrill",
+      "group": "wallet_reload",
+      "aliases": [
+        "rewarble skrill"
+      ],
+      "sources": [
+        "https://rewarble.com/brands/skrill",
+        "https://rewarble.com/fees"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Rewarble-issued; do not merge with a voucher issued by the destination wallet provider."
+    },
+    {
+      "key": "rewarble-neteller",
+      "label": "Rewarble → Neteller",
+      "group": "wallet_reload",
+      "aliases": [
+        "rewarble neteller"
+      ],
+      "sources": [
+        "https://rewarble.com/brands/neteller",
+        "https://rewarble.com/fees"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Rewarble-issued; do not merge with a voucher issued by the destination wallet provider."
+    },
+    {
+      "key": "rewarble-revolut",
+      "label": "Rewarble → Revolut",
+      "group": "wallet_reload",
+      "aliases": [
+        "rewarble revolut"
+      ],
+      "sources": [
+        "https://rewarble.com/brands/revolut",
+        "https://rewarble.com/fees"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Rewarble-issued; do not merge with a voucher issued by the destination wallet provider."
+    },
+    {
+      "key": "rewarble-wise",
+      "label": "Rewarble → Wise",
+      "group": "wallet_reload",
+      "aliases": [
+        "rewarble wise"
+      ],
+      "sources": [
+        "https://rewarble.com/brands/wise",
+        "https://rewarble.com/fees"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Rewarble-issued; do not merge with a voucher issued by the destination wallet provider."
+    },
+    {
+      "key": "rewarble-bank",
+      "label": "Rewarble → Bank transfer",
+      "group": "wallet_reload",
+      "aliases": [
+        "rewarble bank"
+      ],
+      "sources": [
+        "https://rewarble.com/brands/bank",
+        "https://rewarble.com/fees"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Rewarble-issued; do not merge with a voucher issued by the destination wallet provider."
+    },
+    {
+      "key": "paypal-unverified",
+      "label": "PayPal-labelled voucher (issuer unverified)",
+      "group": "wallet_reload",
+      "aliases": [
+        "paypal voucher",
+        "paypal gift card",
+        "paypal"
+      ],
+      "sources": [
+        "https://www.paypal.com/us/cshelp/article/how-do-i-buy-and-send-a-digital-gift-card-through-paypal-help322"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "PayPal Gifts is merchant gift cards, not proof of a PayPal-issued balance voucher. Require issuer and payout evidence."
+    },
+    {
+      "key": "amazon",
+      "label": "Amazon",
+      "group": "retail",
+      "aliases": [
+        "amazon de",
+        "amazon us"
+      ],
+      "sources": [
+        "https://www.amazon.de/-/en/gp/help/customer/display.html?nodeId=GG2R4MGPKZQJEG7B"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "otto",
+      "label": "OTTO",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://gutschein-swap.de/otto-gutschein-verkaufen/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "mediamarkt",
+      "label": "MediaMarkt",
+      "group": "retail",
+      "aliases": [
+        "media markt"
+      ],
+      "sources": [
+        "https://www.mediamarkt.de/de/specials/geschenkkarte"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "saturn",
+      "label": "Saturn",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://hilfe.saturn.de/app/answers/detail/a_id/6360/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "ikea",
+      "label": "IKEA",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://www.ikea.com/de/de/gift-cards/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "zalando",
+      "label": "Zalando",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://en.zalando.de/giftvouchers/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "douglas",
+      "label": "Douglas",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://www.douglas.de/Geschenke/Geschenkgutschein/index_0809.html"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "dm",
+      "label": "dm-drogerie markt",
+      "group": "retail",
+      "aliases": [
+        "dm drogerie"
+      ],
+      "sources": [
+        "https://www.dm.de/services/services-im-markt/geschenkkarten-3480686"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "rossmann",
+      "label": "ROSSMANN",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://rossmann-gutscheine.de/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "A cash resale quote is required; face value is not resale proceeds. Country/storefront remains part of product identity."
+    },
+    {
+      "key": "conrad",
+      "label": "Conrad",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://www.wunschgutschein.de/pages/partnershops"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Issuer partner catalogue evidence; variant and executable resale quote still needed."
+    },
+    {
+      "key": "cyberport",
+      "label": "Cyberport",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://www.wunschgutschein.de/pages/partnershops"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Issuer partner catalogue evidence; variant and executable resale quote still needed."
+    },
+    {
+      "key": "sephora",
+      "label": "Sephora",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://www.wunschgutschein.de/pages/partnershops"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Issuer partner catalogue evidence; variant and executable resale quote still needed."
+    },
+    {
+      "key": "rituals",
+      "label": "Rituals",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://www.wunschgutschein.de/pages/partnershops"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Issuer partner catalogue evidence; variant and executable resale quote still needed."
+    },
+    {
+      "key": "obi",
+      "label": "OBI",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://www.wunschgutschein.de/pages/partnershops"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Issuer partner catalogue evidence; variant and executable resale quote still needed."
+    },
+    {
+      "key": "dehner",
+      "label": "Dehner",
+      "group": "retail",
+      "aliases": [],
+      "sources": [
+        "https://www.wunschgutschein.de/pages/partnershops"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Issuer partner catalogue evidence; variant and executable resale quote still needed."
+    },
+    {
+      "key": "rewe",
+      "label": "REWE",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "edeka",
+      "label": "EDEKA",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "kaufland",
+      "label": "Kaufland",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "lidl",
+      "label": "Lidl",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "aldi",
+      "label": "ALDI",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "hm",
+      "label": "H&M",
+      "group": "retail",
+      "aliases": [
+        "h m"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "ca",
+      "label": "C&A",
+      "group": "retail",
+      "aliases": [
+        "c a"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "decathlon",
+      "label": "Decathlon",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "thalia",
+      "label": "Thalia",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "tchibo",
+      "label": "Tchibo",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "bauhaus",
+      "label": "BAUHAUS",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "hornbach",
+      "label": "HORNBACH",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "toom",
+      "label": "toom",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "breuninger",
+      "label": "Breuninger",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "galeria",
+      "label": "GALERIA",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "aboutyou",
+      "label": "ABOUT YOU",
+      "group": "retail",
+      "aliases": [
+        "about you"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "peekcloppenburg",
+      "label": "Peek & Cloppenburg",
+      "group": "retail",
+      "aliases": [
+        "peek cloppenburg"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "apple-hardware",
+      "label": "Apple Store hardware gift card",
+      "group": "retail",
+      "aliases": [
+        "apple store"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "intersport",
+      "label": "INTERSPORT",
+      "group": "retail",
+      "aliases": [],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Coverage candidate; exact issued gift card and tradable resale route not yet verified."
+    },
+    {
+      "key": "wunschgutschein",
+      "label": "WUNSCHGUTSCHEIN",
+      "group": "multi_merchant",
+      "aliases": [
+        "wunsch gutschein"
+      ],
+      "sources": [
+        "https://www.wunschgutschein.de/",
+        "https://www.wunschgutschein.de/pages/einloesebedingungen-ware"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": "Multi-stage conversion: each conversion and final resale needs its own evidence; no automatic face-value exit."
+    },
+    {
+      "key": "bestchoice",
+      "label": "cadooz BestChoice",
+      "group": "multi_merchant",
+      "aliases": [
+        "best choice",
+        "cadooz"
+      ],
+      "sources": [
+        "https://www.cadooz.com/bestchoice-universalgutschein/"
+      ],
+      "research_state": "product_source_found",
+      "liquidity": "unproven",
+      "note": ""
+    },
+    {
+      "key": "shoppingcard",
+      "label": "ShoppingCARD",
+      "group": "multi_merchant",
+      "aliases": [
+        "ShoppingCARD"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "shell",
+      "label": "Shell",
+      "group": "fuel",
+      "aliases": [
+        "Shell"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "aral",
+      "label": "Aral",
+      "group": "fuel",
+      "aliases": [
+        "Aral"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "esso",
+      "label": "Esso",
+      "group": "fuel",
+      "aliases": [
+        "Esso"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "totalenergies",
+      "label": "TotalEnergies",
+      "group": "fuel",
+      "aliases": [
+        "TotalEnergies"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "db",
+      "label": "Deutsche Bahn",
+      "group": "transport",
+      "aliases": [
+        "Deutsche Bahn"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "uber",
+      "label": "Uber",
+      "group": "transport",
+      "aliases": [
+        "Uber"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "flixbus",
+      "label": "FlixBus",
+      "group": "transport",
+      "aliases": [
+        "FlixBus"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "airbnb",
+      "label": "Airbnb",
+      "group": "travel",
+      "aliases": [
+        "Airbnb"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    },
+    {
+      "key": "booking",
+      "label": "Booking.com",
+      "group": "travel",
+      "aliases": [
+        "Booking.com"
+      ],
+      "sources": [],
+      "research_state": "needs_product_verification",
+      "liquidity": "unproven",
+      "note": "Extended coverage candidate; no validated liquidity or executable exit quote yet."
+    }
+  ]
+}
