@@ -1,6 +1,8 @@
 # Value Rail – CoinGate Clearance Tracker
 
-Prüft ausschließlich **https://coingate.com/gift-cards/clearance**, alle 5 Minuten.
+Prüft ausschließlich **https://coingate.com/gift-cards/clearance**.
+
+Standardbetrieb: GitHub scannt stündlich und veröffentlicht `clearance.json` auf dem Branch `clearance-signals`. Eine ChatGPT-Aufgabe liest neue Signale und benachrichtigt in der ChatGPT-App. Dafür sind kein eigener Server und keine Telegram-Zugangsdaten nötig. Push muss in ChatGPT und auf dem Handy erlaubt sein.
 
 - Meldet konkrete Angebote ab 1 % Rabatt; Schwelle frei einstellbar.
 - Filter: Zahlungs-/Kryptogutscheine und Gutscheine großer Händler. Keine Spiele, Streaming- oder Content-Abos.
@@ -8,7 +10,7 @@ Prüft ausschließlich **https://coingate.com/gift-cards/clearance**, alle 5 Min
 - Neue Angebote, wesentliche Preisänderungen und Wiederverfügbarkeit lösen Meldungen aus. Unveränderte Angebote nicht.
 - Gebühren, Auszahlung und Konten prüfst du selbst.
 
-## Start
+## Optional: eigener Worker
 
 In einer lokalen `.env` setzen:
 
@@ -25,6 +27,6 @@ docker compose up -d --build
 
 Oberfläche: **http://localhost:8000**. Ohne Telegram-Konfiguration gibt es nur Log-Meldungen. Für laufendes Tracking muss der Rechner eingeschaltet bleiben.
 
-`config/production.toml` enthält die einzige Quelle und den Scan-Job. `config/default.toml` enthält ausschließlich synthetische Offline-Testdaten. Andere Website-Anbindungen sind entfernt. SQLite, Verlauf, Push-Wiederholungen, Backups und Weboberfläche bleiben erhalten.
+`config/production.toml` enthält die einzige Quelle und den optionalen Worker-Scan alle fünf Minuten. Der stündliche GitHub-Job ist `.github/workflows/clearance-feed.yml`. `config/default.toml` enthält ausschließlich synthetische Offline-Testdaten. Andere Website-Anbindungen sind entfernt. SQLite, Verlauf, Push-Wiederholungen, Backups und Weboberfläche bleiben erhalten.
 
 Tests: `pip install -e '.[dev]'`, anschließend `pytest`.
