@@ -1,16 +1,17 @@
 name: CoinGate Clearance signal feed
 on:
   schedule:
-    - cron: '17 * * * *'
+    - cron: '17,47 * * * *'
   workflow_dispatch:
   push:
-    branches: [master, fix/review-valuation-worker-health]
+    branches: [master, fix/review-valuation-worker-health, clearance-signals]
     paths:
       - '.github/workflows/clearance-feed.yml'
       - 'src/value_rail/clearance_feed.py'
       - 'src/value_rail/connectors/coingate_clearance.py'
       - 'scripts/export_clearance_feed.py'
       - 'config/production.toml'
+      - 'chatgpt-delivery.json'
 permissions:
   contents: write
 concurrency:
@@ -18,12 +19,16 @@ concurrency:
   cancel-in-progress: false
 jobs:
   export:
+    # Delivery acknowledgements must not start scans or create a feedback loop.
+    if: github.ref != 'refs/heads/clearance-signals' || github.event.head_commit.message == 'Request CoinGate Clearance refresh'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          # The data branch carries the trigger, but scanner code comes from master.
+          ref: master
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
