@@ -50,8 +50,8 @@ Open `http://127.0.0.1:8000`. The default configuration uses synthetic offline f
 ## Verified evidence
 
 - Reviewed implementation: `1d27c69e9f0ab2359eb3ba636867638b37a79b0a`.
-- [Offline CI run 38668234312](https://github.com/RedDot95/value-rail-mvp/actions/runs/38668234312): **success** on that commit for Python 3.12 and 3.13; package installation, pytest and Compose configuration checks passed. This existing CI evidence was reused during the 24 October portfolio review; no fresh local full-suite result is claimed.
-- [Scheduled feed run 40032371746](https://github.com/RedDot95/value-rail-mvp/actions/runs/40032371746): **success** on the same implementation commit. A successful job is not proof of current stock, user-phone delivery or profitable execution.
+- [Offline CI run 38668234312](https://github.com/SFS-Labs/value-rail-mvp/actions/runs/38668234312): **success** on that commit for Python 3.12 and 3.13; package installation, pytest and Compose configuration checks passed. This existing CI evidence was reused during the 24 October portfolio review; no fresh local full-suite result is claimed.
+- [Scheduled feed run 40032371746](https://github.com/SFS-Labs/value-rail-mvp/actions/runs/40032371746): **success** on the same implementation commit. A successful job is not proof of current stock, user-phone delivery or profitable execution.
 - [Historical 10 October validation](docs/clearance_validation_2026-10-10.md) records its dated source observations and 323 offline tests. Those inventory counts are historical snapshots.
 
 ## Optional worker deployment
