@@ -1,0 +1,116 @@
+{
+  "captured_at": "2026-10-24T08:33:26.505274+00:00",
+  "implementation_commit": "fa3bdc5ddefa9e47d13ab77948c67f3c134e2355",
+  "mode": "synthetic offline fixtures; no network or dispatch",
+  "dashboard_http": 200,
+  "detail_http": 200,
+  "status_http": 200,
+  "evaluation_count": 10,
+  "health": {
+    "status": "starting",
+    "checked_at": "2026-10-24T08:33:26.499054+00:00",
+    "live_scanning": false,
+    "jobs": [
+      {
+        "name": "fixture_scan",
+        "kind": "scan",
+        "connector": "fixture",
+        "interval_seconds": 300,
+        "state": "starting",
+        "last_status": "never_run",
+        "last_success_at": null,
+        "last_success_berlin": null,
+        "last_success_age_s": null,
+        "consecutive_failures": 0,
+        "last_error": "",
+        "next_due_at": null,
+        "last_scan": null
+      }
+    ],
+    "heartbeat": {
+      "path": "/tmp/tmpjg1quz5i/heartbeat.json",
+      "present": false,
+      "stale_after_s": 300,
+      "stale": true
+    },
+    "sources": [
+      {
+        "key": "synthetic-aggregator-x",
+        "health": "ok",
+        "last_success_at": "2026-10-24T08:33:26.341354+00:00",
+        "last_success_berlin": "24.10.2026 10:33:26 CEST",
+        "last_success_age_s": 0.2,
+        "scheduled": false,
+        "max_age_s": null,
+        "stale": false,
+        "last_error": "",
+        "synthetic": true
+      },
+      {
+        "key": "synthetic-bitsa-reseller",
+        "health": "ok",
+        "last_success_at": "2026-10-24T08:33:26.341354+00:00",
+        "last_success_berlin": "24.10.2026 10:33:26 CEST",
+        "last_success_age_s": 0.2,
+        "scheduled": false,
+        "max_age_s": null,
+        "stale": false,
+        "last_error": "",
+        "synthetic": true
+      },
+      {
+        "key": "synthetic-direct-a",
+        "health": "ok",
+        "last_success_at": "2026-10-24T08:33:26.341354+00:00",
+        "last_success_berlin": "24.10.2026 10:33:26 CEST",
+        "last_success_age_s": 0.2,
+        "scheduled": false,
+        "max_age_s": null,
+        "stale": false,
+        "last_error": "",
+        "synthetic": true
+      },
+      {
+        "key": "synthetic-exit-venue",
+        "health": "ok",
+        "last_success_at": "2026-10-24T08:33:26.341354+00:00",
+        "last_success_berlin": "24.10.2026 10:33:26 CEST",
+        "last_success_age_s": 0.2,
+        "scheduled": false,
+        "max_age_s": null,
+        "stale": false,
+        "last_error": "",
+        "synthetic": true
+      },
+      {
+        "key": "synthetic-paysafe-reseller",
+        "health": "ok",
+        "last_success_at": "2026-10-24T08:33:26.341354+00:00",
+        "last_success_berlin": "24.10.2026 10:33:26 CEST",
+        "last_success_age_s": 0.2,
+        "scheduled": false,
+        "max_age_s": null,
+        "stale": false,
+        "last_error": "",
+        "synthetic": true
+      }
+    ],
+    "stale_sources": [],
+    "alerts_open": {
+      "pending": 5,
+      "dead": 0
+    },
+    "backup": null,
+    "telegram_configured": false
+  },
+  "selected_fixture_replay": {
+    "evaluation_id": 4,
+    "rule_version_id": 1,
+    "rule_label": "delivery2-2026-10-05-v2",
+    "match": true,
+    "inputs_hash_ok": true,
+    "engine_version_stored": "1.4.0",
+    "engine_version_now": "1.4.0",
+    "diff": {}
+  }
+}

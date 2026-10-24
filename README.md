@@ -47,8 +47,11 @@ value-rail serve
 
 Open `http://127.0.0.1:8000`. The default configuration uses synthetic offline fixtures. `pytest` excludes tests marked `live` by default. Do not confuse fixture outputs with real offers.
 
+For recorded dashboard/detail/status responses and a freshly executed offline verification, see the [24 October operational demo](docs/operational-demo-2026-10-24.md). The HTML snapshots are explicitly synthetic; phone delivery is a separate, unverified step.
+
 ## Verified evidence
 
+- Fresh local verification on 24 October 2026: **326 offline tests passed** at `fa3bdc5ddefa9e47d13ab77948c67f3c134e2355`; existing fixture scan, UI routes and replay executed. See the operational demo above.
 - Reviewed implementation: `1d27c69e9f0ab2359eb3ba636867638b37a79b0a`.
 - [Offline CI run 38668234312](https://github.com/SFS-Labs/value-rail-mvp/actions/runs/38668234312): **success** on that commit for Python 3.12 and 3.13; package installation, pytest and Compose configuration checks passed. This existing CI evidence was reused during the 24 October portfolio review; no fresh local full-suite result is claimed.
 - [Scheduled feed run 40032371746](https://github.com/SFS-Labs/value-rail-mvp/actions/runs/40032371746): **success** on the same implementation commit. A successful job is not proof of current stock, user-phone delivery or profitable execution.
