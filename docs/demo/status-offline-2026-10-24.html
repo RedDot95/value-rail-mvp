@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="color-scheme" content="light dark">
+<title>Systemstatus</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--fg:#14161a;--mut:#667085;--ok:#0f9d58;--warn:#b26a00;--bad:#c62828;--acc:#1f5eff;--line:#e4e7ec}
+@media (prefers-color-scheme:dark){:root{--bg:#0d0f12;--card:#171a1f;--fg:#eef0f3;--mut:#98a2b3;--line:#2a2f37}}
+*{box-sizing:border-box}body{margin:0;font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:2;background:var(--card);border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:12px;align-items:center}
+header b{font-size:17px;flex:1}header a{color:var(--acc);text-decoration:none;font-weight:600}
+main{max-width:720px;margin:0 auto;padding:12px}
+.synth{background:repeating-linear-gradient(45deg,#ffe08a,#ffe08a 10px,#ffd24d 10px,#ffd24d 20px);color:#3d2c00;font-weight:700;text-align:center;padding:6px 10px;font-size:13px;letter-spacing:.3px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin:18px 4px 8px}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px;color:inherit;text-decoration:none}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.big{font-size:22px;font-weight:700}.mut{color:var(--mut);font-size:13px}
+.pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;border:1px solid currentColor}
+.s-price_find{color:var(--acc)}.s-verified_route{color:var(--ok)}.s-blocked{color:var(--bad)}.s-expired{color:var(--warn)}.s-no_signal{color:var(--mut)}
+.lvl-ok{border-left:5px solid var(--ok)}.lvl-warn{border-left:5px solid var(--warn)}.lvl-bad{border-left:5px solid var(--bad)}
+.tag{display:inline-block;background:#ffe08a;color:#3d2c00;border-radius:6px;padding:0 6px;font-size:11px;font-weight:700}
+.stale{color:var(--warn);font-size:13px;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}td.n{text-align:right;white-space:nowrap}
+ul{padding-left:18px;margin:6px 0}code{font-size:12px;word-break:break-all}
+details summary{cursor:pointer;color:var(--mut);margin:8px 0}
+.empty{color:var(--mut);padding:8px 4px}
+a,button,input,select{pointer-events:none}form{pointer-events:none}</style>
+</head>
+<body><div style="padding:12px;background:#fff3cd;color:#332701;font:16px sans-serif">Recorded offline application response · 24 October 2026 · SYNTHETIC FIXTURES · No live offers or phone delivery · Navigation and controls are inactive in this static snapshot.</div>
+<div class="synth">SYNTHETISCHE TESTDATEN vorhanden – als SYNTHETISCH markierte Karten sind keine realen Angebote; keine Kaufempfehlung</div>
+<header><b>Value Rail</b><a href="#">Funde</a><a href="#">Status</a></header>
+<main>
+<div class="card lvl-warn mut">Auth deaktiviert – nur lokal (localhost) verwenden. Externer Zugriff nur mit TLS + Basic-Auth.</div>
+
+<div class="card lvl-ok"><b>Systemstatus</b><div>Letzter Scan ok</div>
+<div class="mut">Live-Connector: <b>aus (nur manueller Smoke-Test)</b>. Kein 24/7-Betrieb nachgewiesen. Maschinenlesbar: <a href="#">/healthz</a></div></div>
+
+<h2>Quellen</h2>
+
+<div class="card lvl-ok">
+<div class="row"><b>SYNTHETIC Aggregator X</b><span class="pill">ok</span></div>
+<div class="mut">synthetic-aggregator-x · aggregator / discovery_only · <span class="tag">SYNTHETIC</span></div>
+<div class="mut">Letzter Erfolg: 24.10.2026 10:33:26 CEST</div>
+</div><div class="card lvl-ok">
+<div class="row"><b>SYNTHETIC Bitsa-like Reseller</b><span class="pill">ok</span></div>
+<div class="mut">synthetic-bitsa-reseller · direct_seller / price_basis · <span class="tag">SYNTHETIC</span></div>
+<div class="mut">Letzter Erfolg: 24.10.2026 10:33:26 CEST</div>
+</div><div class="card lvl-ok">
+<div class="row"><b>SYNTHETIC Direct Seller A</b><span class="pill">ok</span></div>
+<div class="mut">synthetic-direct-a · direct_seller / price_basis · <span class="tag">SYNTHETIC</span></div>
+<div class="mut">Letzter Erfolg: 24.10.2026 10:33:26 CEST</div>
+</div><div class="card lvl-ok">
+<div class="row"><b>SYNTHETIC Exit Venue</b><span class="pill">ok</span></div>
+<div class="mut">synthetic-exit-venue · exit_venue / exit · <span class="tag">SYNTHETIC</span></div>
+<div class="mut">Letzter Erfolg: 24.10.2026 10:33:26 CEST</div>
+</div><div class="card lvl-ok">
+<div class="row"><b>SYNTHETIC Paysafe-like Reseller</b><span class="pill">ok</span></div>
+<div class="mut">synthetic-paysafe-reseller · direct_seller / price_basis · <span class="tag">SYNTHETIC</span></div>
+<div class="mut">Letzter Erfolg: 24.10.2026 10:33:26 CEST</div>
+</div>
+
+<h2>Letzte Scans</h2>
+<div class="card"><table><tr><th>#</th><th>Zeit</th><th>Status</th><th class="n">Bew./Alerts</th></tr>
+<tr><td>1</td><td>24.10.2026 10:33:26 CEST<div class="mut">cli</div></td><td>ok</td><td class="n">10/5</td></tr>
+</table></div>
+
+<h2>Konfiguration</h2>
+<div class="card"><table>
+<tr><td>Watchlist-Intervall</td><td class="n">300 s</td></tr>
+<tr><td>Neue Seller</td><td class="n">1800 s</td></tr>
+<tr><td>Aggregatoren (nur Discovery)</td><td class="n">86400 s</td></tr>
+<tr><td>Veraltet nach</td><td class="n">900 s</td></tr>
+<tr><td>Regelversion</td><td class="n">delivery2-2026-10-05-v2</td></tr>
+<tr><td>Alert-Outbox</td><td class="n">pending: 5 </td></tr>
+</table></div>
+
+</main>
+</body>
+</html>
